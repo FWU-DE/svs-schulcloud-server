@@ -12,5 +12,7 @@ import { CourseModule } from './course.module';
 	imports: [AuthorizationModule, CourseModule, RoleModule, SchoolModule, GroupModule, UserModule, ClassModule],
 	controllers: [CourseController, CourseInfoController],
 	providers: [CourseUc, CourseInfoUc, CourseSyncUc],
+	// Exported so the MCP server app can drive courses through the same use-cases as the REST API.
+	exports: [CourseUc, CourseInfoUc],
 })
 export class CourseApiModule {}

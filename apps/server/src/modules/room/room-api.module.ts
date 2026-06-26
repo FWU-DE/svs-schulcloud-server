@@ -57,6 +57,8 @@ import { ROOM_TIMEOUT_CONFIG_TOKEN, RoomTimeoutConfig } from './timeout.config';
 		RoomBoardDeletedHandler,
 		RoomBoardService,
 	],
+	// Exported so the MCP server app can drive rooms through the same use-cases as the REST API.
+	exports: [RoomUc],
 })
 @RegisterTimeoutConfig(ROOM_TIMEOUT_CONFIG_TOKEN)
 export class RoomApiModule {}

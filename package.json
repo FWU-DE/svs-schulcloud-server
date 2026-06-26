@@ -54,6 +54,10 @@
 		"nest:start:admin-api-server:dev": "nest start admin-api-server --watch",
 		"nest:start:admin-api-server:debug": "nest start admin-api-server --debug --watch",
 		"nest:start:admin-api-server:prod": "node dist/apps/server/apps/admin-api-server.app",
+		"nest:start:mcp-server": "nest start mcp-server",
+		"nest:start:mcp-server:dev": "nest start mcp-server --watch",
+		"nest:start:mcp-server:debug": "nest start mcp-server --debug --watch",
+		"nest:start:mcp-server:prod": "node dist/apps/server/apps/mcp-server.app",
 		"nest:start:board-collaboration": "nest start board-collaboration",
 		"nest:start:board-collaboration:dev": "nest start board-collaboration --watch --",
 		"nest:start:board-collaboration:debug": "nest start board-collaboration --debug --watch",
@@ -163,6 +167,7 @@
 		"@mikro-orm/migrations-mongodb": "^6.6.11",
 		"@mikro-orm/mongodb": "^6.6.11",
 		"@mikro-orm/nestjs": "^6.1.1",
+		"@modelcontextprotocol/sdk": "^1.29.0",
 		"@nestjs/axios": "^4.0.1",
 		"@nestjs/cache-manager": "^3.1.0",
 		"@nestjs/common": "^11.1.27",
@@ -247,7 +252,8 @@
 		"urlsafe-base64": "^1.0.0",
 		"uuid": "^11.1.0",
 		"winston": "^3.17.0",
-		"xml2js": "^0.6.2"
+		"xml2js": "^0.6.2",
+		"zod": "^4.4.3"
 	},
 	"devDependencies": {
 		"@faker-js/faker": "^9.6.0",
