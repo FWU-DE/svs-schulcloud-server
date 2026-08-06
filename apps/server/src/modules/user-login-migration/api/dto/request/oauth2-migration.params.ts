@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsMongoId, IsNotEmpty, IsString } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsMongoId, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class Oauth2MigrationParams {
 	@IsString()
@@ -15,4 +15,14 @@ export class Oauth2MigrationParams {
 	@IsMongoId()
 	@ApiProperty()
 	systemId!: string;
+
+	/**
+	 * PKCE (RFC 7636) code verifier. Required only for systems whose IdP
+	 * enforces PKCE on the authorization request; optional otherwise for
+	 * backwards compatibility with systems that don't require it.
+	 */
+	@IsString()
+	@IsOptional()
+	@ApiPropertyOptional()
+	codeVerifier?: string;
 }

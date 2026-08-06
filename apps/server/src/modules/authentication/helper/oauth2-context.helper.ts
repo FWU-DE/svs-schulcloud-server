@@ -23,9 +23,9 @@ export class Oauth2ContextHelper {
 	) {}
 
 	public async buildOauth2Context(params: Oauth2AuthorizationBodyParams): Promise<Oauth2ContextResult> {
-		const { systemId, redirectUri, code } = params;
+		const { systemId, redirectUri, code, codeVerifier } = params;
 
-		const tokenDto = await this.oauthService.authenticateUser(systemId, redirectUri, code);
+		const tokenDto = await this.oauthService.authenticateUser(systemId, redirectUri, code, codeVerifier);
 
 		const user = await this.oauthService.provisionUser(systemId, tokenDto.idToken, tokenDto.accessToken);
 

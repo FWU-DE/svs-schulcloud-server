@@ -41,7 +41,12 @@ export class OAuthService {
 		this.logger.setContext(OAuthService.name);
 	}
 
-	public async authenticateUser(systemId: string, redirectUri: string, code: string): Promise<OAuthTokenDto> {
+	public async authenticateUser(
+		systemId: string,
+		redirectUri: string,
+		code: string,
+		codeVerifier?: string
+	): Promise<OAuthTokenDto> {
 		const system = await this.systemService.findById(systemId);
 
 		if (!system || !system.oauthConfig) {
@@ -49,7 +54,7 @@ export class OAuthService {
 		}
 		const { oauthConfig } = system;
 
-		const oauthTokens = await this.requestToken(code, oauthConfig, redirectUri);
+		const oauthTokens = await this.requestToken(code, oauthConfig, redirectUri, codeVerifier);
 
 		await this.validateToken(oauthTokens.idToken, oauthConfig);
 
@@ -144,8 +149,13 @@ export class OAuthService {
 	}
 
 	// private
-	public async requestToken(code: string, oauthConfig: OauthConfigEntity, redirectUri: string): Promise<OAuthTokenDto> {
-		const payload = this.buildTokenRequestPayload(code, oauthConfig, redirectUri);
+	public async requestToken(
+		code: string,
+		oauthConfig: OauthConfigEntity,
+		redirectUri: string,
+		codeVerifier?: string
+	): Promise<OAuthTokenDto> {
+		const payload = this.buildTokenRequestPayload(code, oauthConfig, redirectUri, codeVerifier);
 
 		const tokenDto = await this.oauthAdapterService.sendTokenRequest(oauthConfig.tokenEndpoint, payload);
 
@@ -191,7 +201,8 @@ export class OAuthService {
 	private buildTokenRequestPayload(
 		code: string,
 		oauthConfig: OauthConfigEntity,
-		redirectUri: string
+		redirectUri: string,
+		codeVerifier?: string
 	): AuthenticationCodeGrantTokenRequest {
 		const decryptedClientSecret: string = this.oAuthEncryptionService.decrypt(oauthConfig.clientSecret);
 
@@ -199,7 +210,8 @@ export class OAuthService {
 			oauthConfig.clientId,
 			decryptedClientSecret,
 			code,
-			redirectUri
+			redirectUri,
+			codeVerifier
 		);
 
 		return tokenRequestPayload;
