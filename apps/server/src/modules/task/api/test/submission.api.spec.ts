@@ -519,4 +519,121 @@ describe('Submission Controller (API)', () => {
 			});
 		});
 	});
+	describe('collect submissions for a class', () => {
+		let app: INestApplication;
+		let em: EntityManager;
+		let apiClient: TestApiClient;
+
+		beforeAll(async () => {
+			const module: TestingModule = await Test.createTestingModule({
+				imports: [ServerTestModule],
+			}).compile();
+
+			app = module.createNestApplication();
+			await app.init();
+			em = module.get(EntityManager);
+			apiClient = new TestApiClient(app, '/submissions');
+		});
+
+		beforeEach(async () => {
+			await cleanupCollections(em);
+		});
+
+		afterAll(async () => {
+			await app.close();
+		});
+
+		const setupClass = async () => {
+			const { teacherAccount, teacherUser } = UserAndAccountTestFactory.buildTeacher();
+			const { studentAccount, studentUser } = UserAndAccountTestFactory.buildStudent();
+			const other = UserAndAccountTestFactory.buildStudent();
+			const course = courseEntityFactory.buildWithId({ teachers: [teacherUser], students: [studentUser] });
+			const task = taskFactory.isPublished().buildWithId({ course });
+
+			await em
+				.persist([task, course, teacherUser, teacherAccount, studentUser, studentAccount, other.studentUser, other.studentAccount])
+				.flush();
+			em.clear();
+
+			return { teacherAccount, studentAccount, studentUser, task, outsider: other.studentUser };
+		};
+
+		describe('WHEN a teacher opens the collect list', () => {
+			it('should list every student of the course, including those without a submission', async () => {
+				const { teacherAccount, studentUser, task } = await setupClass();
+				const loggedInClient = await apiClient.login(teacherAccount);
+
+				const response = await loggedInClient.get(`collect/task/${task.id}`);
+				const body = response.body as { data: { studentId: string; isSubmitted: boolean; submissionId?: string }[] };
+
+				expect(response.status).toEqual(200);
+				expect(body.data).toHaveLength(1);
+				expect(body.data[0].studentId).toEqual(studentUser.id);
+				expect(body.data[0].isSubmitted).toBe(false);
+				expect(body.data[0].submissionId).toBeUndefined();
+			});
+
+			it('should report the state once a submission exists', async () => {
+                const { teacherAccount, studentUser, task } = await setupClass();
+				const submission = submissionFactory.submitted().buildWithId({ task, student: studentUser });
+				await em.persist(submission).flush();
+				em.clear();
+				const loggedInClient = await apiClient.login(teacherAccount);
+
+				const response = await loggedInClient.get(`collect/task/${task.id}`);
+				const body = response.body as { data: { isSubmitted: boolean; submissionId?: string }[] };
+
+				expect(body.data[0].isSubmitted).toBe(true);
+				expect(body.data[0].submissionId).toEqual(submission.id);
+			});
+		});
+
+		describe('WHEN a student opens the collect list', () => {
+			it('should return 403 — the class roster is not theirs to read', async () => {
+				const { studentAccount, task } = await setupClass();
+				const loggedInClient = await apiClient.login(studentAccount);
+
+				const { status } = await loggedInClient.get(`collect/task/${task.id}`);
+
+				expect(status).toEqual(403);
+			});
+		});
+
+		describe('WHEN a teacher hands in for a student', () => {
+			it('should create the submission for that student', async () => {
+				const { teacherAccount, studentUser, task } = await setupClass();
+				const loggedInClient = await apiClient.login(teacherAccount);
+
+				const response = await loggedInClient.post('', { taskId: task.id, studentId: studentUser.id });
+				const body = response.body as SubmissionStatusResponse;
+
+				expect(response.status).toEqual(201);
+				expect(body.submitters).toEqual([studentUser.id]);
+
+				const persisted = await em.findOneOrFail(Submission, { id: body.id });
+				expect(persisted.student?.id).toEqual(studentUser.id);
+			});
+
+			it('should refuse a student outside the course', async () => {
+				const { teacherAccount, task, outsider } = await setupClass();
+				const loggedInClient = await apiClient.login(teacherAccount);
+
+				const { status } = await loggedInClient.post('', { taskId: task.id, studentId: outsider.id });
+
+				expect(status).toEqual(403);
+				expect(await em.count(Submission, { task: task.id })).toEqual(0);
+			});
+		});
+
+		describe('WHEN a student tries to hand in for someone else', () => {
+			it('should return 403', async () => {
+				const { studentAccount, task, outsider } = await setupClass();
+				const loggedInClient = await apiClient.login(studentAccount);
+
+				const { status } = await loggedInClient.post('', { taskId: task.id, studentId: outsider.id });
+
+				expect(status).toEqual(403);
+			});
+		});
+	});
 });

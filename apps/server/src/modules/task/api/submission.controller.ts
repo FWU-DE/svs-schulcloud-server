@@ -2,6 +2,7 @@ import { CurrentUser, ICurrentUser, JwtAuthentication } from '@infra/auth-guard'
 import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import {
+	SubmissionCollectListResponse,
 	SubmissionCreateParams,
 	SubmissionStatusListResponse,
 	SubmissionStatusResponse,
@@ -32,12 +33,25 @@ export class SubmissionController {
 		return listResponse;
 	}
 
+	@Get('collect/task/:taskId')
+	public async findCollectStatusesByTask(
+		@CurrentUser() currentUser: ICurrentUser,
+		@Param() params: TaskUrlParams
+	): Promise<SubmissionCollectListResponse> {
+		const [students, submissions] = await this.submissionUc.findCollectStatusesByTask(
+			currentUser.userId,
+			params.taskId
+		);
+
+		return new SubmissionCollectListResponse(SubmissionMapper.mapToCollectResponse(students, submissions));
+	}
+
 	@Post()
 	public async create(
 		@CurrentUser() currentUser: ICurrentUser,
 		@Body() params: SubmissionCreateParams
 	): Promise<SubmissionStatusResponse> {
-		const submission = await this.submissionUc.create(currentUser.userId, params.taskId);
+		const submission = await this.submissionUc.create(currentUser.userId, params.taskId, params.studentId);
 
 		return SubmissionMapper.mapToStatusResponse(submission);
 	}

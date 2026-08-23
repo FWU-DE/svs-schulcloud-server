@@ -1,3 +1,4 @@
+export * from './submission-collect.response';
 export * from './submission-create.params';
 export * from './submission-update.params';
 export * from './submission.response';

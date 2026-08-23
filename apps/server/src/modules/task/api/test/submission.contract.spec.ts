@@ -87,6 +87,22 @@ describe('Submission API contract', () => {
 		});
 	});
 
+	describe('SubmissionCollectListResponse', () => {
+		it('should match the collect fixture', () => {
+			const student = userFactory.buildWithId();
+			const submission = submissionFactory.submitted().buildWithId({ student });
+			const students = [
+				{ id: student.id, schoolId: student.school.id, firstName: 'Marla', lastName: 'Mathe' },
+			];
+
+			const listResponse = { data: SubmissionMapper.mapToCollectResponse(students, [submission]) };
+
+			expect(shapeOf(JSON.parse(JSON.stringify(listResponse)))).toEqual(
+				shapeOf(readContract('submission-collect-list.response.json'))
+			);
+		});
+	});
+
 	describe('request params', () => {
 		it('should accept the create fixture into SubmissionCreateParams', () => {
 			const fixture = readContract('submission-create.request.json') as SubmissionCreateParams;
@@ -94,8 +110,11 @@ describe('Submission API contract', () => {
 			const params = new SubmissionCreateParams();
 			params.taskId = fixture.taskId;
 
-			expect(Object.keys(fixture).sort()).toEqual(['taskId']);
+			params.studentId = fixture.studentId;
+
+			expect(Object.keys(fixture).sort()).toEqual(['studentId', 'taskId']);
 			expect(params.taskId).toEqual(fixture.taskId);
+			expect(params.studentId).toEqual(fixture.studentId);
 		});
 
 		it('should accept the update fixture into SubmissionUpdateParams', () => {

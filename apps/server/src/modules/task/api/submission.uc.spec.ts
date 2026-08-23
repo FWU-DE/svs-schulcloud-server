@@ -1,10 +1,12 @@
 import { createMock, type DeepMocked } from '@golevelup/ts-jest';
 import { AuthorizationContextBuilder, AuthorizationService } from '@modules/authorization';
+import { CourseService } from '@modules/course';
 import { CourseEntity, CourseGroupEntity } from '@modules/course/repo';
+import { courseEntityFactory } from '@modules/course/testing';
 import { LessonEntity, Material } from '@modules/lesson/repo';
 import { User } from '@modules/user/repo';
 import { userFactory } from '@modules/user/testing';
-import { ForbiddenException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { Permission } from '@shared/domain/interface';
 import { type Counted } from '@shared/domain/types';
@@ -19,6 +21,7 @@ describe('Submission Uc', () => {
 	let submissionUc: SubmissionUc;
 	let submissionService: DeepMocked<SubmissionService>;
 	let taskService: DeepMocked<TaskService>;
+	let courseService: DeepMocked<CourseService>;
 	let authorizationService: DeepMocked<AuthorizationService>;
 
 	beforeAll(async () => {
@@ -37,6 +40,10 @@ describe('Submission Uc', () => {
 					useValue: createMock<TaskService>(),
 				},
 				{
+					provide: CourseService,
+					useValue: createMock<CourseService>(),
+				},
+				{
 					provide: AuthorizationService,
 					useValue: createMock<AuthorizationService>(),
 				},
@@ -46,6 +53,7 @@ describe('Submission Uc', () => {
 		submissionUc = module.get(SubmissionUc);
 		submissionService = module.get(SubmissionService);
 		taskService = module.get(TaskService);
+		courseService = module.get(CourseService);
 		authorizationService = module.get(AuthorizationService);
 	});
 
@@ -501,6 +509,123 @@ describe('Submission Uc', () => {
 				await expect(submissionUc.update(user.id, submission.id, { submitted: true })).rejects.toThrow(error);
 				expect(submissionService.save).not.toHaveBeenCalled();
 			});
+		});
+	});
+	describe('create on behalf of a student', () => {
+		const setup = () => {
+			const teacher = userFactory.buildWithId();
+			const student = userFactory.buildWithId();
+			const course = courseEntityFactory.buildWithId({ teachers: [teacher], students: [student] });
+			const task = taskFactory.buildWithId({ course });
+
+			authorizationService.getUserWithPermissions.mockResolvedValueOnce(teacher);
+			taskService.findById.mockResolvedValueOnce(task);
+			courseService.findById.mockResolvedValue(course);
+			submissionService.findByTaskAndUser.mockResolvedValueOnce(null);
+			authorizationService.checkPermission.mockImplementation();
+			submissionService.save.mockImplementation((submission) => Promise.resolve(submission));
+
+			return { teacher, student, course, task };
+		};
+
+		it('should create the submission for the student, not the teacher', async () => {
+			const { teacher, student, task } = setup();
+
+			const result = await submissionUc.create(teacher.id, task.id, student.id);
+
+			expect(result.student).toBe(student);
+			expect(result.school).toBe(student.school);
+			expect(submissionService.findByTaskAndUser).toHaveBeenCalledWith(task.id, student.id);
+		});
+
+		it('should authorise against the task with write access', async () => {
+			const { teacher, student, task } = setup();
+
+			await submissionUc.create(teacher.id, task.id, student.id);
+
+			expect(authorizationService.checkPermission).toHaveBeenCalledWith(
+				teacher,
+				task,
+				AuthorizationContextBuilder.write([Permission.SUBMISSIONS_CREATE])
+			);
+			// Never the student-facing read check — that one is for handing in your own work.
+			expect(authorizationService.checkPermission).not.toHaveBeenCalledWith(
+				teacher,
+				task,
+				AuthorizationContextBuilder.read([Permission.SUBMISSIONS_CREATE])
+			);
+		});
+
+		it('should reuse an existing submission of that student', async () => {
+			const { teacher, student, task } = setup();
+			const existing = submissionFactory.buildWithId();
+			submissionService.findByTaskAndUser.mockReset();
+			submissionService.findByTaskAndUser.mockResolvedValueOnce(existing);
+
+			const result = await submissionUc.create(teacher.id, task.id, student.id);
+
+			expect(result).toBe(existing);
+			expect(submissionService.save).not.toHaveBeenCalled();
+		});
+
+		it('should refuse a student who does not take part in the course', async () => {
+			const { teacher, task } = setup();
+			const outsider = userFactory.buildWithId();
+
+			await expect(submissionUc.create(teacher.id, task.id, outsider.id)).rejects.toThrow(ForbiddenException);
+			expect(submissionService.save).not.toHaveBeenCalled();
+		});
+
+		it('should treat a studentId equal to the caller as handing in your own work', async () => {
+			const { teacher, task } = setup();
+
+			await submissionUc.create(teacher.id, task.id, teacher.id);
+
+			expect(submissionService.findByTaskAndUser).toHaveBeenCalledWith(task.id, teacher.id);
+			expect(authorizationService.checkPermission).toHaveBeenCalledWith(
+				teacher,
+				task,
+				AuthorizationContextBuilder.read([Permission.SUBMISSIONS_CREATE])
+			);
+		});
+	});
+
+	describe('findCollectStatusesByTask is called', () => {
+		it('should return every student of the course together with the submissions', async () => {
+			const teacher = userFactory.buildWithId();
+			const [first, second] = userFactory.buildListWithId(2);
+			const course = courseEntityFactory.buildWithId({ teachers: [teacher], students: [first, second] });
+			const task = taskFactory.buildWithId({ course });
+			const submission = submissionFactory.buildWithId({ task, student: first });
+
+			authorizationService.getUserWithPermissions.mockResolvedValueOnce(teacher);
+			taskService.findById.mockResolvedValueOnce(task);
+			courseService.findById.mockResolvedValue(course);
+			submissionService.findAllByTask.mockResolvedValueOnce([[submission], 1]);
+			authorizationService.checkPermission.mockImplementation();
+
+			const [students, submissions] = await submissionUc.findCollectStatusesByTask(teacher.id, task.id);
+
+			expect(students.map((entry) => entry.id)).toEqual([first.id, second.id]);
+			expect(submissions).toEqual([submission]);
+			expect(authorizationService.checkPermission).toHaveBeenCalledWith(
+				teacher,
+				task,
+				AuthorizationContextBuilder.write([Permission.SUBMISSIONS_VIEW])
+			);
+		});
+
+		it('should reject a task without a course', async () => {
+			const teacher = userFactory.buildWithId();
+			const task = taskFactory.buildWithId();
+
+			authorizationService.getUserWithPermissions.mockResolvedValueOnce(teacher);
+			taskService.findById.mockResolvedValueOnce(task);
+			authorizationService.checkPermission.mockImplementation();
+
+			await expect(submissionUc.findCollectStatusesByTask(teacher.id, task.id)).rejects.toThrow(
+				BadRequestException
+			);
 		});
 	});
 });
