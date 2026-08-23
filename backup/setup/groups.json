@@ -426,5 +426,53 @@
 		"organization": {
 			"$oid": "5f2987e020834114b8efd6f8"
 		}
+	},
+	{
+		"_id": {
+			"$oid": "6a8b0001000000000000c003"
+		},
+		"createdAt": {
+			"$date": "2026-08-01T08:00:00.000Z"
+		},
+		"updatedAt": {
+			"$date": "2026-08-01T08:00:00.000Z"
+		},
+		"name": "8c",
+		"type": "class",
+		"users": [
+			{
+				"user": {
+					"$oid": "0000d231816abba584714c9e"
+				},
+				"role": {
+					"$oid": "0000d186816abba584714c98"
+				}
+			},
+			{
+				"user": {
+					"$oid": "0000d224816abba584714c9c"
+				},
+				"role": {
+					"$oid": "0000d186816abba584714c99"
+				}
+			},
+			{
+				"user": {
+					"$oid": "58b40278dac20e0645353e3a"
+				},
+				"role": {
+					"$oid": "0000d186816abba584714c99"
+				}
+			}
+		],
+		"organization": {
+			"$oid": "5f2987e020834114b8efd6f8"
+		},
+		"validPeriod_from": {
+			"$date": "2026-08-01T00:00:00.000Z"
+		},
+		"validPeriod_until": {
+			"$date": "2027-07-31T00:00:00.000Z"
+		}
 	}
 ]
