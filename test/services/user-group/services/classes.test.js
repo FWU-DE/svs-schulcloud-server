@@ -73,24 +73,28 @@ describe('classes service', () => {
 		});
 
 		it('should allow admins to find all classes', async () => {
+			// Own school, like 'does not find class of other school' above: without it the admin
+			// lands in the seeded demo school and the count depends on that school's seed data.
+			const { _id: schoolId } = await testObjects.createTestSchool({});
 			const adminUser = await testObjects.createTestUser({
 				roles: ['administrator'],
+				schoolId,
 			});
 
 			const classes = [
 				await testObjects.createTestClass({
 					name: Math.random(),
 					teacherIds: [adminUser._id],
-					schoolId: adminUser.schoolId,
+					schoolId,
 				}),
 				await testObjects.createTestClass({
 					name: Math.random(),
 					teacherIds: [adminUser._id],
-					schoolId: adminUser.schoolId,
+					schoolId,
 				}),
 				await testObjects.createTestClass({
 					name: Math.random(),
-					schoolId: adminUser.schoolId,
+					schoolId,
 				}),
 			];
 
@@ -143,17 +147,21 @@ describe('classes service', () => {
 		});
 
 		it('should display the classes in correct order', async () => {
-			const adminUser = await testObjects.createTestUser({ roles: ['administrator'] });
+			const { _id: schoolId } = await testObjects.createTestSchool({});
+			const adminUser = await testObjects.createTestUser({ roles: ['administrator'], schoolId });
 
 			const classes = [
 				await testObjects.createTestClass({
 					name: 'C',
+					schoolId,
 				}),
 				await testObjects.createTestClass({
 					name: 'B',
+					schoolId,
 				}),
 				await testObjects.createTestClass({
 					name: 'A',
+					schoolId,
 				}),
 			];
 
@@ -170,20 +178,24 @@ describe('classes service', () => {
 		});
 
 		it('should display the classes in correct order when gradelevel is included', async () => {
-			const adminUser = await testObjects.createTestUser({ roles: ['administrator'] });
+			const { _id: schoolId } = await testObjects.createTestSchool({});
+			const adminUser = await testObjects.createTestUser({ roles: ['administrator'], schoolId });
 
 			const classes = [
 				await testObjects.createTestClass({
 					name: 'C',
 					gradeLevel: 2,
+					schoolId,
 				}),
 				await testObjects.createTestClass({
 					name: 'B',
 					gradeLevel: 9,
+					schoolId,
 				}),
 				await testObjects.createTestClass({
 					name: 'A',
 					gradeLevel: 7,
+					schoolId,
 				}),
 			];
 
@@ -202,20 +214,23 @@ describe('classes service', () => {
 		it('should display the classes in correct order when years are included', async () => {
 			const { _id } = await testObjects.createTestSchool();
 			const school = await app.service('schools').get(_id);
-			const adminUser = await testObjects.createTestUser({ roles: ['administrator'] });
+			const adminUser = await testObjects.createTestUser({ roles: ['administrator'], schoolId: _id });
 
 			const classes = [
 				await testObjects.createTestClass({
 					name: 'A',
 					year: school.years.schoolYears[0],
+					schoolId: _id,
 				}),
 				await testObjects.createTestClass({
 					name: 'A',
 					year: school.years.schoolYears[1],
+					schoolId: _id,
 				}),
 				await testObjects.createTestClass({
 					name: 'B',
 					year: school.years.schoolYears[0],
+					schoolId: _id,
 				}),
 			];
 
