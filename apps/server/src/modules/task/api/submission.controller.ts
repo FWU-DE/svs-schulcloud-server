@@ -1,7 +1,14 @@
 import { CurrentUser, ICurrentUser, JwtAuthentication } from '@infra/auth-guard';
-import { Controller, Delete, Get, Param } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { SubmissionStatusListResponse, SubmissionUrlParams, TaskUrlParams } from './dto';
+import {
+	SubmissionCreateParams,
+	SubmissionStatusListResponse,
+	SubmissionStatusResponse,
+	SubmissionUpdateParams,
+	SubmissionUrlParams,
+	TaskUrlParams,
+} from './dto';
 import { SubmissionMapper } from './mapper';
 import { SubmissionUc } from './submission.uc';
 
@@ -23,6 +30,27 @@ export class SubmissionController {
 		const listResponse = new SubmissionStatusListResponse(submissionResponses);
 
 		return listResponse;
+	}
+
+	@Post()
+	public async create(
+		@CurrentUser() currentUser: ICurrentUser,
+		@Body() params: SubmissionCreateParams
+	): Promise<SubmissionStatusResponse> {
+		const submission = await this.submissionUc.create(currentUser.userId, params.taskId);
+
+		return SubmissionMapper.mapToStatusResponse(submission);
+	}
+
+	@Patch(':submissionId')
+	public async update(
+		@CurrentUser() currentUser: ICurrentUser,
+		@Param() urlParams: SubmissionUrlParams,
+		@Body() params: SubmissionUpdateParams
+	): Promise<SubmissionStatusResponse> {
+		const submission = await this.submissionUc.update(currentUser.userId, urlParams.submissionId, params);
+
+		return SubmissionMapper.mapToStatusResponse(submission);
 	}
 
 	@Delete(':submissionId')

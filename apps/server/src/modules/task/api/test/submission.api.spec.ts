@@ -1,6 +1,6 @@
 import { createMock, type DeepMocked } from '@golevelup/ts-jest';
 import { FilesStorageClientAdapterService } from '@infra/files-storage-amqp-client';
-import { EntityManager } from '@mikro-orm/mongodb';
+import { EntityManager, ObjectId } from '@mikro-orm/mongodb';
 import { courseEntityFactory, courseGroupEntityFactory } from '@modules/course/testing';
 import { ServerTestModule } from '@modules/server/server.app.module';
 import { type INestApplication } from '@nestjs/common';
@@ -11,7 +11,7 @@ import { UserAndAccountTestFactory } from '@testing/factory/user-and-account.tes
 import { TestApiClient } from '@testing/test-api-client';
 import { Submission } from '../../repo';
 import { submissionFactory, taskFactory } from '../../testing';
-import { type SubmissionStatusListResponse } from '../dto';
+import { type SubmissionStatusListResponse, type SubmissionStatusResponse } from '../dto';
 
 describe('Submission Controller (API)', () => {
 	describe('find statuses by task', () => {
@@ -283,6 +283,239 @@ describe('Submission Controller (API)', () => {
 				const { status } = await loggedInClient.delete(submission.id);
 
 				expect(status).toEqual(403);
+			});
+		});
+	});
+	describe('create submission', () => {
+		let app: INestApplication;
+		let em: EntityManager;
+		let apiClient: TestApiClient;
+
+		beforeAll(async () => {
+			const module: TestingModule = await Test.createTestingModule({
+				imports: [ServerTestModule],
+			}).compile();
+
+			app = module.createNestApplication();
+			await app.init();
+			em = module.get(EntityManager);
+			apiClient = new TestApiClient(app, '/submissions');
+		});
+
+		beforeEach(async () => {
+			await cleanupCollections(em);
+		});
+
+		afterAll(async () => {
+			await app.close();
+		});
+
+		describe('WHEN user is not authenticated', () => {
+			it('should return 401', async () => {
+				const { status } = await apiClient.post('', { taskId: new ObjectId().toHexString() });
+
+				expect(status).toEqual(401);
+			});
+		});
+
+		describe('WHEN taskId is not a mongo id', () => {
+			const setup = async () => {
+				const { studentUser, studentAccount } = UserAndAccountTestFactory.buildStudent();
+
+				await em.persist([studentUser, studentAccount]).flush();
+				em.clear();
+
+				const loggedInClient = await apiClient.login(studentAccount);
+
+				return { loggedInClient };
+			};
+
+			it('should return 400', async () => {
+				const { loggedInClient } = await setup();
+
+				const { status } = await loggedInClient.post('', { taskId: 'not-an-id' });
+
+				expect(status).toEqual(400);
+			});
+		});
+
+		describe('WHEN the student is a member of the task course', () => {
+			const setup = async () => {
+				const { studentUser, studentAccount } = UserAndAccountTestFactory.buildStudent();
+				const course = courseEntityFactory.buildWithId({ students: [studentUser] });
+				const task = taskFactory.isPublished().buildWithId({ course });
+
+				await em.persist([task, course, studentUser, studentAccount]).flush();
+				em.clear();
+
+				const loggedInClient = await apiClient.login(studentAccount);
+
+				return { loggedInClient, task, studentUser };
+			};
+
+			it('should create an unsubmitted submission for the student', async () => {
+				const { loggedInClient, task, studentUser } = await setup();
+
+				const response = await loggedInClient.post('', { taskId: task.id });
+				const body = response.body as SubmissionStatusResponse;
+
+				expect(response.status).toEqual(201);
+				expect(body.isSubmitted).toBe(false);
+				expect(body.submitters).toEqual([studentUser.id]);
+
+				const persisted = await em.findOneOrFail(Submission, { id: body.id });
+				expect(persisted.submitted).toBe(false);
+			});
+
+			it('should return the same submission when called twice', async () => {
+				const { loggedInClient, task } = await setup();
+
+				const first = await loggedInClient.post('', { taskId: task.id });
+				const second = await loggedInClient.post('', { taskId: task.id });
+
+				const firstBody = first.body as SubmissionStatusResponse;
+				const secondBody = second.body as SubmissionStatusResponse;
+
+				expect(secondBody.id).toEqual(firstBody.id);
+
+				const count = await em.count(Submission, { task: task.id });
+				expect(count).toEqual(1);
+			});
+		});
+
+		describe('WHEN the student is not a member of the task course', () => {
+			const setup = async () => {
+				const { studentUser, studentAccount } = UserAndAccountTestFactory.buildStudent();
+				const course = courseEntityFactory.buildWithId();
+				const task = taskFactory.isPublished().buildWithId({ course });
+
+				await em.persist([task, course, studentUser, studentAccount]).flush();
+				em.clear();
+
+				const loggedInClient = await apiClient.login(studentAccount);
+
+				return { loggedInClient, task };
+			};
+
+			it('should return 403 and create nothing', async () => {
+				const { loggedInClient, task } = await setup();
+
+				const { status } = await loggedInClient.post('', { taskId: task.id });
+
+				expect(status).toEqual(403);
+				expect(await em.count(Submission, { task: task.id })).toEqual(0);
+			});
+		});
+	});
+
+	describe('update submission', () => {
+		let app: INestApplication;
+		let em: EntityManager;
+		let apiClient: TestApiClient;
+
+		beforeAll(async () => {
+			const module: TestingModule = await Test.createTestingModule({
+				imports: [ServerTestModule],
+			}).compile();
+
+			app = module.createNestApplication();
+			await app.init();
+			em = module.get(EntityManager);
+			apiClient = new TestApiClient(app, '/submissions');
+		});
+
+		beforeEach(async () => {
+			await cleanupCollections(em);
+		});
+
+		afterAll(async () => {
+			await app.close();
+		});
+
+		describe('WHEN user is not authenticated', () => {
+			it('should return 401', async () => {
+				const { status } = await apiClient.patch(new ObjectId().toHexString(), { submitted: true });
+
+				expect(status).toEqual(401);
+			});
+		});
+
+		describe('WHEN the student owns the submission', () => {
+			const setup = async () => {
+				const { studentUser, studentAccount } = UserAndAccountTestFactory.buildStudent();
+				const course = courseEntityFactory.buildWithId({ students: [studentUser] });
+				const task = taskFactory.isPublished().buildWithId({ course });
+				const submission = submissionFactory.buildWithId({ task, student: studentUser });
+
+				await em.persist([submission, task, course, studentUser, studentAccount]).flush();
+				em.clear();
+
+				const loggedInClient = await apiClient.login(studentAccount);
+
+				return { loggedInClient, submission };
+			};
+
+			it('should hand the submission in', async () => {
+				const { loggedInClient, submission } = await setup();
+
+				const response = await loggedInClient.patch(submission.id, { submitted: true, comment: 'Fertig' });
+				const body = response.body as SubmissionStatusResponse;
+
+				expect(response.status).toEqual(200);
+				expect(body.isSubmitted).toBe(true);
+
+				const persisted = await em.findOneOrFail(Submission, { id: submission.id });
+				expect(persisted.submitted).toBe(true);
+				expect(persisted.comment).toEqual('Fertig');
+			});
+
+			// The global validation pipe runs with `enableImplicitConversion`, so a wrongly typed
+			// `submitted` is coerced rather than rejected. What must hold is that fields outside
+			// the params DTO never reach the entity — a student may hand in, but not grade.
+			it('should ignore grading fields sent by the student', async () => {
+				const { loggedInClient, submission } = await setup();
+
+				const { status } = await loggedInClient.patch(submission.id, {
+					submitted: true,
+					grade: 100,
+					graded: true,
+					gradeComment: 'Sehr gut',
+				});
+
+				expect(status).toEqual(200);
+
+				const persisted = await em.findOneOrFail(Submission, { id: submission.id });
+				expect(persisted.submitted).toBe(true);
+				expect(persisted.graded).toBe(false);
+				expect(persisted.grade).toBeUndefined();
+				expect(persisted.gradeComment).toBeUndefined();
+			});
+		});
+
+		describe('WHEN the submission is already graded', () => {
+			const setup = async () => {
+				const { studentUser, studentAccount } = UserAndAccountTestFactory.buildStudent();
+				const course = courseEntityFactory.buildWithId({ students: [studentUser] });
+				const task = taskFactory.isPublished().buildWithId({ course });
+				const submission = submissionFactory.submitted().graded().buildWithId({ task, student: studentUser });
+
+				await em.persist([submission, task, course, studentUser, studentAccount]).flush();
+				em.clear();
+
+				const loggedInClient = await apiClient.login(studentAccount);
+
+				return { loggedInClient, submission };
+			};
+
+			it('should refuse to withdraw it', async () => {
+				const { loggedInClient, submission } = await setup();
+
+				const { status } = await loggedInClient.patch(submission.id, { submitted: false });
+
+				expect(status).toEqual(403);
+
+				const persisted = await em.findOneOrFail(Submission, { id: submission.id });
+				expect(persisted.submitted).toBe(true);
 			});
 		});
 	});

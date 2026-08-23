@@ -4,11 +4,12 @@ import { CourseEntity, CourseGroupEntity } from '@modules/course/repo';
 import { LessonEntity, Material } from '@modules/lesson/repo';
 import { User } from '@modules/user/repo';
 import { userFactory } from '@modules/user/testing';
+import { ForbiddenException } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { Permission } from '@shared/domain/interface';
 import { type Counted } from '@shared/domain/types';
 import { setupEntities } from '@testing/database';
-import { SubmissionService } from '../domain';
+import { SubmissionService, TaskService } from '../domain';
 import { Submission, Task } from '../repo';
 import { submissionFactory, taskFactory } from '../testing';
 import { SubmissionUc } from './submission.uc';
@@ -17,6 +18,7 @@ describe('Submission Uc', () => {
 	let module: TestingModule;
 	let submissionUc: SubmissionUc;
 	let submissionService: DeepMocked<SubmissionService>;
+	let taskService: DeepMocked<TaskService>;
 	let authorizationService: DeepMocked<AuthorizationService>;
 
 	beforeAll(async () => {
@@ -31,6 +33,10 @@ describe('Submission Uc', () => {
 					useValue: createMock<SubmissionService>(),
 				},
 				{
+					provide: TaskService,
+					useValue: createMock<TaskService>(),
+				},
+				{
 					provide: AuthorizationService,
 					useValue: createMock<AuthorizationService>(),
 				},
@@ -39,6 +45,7 @@ describe('Submission Uc', () => {
 
 		submissionUc = module.get(SubmissionUc);
 		submissionService = module.get(SubmissionService);
+		taskService = module.get(TaskService);
 		authorizationService = module.get(AuthorizationService);
 	});
 
@@ -278,6 +285,221 @@ describe('Submission Uc', () => {
 				const { submission, user, error } = setup();
 
 				await expect(submissionUc.delete(user.id, submission.id)).rejects.toThrow(error);
+			});
+		});
+	});
+	describe('create is called', () => {
+		describe('WHEN the user has no submission for the task yet', () => {
+			const setup = () => {
+				const user = userFactory.buildWithId();
+				const task = taskFactory.buildWithId();
+
+				authorizationService.getUserWithPermissions.mockResolvedValueOnce(user);
+				taskService.findById.mockResolvedValueOnce(task);
+				submissionService.findByTaskAndUser.mockResolvedValueOnce(null);
+				authorizationService.checkPermission.mockImplementation();
+				submissionService.save.mockImplementation((submission) => Promise.resolve(submission));
+
+				return { user, task };
+			};
+
+			it('should create the submission for the current user and save it', async () => {
+				const { user, task } = setup();
+
+				const result = await submissionUc.create(user.id, task.id);
+
+				expect(result.task).toBe(task);
+				expect(result.student).toBe(user);
+				expect(result.school).toBe(user.school);
+				expect(result.submitted).toBe(false);
+				expect(submissionService.save).toHaveBeenCalledWith(result);
+			});
+
+			it('should check read permission on the task and write permission on the new submission', async () => {
+				const { user, task } = setup();
+
+				const result = await submissionUc.create(user.id, task.id);
+
+				expect(authorizationService.checkPermission).toHaveBeenCalledWith(
+					user,
+					task,
+					AuthorizationContextBuilder.read([Permission.SUBMISSIONS_CREATE])
+				);
+				expect(authorizationService.checkPermission).toHaveBeenCalledWith(
+					user,
+					result,
+					AuthorizationContextBuilder.write([Permission.SUBMISSIONS_CREATE])
+				);
+			});
+		});
+
+		describe('WHEN the user already has a submission for the task', () => {
+			const setup = () => {
+				const user = userFactory.buildWithId();
+				const task = taskFactory.buildWithId();
+				const submission = submissionFactory.buildWithId();
+
+				authorizationService.getUserWithPermissions.mockResolvedValueOnce(user);
+				taskService.findById.mockResolvedValueOnce(task);
+				submissionService.findByTaskAndUser.mockResolvedValueOnce(submission);
+				authorizationService.checkPermission.mockImplementation();
+
+				return { user, task, submission };
+			};
+
+			it('should return the existing submission without creating a second one', async () => {
+				const { user, task, submission } = setup();
+
+				const result = await submissionUc.create(user.id, task.id);
+
+				expect(result).toBe(submission);
+				expect(submissionService.save).not.toHaveBeenCalled();
+				expect(authorizationService.checkPermission).toHaveBeenCalledWith(
+					user,
+					submission,
+					AuthorizationContextBuilder.read([Permission.SUBMISSIONS_VIEW])
+				);
+			});
+		});
+
+		describe('WHEN the user may not submit to the task', () => {
+			const setup = () => {
+				const user = userFactory.buildWithId();
+				const task = taskFactory.buildWithId();
+				const error = new Error();
+
+				authorizationService.getUserWithPermissions.mockResolvedValueOnce(user);
+				taskService.findById.mockResolvedValueOnce(task);
+				submissionService.findByTaskAndUser.mockResolvedValueOnce(null);
+				authorizationService.checkPermission.mockImplementation(() => {
+					throw error;
+				});
+
+				return { user, task, error };
+			};
+
+			it('should pass error and save nothing', async () => {
+				const { user, task, error } = setup();
+
+				await expect(submissionUc.create(user.id, task.id)).rejects.toThrow(error);
+				expect(submissionService.save).not.toHaveBeenCalled();
+			});
+		});
+
+		describe('WHEN the task can not be found', () => {
+			const setup = () => {
+				const user = userFactory.buildWithId();
+				const task = taskFactory.buildWithId();
+				const error = new Error();
+
+				authorizationService.getUserWithPermissions.mockResolvedValueOnce(user);
+				taskService.findById.mockRejectedValueOnce(error);
+
+				return { user, task, error };
+			};
+
+			it('should pass error', async () => {
+				const { user, task, error } = setup();
+
+				await expect(submissionUc.create(user.id, task.id)).rejects.toThrow(error);
+			});
+		});
+	});
+
+	describe('update is called', () => {
+		describe('WHEN the user hands in their submission', () => {
+			const setup = () => {
+				const user = userFactory.buildWithId();
+				const submission = submissionFactory.buildWithId();
+
+				authorizationService.getUserWithPermissions.mockResolvedValueOnce(user);
+				submissionService.findById.mockResolvedValueOnce(submission);
+				authorizationService.checkPermission.mockImplementation();
+				submissionService.save.mockImplementation((updated) => Promise.resolve(updated));
+
+				return { user, submission };
+			};
+
+			it('should apply submitted and comment and save', async () => {
+				const { user, submission } = setup();
+
+				const result = await submissionUc.update(user.id, submission.id, {
+					submitted: true,
+					comment: 'Fertig bearbeitet',
+				});
+
+				expect(result.submitted).toBe(true);
+				expect(result.comment).toBe('Fertig bearbeitet');
+				expect(authorizationService.checkPermission).toHaveBeenCalledWith(
+					user,
+					submission,
+					AuthorizationContextBuilder.write([Permission.SUBMISSIONS_EDIT])
+				);
+				expect(submissionService.save).toHaveBeenCalledWith(submission);
+			});
+
+			it('should leave fields the params do not mention untouched', async () => {
+				const { user, submission } = setup();
+				const previousComment = submission.comment;
+
+				const result = await submissionUc.update(user.id, submission.id, { submitted: true });
+
+				expect(result.comment).toBe(previousComment);
+			});
+		});
+
+		describe('WHEN the submission is already graded', () => {
+			const setup = () => {
+				const user = userFactory.buildWithId();
+				const submission = submissionFactory.submitted().graded().buildWithId();
+
+				authorizationService.getUserWithPermissions.mockResolvedValue(user);
+				submissionService.findById.mockResolvedValue(submission);
+				authorizationService.checkPermission.mockImplementation();
+				submissionService.save.mockImplementation((updated) => Promise.resolve(updated));
+
+				return { user, submission };
+			};
+
+			it('should refuse to withdraw it and save nothing', async () => {
+				const { user, submission } = setup();
+
+				await expect(submissionUc.update(user.id, submission.id, { submitted: false })).rejects.toThrow(
+					ForbiddenException
+				);
+				expect(submissionService.save).not.toHaveBeenCalled();
+			});
+
+			it('should still allow editing the comment', async () => {
+				const { user, submission } = setup();
+
+				const result = await submissionUc.update(user.id, submission.id, { comment: 'Nachtrag' });
+
+				expect(result.comment).toBe('Nachtrag');
+				expect(submissionService.save).toHaveBeenCalledWith(submission);
+			});
+		});
+
+		describe('WHEN user has no permission', () => {
+			const setup = () => {
+				const user = userFactory.buildWithId();
+				const submission = submissionFactory.buildWithId();
+				const error = new Error();
+
+				authorizationService.getUserWithPermissions.mockResolvedValueOnce(user);
+				submissionService.findById.mockResolvedValueOnce(submission);
+				authorizationService.checkPermission.mockImplementation(() => {
+					throw error;
+				});
+
+				return { user, submission, error };
+			};
+
+			it('should pass error and save nothing', async () => {
+				const { user, submission, error } = setup();
+
+				await expect(submissionUc.update(user.id, submission.id, { submitted: true })).rejects.toThrow(error);
+				expect(submissionService.save).not.toHaveBeenCalled();
 			});
 		});
 	});
