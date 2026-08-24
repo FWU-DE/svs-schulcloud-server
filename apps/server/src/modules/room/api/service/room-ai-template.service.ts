@@ -53,12 +53,18 @@ export class RoomAiTemplateService {
 		}
 	}
 
+	private authHeader(): Record<string, string> {
+		return this.config.aiApiStyle === 'azure'
+			? { 'api-key': this.config.aiApiKey }
+			: { Authorization: `Bearer ${this.config.aiApiKey}` };
+	}
+
 	private async requestCompletion(prompt: string, maxColumns: number): Promise<Response> {
 		const response = await fetch(this.config.aiApiUrl, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
-				Authorization: `Bearer ${this.config.aiApiKey}`,
+				...this.authHeader(),
 			},
 			body: JSON.stringify({
 				model: this.config.aiModel,

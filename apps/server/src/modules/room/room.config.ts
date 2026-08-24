@@ -1,6 +1,6 @@
 import { ConfigProperty, Configuration } from '@infra/configuration';
 import { StringToBoolean } from '@shared/controller/transformer';
-import { IsBoolean, IsEmail, IsOptional, IsString, IsUrl } from 'class-validator';
+import { IsBoolean, IsEmail, IsIn, IsOptional, IsString, IsUrl } from 'class-validator';
 
 export const ROOM_PUBLIC_API_CONFIG_TOKEN = 'ROOM_PUBLIC_API_CONFIG_TOKEN';
 export const ROOM_CONFIG_TOKEN = 'ROOM_CONFIG_TOKEN';
@@ -72,4 +72,9 @@ export class RoomConfig extends RoomPublicApiConfig {
 	@ConfigProperty('ROOM_AI_MODEL')
 	@IsString()
 	public aiModel = 'gpt-4o-mini';
+
+	/** azure sends the key as `api-key`, everything openai compatible as a bearer token */
+	@ConfigProperty('ROOM_AI_API_STYLE')
+	@IsIn(['openai', 'azure'])
+	public aiApiStyle: 'openai' | 'azure' = 'openai';
 }

@@ -22,13 +22,16 @@ describe('RoomAiTemplateService', () => {
 		'data: [DONE]\n',
 	];
 
-	const setup = (options: { chunks?: string[]; ok?: boolean; apiKey?: string } = {}) => {
-		const { chunks = [], ok = true, apiKey = 'test-key' } = options;
+	const setup = (
+		options: { chunks?: string[]; ok?: boolean; apiKey?: string; apiStyle?: 'openai' | 'azure' } = {}
+	) => {
+		const { chunks = [], ok = true, apiKey = 'test-key', apiStyle = 'openai' } = options;
 
 		const config = new RoomConfig();
 		config.aiApiUrl = 'https://ai.example.org/v1/chat/completions';
 		config.aiApiKey = apiKey;
 		config.aiModel = 'test-model';
+		config.aiApiStyle = apiStyle;
 
 		const fetchMock = jest.fn().mockResolvedValue({
 			ok,
@@ -84,6 +87,16 @@ describe('RoomAiTemplateService', () => {
 			expect(body.model).toBe('test-model');
 			expect(body.stream).toBe(true);
 			expect(body.messages[1]).toEqual({ role: 'user', content: 'Mathe 9b, Bruchrechnung' });
+		});
+
+		it('should send the key the way azure expects it', async () => {
+			const { service, fetchMock } = setup({ chunks: completionEvents([]), apiStyle: 'azure' });
+
+			await collect(service.generate('Mathe'));
+
+			const [, requestInit] = fetchMock.mock.calls[0] as [string, { headers: Record<string, string> }];
+			expect(requestInit.headers).toEqual(expect.objectContaining({ 'api-key': 'test-key' }));
+			expect(requestInit.headers.Authorization).toBeUndefined();
 		});
 
 		it('should yield the items of the stream', async () => {
