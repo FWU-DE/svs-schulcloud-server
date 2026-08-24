@@ -31,7 +31,7 @@ import {
 	RoomBoardService,
 	RoomPermissionService,
 } from './api/service';
-import { ROOM_CONFIG_TOKEN, ROOM_PUBLIC_API_CONFIG_TOKEN, RoomConfig, RoomPublicApiConfig } from './room.config';
+import { ROOM_AI_CONFIG_TOKEN, ROOM_PUBLIC_API_CONFIG_TOKEN, RoomAiConfig, RoomPublicApiConfig } from './room.config';
 import { RoomModule } from './room.module';
 import { ROOM_TIMEOUT_CONFIG_TOKEN, RoomTimeoutConfig } from './timeout.config';
 
@@ -48,7 +48,7 @@ import { ROOM_TIMEOUT_CONFIG_TOKEN, RoomTimeoutConfig } from './timeout.config';
 		CopyHelperModule,
 		SagaModule,
 		ConfigurationModule.register(ROOM_PUBLIC_API_CONFIG_TOKEN, RoomPublicApiConfig),
-		ConfigurationModule.register(ROOM_CONFIG_TOKEN, RoomConfig),
+		ConfigurationModule.register(ROOM_AI_CONFIG_TOKEN, RoomAiConfig),
 		ConfigurationModule.register(ROOM_TIMEOUT_CONFIG_TOKEN, RoomTimeoutConfig),
 	],
 	controllers: [RoomAiTemplateController, RoomController, RoomInvitationLinkController],

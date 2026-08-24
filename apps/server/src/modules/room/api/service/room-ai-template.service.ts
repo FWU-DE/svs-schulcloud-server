@@ -1,5 +1,5 @@
 import { Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
-import { ROOM_CONFIG_TOKEN, RoomConfig } from '../../room.config';
+import { ROOM_AI_CONFIG_TOKEN, RoomAiConfig } from '../../room.config';
 
 export type RoomAiBoardLayout = 'columns' | 'list';
 
@@ -34,7 +34,7 @@ const SYSTEM_PROMPT = [
  */
 @Injectable()
 export class RoomAiTemplateService {
-	constructor(@Inject(ROOM_CONFIG_TOKEN) private readonly config: RoomConfig) {}
+	constructor(@Inject(ROOM_AI_CONFIG_TOKEN) private readonly config: RoomAiConfig) {}
 
 	public isConfigured(): boolean {
 		return this.config.aiApiKey.length > 0;

@@ -1,5 +1,5 @@
 import { InternalServerErrorException } from '@nestjs/common';
-import { RoomConfig } from '../../room.config';
+import { RoomAiConfig } from '../../room.config';
 import { RoomAiTemplateItem, RoomAiTemplateService } from './room-ai-template.service';
 
 describe('RoomAiTemplateService', () => {
@@ -27,7 +27,7 @@ describe('RoomAiTemplateService', () => {
 	) => {
 		const { chunks = [], ok = true, apiKey = 'test-key', apiStyle = 'openai' } = options;
 
-		const config = new RoomConfig();
+		const config = new RoomAiConfig();
 		config.aiApiUrl = 'https://ai.example.org/v1/chat/completions';
 		config.aiApiKey = apiKey;
 		config.aiModel = 'test-model';
