@@ -22,19 +22,40 @@ describe('RoomAiTemplateService', () => {
 		'data: [DONE]\n',
 	];
 
-	const setup = (options: { chunks?: string[]; ok?: boolean; apiKey?: string; apiStyle?: 'openai' | 'azure' } = {}) => {
-		const { chunks = [], ok = true, apiKey = 'test-key', apiStyle = 'openai' } = options;
+	const setup = (
+		options: {
+			chunks?: string[];
+			ok?: boolean;
+			apiKey?: string;
+			apiStyle?: 'openai' | 'azure';
+			checkLinks?: boolean;
+			linkStatus?: number | 'unreachable';
+		} = {}
+	) => {
+		const {
+			chunks = [],
+			ok = true,
+			apiKey = 'test-key',
+			apiStyle = 'openai',
+			checkLinks = false,
+			linkStatus = 200,
+		} = options;
 
 		const config = new RoomAiConfig();
 		config.aiApiUrl = 'https://ai.example.org/v1/chat/completions';
 		config.aiApiKey = apiKey;
 		config.aiModel = 'test-model';
 		config.aiApiStyle = apiStyle;
+		config.aiCheckLinks = checkLinks;
 
-		const fetchMock = jest.fn().mockResolvedValue({
-			ok,
-			status: ok ? 200 : 429,
-			body: ok ? streamOf(chunks) : null,
+		const fetchMock = jest.fn().mockImplementation((url: string, init?: { method?: string }) => {
+			if (init?.method === 'HEAD') {
+				return linkStatus === 'unreachable'
+					? Promise.reject(new Error('getaddrinfo ENOTFOUND'))
+					: Promise.resolve({ ok: true, status: linkStatus });
+			}
+
+			return Promise.resolve({ ok, status: ok ? 200 : 429, body: ok ? streamOf(chunks) : null });
 		});
 		global.fetch = fetchMock as unknown as typeof fetch;
 
@@ -102,7 +123,7 @@ describe('RoomAiTemplateService', () => {
 				chunks: completionEvents([
 					'{"type":"roomName","name":"Mathe 9b"}\n',
 					'{"type":"board","title":"Übersicht","layout":"list"}\n',
-					'{"type":"column","title":"Woche 1"}\n{"type":"card","title":"Ziele","text":"<p>Los</p>"}\n',
+					'{"type":"column","title":"Woche 1"}\n{"type":"card","title":"Ziele","elements":[{"kind":"text","text":"<p>Los</p>"}]}\n',
 				]),
 			});
 
@@ -112,7 +133,7 @@ describe('RoomAiTemplateService', () => {
 				{ type: 'roomName', name: 'Mathe 9b' },
 				{ type: 'board', title: 'Übersicht', layout: 'list' },
 				{ type: 'column', title: 'Woche 1' },
-				{ type: 'card', title: 'Ziele', text: '<p>Los</p>' },
+				{ type: 'card', title: 'Ziele', color: undefined, elements: [{ kind: 'text', text: '<p>Los</p>' }] },
 			]);
 		});
 
@@ -165,6 +186,99 @@ describe('RoomAiTemplateService', () => {
 
 			expect(items.filter((item) => item.type === 'column')).toHaveLength(2);
 			expect(items.some((item) => item.type === 'card')).toBe(false);
+		});
+
+		it('should take over every content type of a card', async () => {
+			const { service } = setup({
+				chunks: completionEvents([
+					'{"type":"board","title":"Plan","layout":"columns"}\n{"type":"board","title":"Anhang","layout":"list"}\n',
+					'{"type":"column","title":"Material"}\n',
+					'{"type":"card","title":"Sammlung","color":"teal","elements":[',
+					'{"kind":"text","text":"<p>Los</p>"},{"kind":"link","title":"Serlo","url":"https://de.serlo.org"},',
+					'{"kind":"folder","title":"Material"},{"kind":"boardLink","title":"Zum Anhang","board":2}]}\n',
+				]),
+			});
+
+			const items = await collect(service.generate('Mathe'));
+			const card = items.find((item) => item.type === 'card');
+
+			expect(card).toEqual({
+				type: 'card',
+				title: 'Sammlung',
+				color: 'teal',
+				elements: [
+					{ kind: 'text', text: '<p>Los</p>' },
+					{ kind: 'link', title: 'Serlo', url: 'https://de.serlo.org/' },
+					{ kind: 'folder', title: 'Material' },
+					// the model counts boards from one, the client from zero
+					{ kind: 'boardLink', title: 'Zum Anhang', boardIndex: 1 },
+				],
+			});
+		});
+
+		it('should drop a colour that the board does not know', async () => {
+			const { service } = setup({
+				chunks: completionEvents([
+					'{"type":"board","title":"Plan","layout":"columns"}\n{"type":"column","title":"Material"}\n',
+					'{"type":"card","title":"Sammlung","color":"neon"}\n',
+				]),
+			});
+
+			const items = await collect(service.generate('Mathe'));
+
+			expect(items.find((item) => item.type === 'card')).toEqual({
+				type: 'card',
+				title: 'Sammlung',
+				color: undefined,
+				elements: [],
+			});
+		});
+
+		it('should drop links that are not public https addresses', async () => {
+			const { service } = setup({
+				chunks: completionEvents([
+					'{"type":"board","title":"Plan","layout":"columns"}\n{"type":"column","title":"Material"}\n',
+					'{"type":"card","title":"Sammlung","elements":[{"kind":"link","title":"Intern","url":"http://intranet/wiki"},',
+					'{"kind":"link","title":"Datei","url":"file:///etc/passwd"},{"kind":"link","title":"Ok","url":"https://de.wikipedia.org"}]}\n',
+				]),
+			});
+
+			const items = await collect(service.generate('Mathe'));
+			const card = items.find((item) => item.type === 'card') as { elements: unknown[] };
+
+			expect(card.elements).toEqual([{ kind: 'link', title: 'Ok', url: 'https://de.wikipedia.org/' }]);
+		});
+
+		it('should drop a link that does not resolve', async () => {
+			const { service } = setup({
+				checkLinks: true,
+				linkStatus: 404,
+				chunks: completionEvents([
+					'{"type":"board","title":"Plan","layout":"columns"}\n{"type":"column","title":"Material"}\n',
+					'{"type":"card","title":"Sammlung","elements":[{"kind":"link","title":"Weg","url":"https://example.org/gibt-es-nicht"}]}\n',
+				]),
+			});
+
+			const items = await collect(service.generate('Mathe'));
+			const card = items.find((item) => item.type === 'card') as { elements: unknown[] };
+
+			expect(card.elements).toEqual([]);
+		});
+
+		it('should keep a link that answers, even when it dislikes HEAD', async () => {
+			const { service } = setup({
+				checkLinks: true,
+				linkStatus: 405,
+				chunks: completionEvents([
+					'{"type":"board","title":"Plan","layout":"columns"}\n{"type":"column","title":"Material"}\n',
+					'{"type":"card","title":"Sammlung","elements":[{"kind":"link","title":"Da","url":"https://example.org/artikel"}]}\n',
+				]),
+			});
+
+			const items = await collect(service.generate('Mathe'));
+			const card = items.find((item) => item.type === 'card') as { elements: unknown[] };
+
+			expect(card.elements).toEqual([{ kind: 'link', title: 'Da', url: 'https://example.org/artikel' }]);
 		});
 
 		it('should fail when the api rejects the request', async () => {

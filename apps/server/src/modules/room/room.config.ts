@@ -1,6 +1,6 @@
 import { ConfigProperty, Configuration } from '@infra/configuration';
-import { StringToBoolean } from '@shared/controller/transformer';
-import { IsBoolean, IsEmail, IsIn, IsOptional, IsString, IsUrl } from 'class-validator';
+import { StringToBoolean, StringToNumber } from '@shared/controller/transformer';
+import { IsBoolean, IsEmail, IsIn, IsNumber, IsOptional, IsString, IsUrl } from 'class-validator';
 
 export const ROOM_PUBLIC_API_CONFIG_TOKEN = 'ROOM_PUBLIC_API_CONFIG_TOKEN';
 export const ROOM_CONFIG_TOKEN = 'ROOM_CONFIG_TOKEN';
@@ -81,4 +81,15 @@ export class RoomAiConfig {
 	@ConfigProperty('ROOM_AI_API_STYLE')
 	@IsIn(['openai', 'azure'])
 	public aiApiStyle: 'openai' | 'azure' = 'openai';
+
+	/** suggested links are probed once, so that a made up reference never reaches a card */
+	@ConfigProperty('ROOM_AI_CHECK_LINKS')
+	@IsBoolean()
+	@StringToBoolean()
+	public aiCheckLinks = true;
+
+	@ConfigProperty('ROOM_AI_LINK_CHECK_TIMEOUT_MS')
+	@IsNumber()
+	@StringToNumber()
+	public aiLinkCheckTimeoutMs = 3000;
 }

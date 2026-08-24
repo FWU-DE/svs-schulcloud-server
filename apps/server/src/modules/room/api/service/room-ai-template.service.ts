@@ -1,29 +1,54 @@
+import { Colors } from '@modules/board';
 import { Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { ROOM_AI_CONFIG_TOKEN, RoomAiConfig } from '../../room.config';
 
 export type RoomAiBoardLayout = 'columns' | 'list';
 
+export type RoomAiElement =
+	| { kind: 'text'; text: string }
+	| { kind: 'link'; title: string; url: string }
+	| { kind: 'boardLink'; title: string; boardIndex: number }
+	| { kind: 'folder'; title: string }
+	| { kind: 'drawing' }
+	| { kind: 'collaborative' }
+	| { kind: 'videoConference'; title: string };
+
 export type RoomAiTemplateItem =
 	| { type: 'roomName'; name: string }
 	| { type: 'board'; title: string; layout: RoomAiBoardLayout }
 	| { type: 'column'; title: string }
-	| { type: 'card'; title: string; text: string };
+	| { type: 'card'; title: string; color?: Colors; elements: RoomAiElement[] };
 
 const MAX_TITLE_LENGTH = 100;
 const MAX_TEXT_LENGTH = 2000;
-const MAX_BOARDS = 3;
+const MAX_BOARDS = 4;
 const MAX_CARDS_PER_COLUMN = 8;
+const MAX_ELEMENTS_PER_CARD = 4;
 const DEFAULT_MAX_COLUMNS = 6;
+
+const CARD_COLORS = new Set<string>(Object.values(Colors));
 
 const SYSTEM_PROMPT = [
 	'You design the structure of a room in a school learning platform for a teacher.',
-	'A room holds boards, a board holds columns and a column holds cards. A card can carry one short rich text.',
+	'A room holds boards, a board holds columns, a column holds cards and a card holds content elements.',
 	'Answer as newline delimited json, one object per line and nothing else - no prose, no markdown, no code fences.',
 	'The first line is {"type":"roomName","name":"..."}.',
 	'Then repeat, in reading order: {"type":"board","title":"...","layout":"columns"|"list"},',
-	'{"type":"column","title":"..."} and {"type":"card","title":"...","text":"<p>...</p>"}.',
+	'{"type":"column","title":"..."} and {"type":"card","title":"...","color":"...","elements":[...]}.',
 	'A column belongs to the board above it, a card to the column above it.',
-	'The text of a card is simple html, only <p>, <strong>, <ul>, <ol> and <li> are allowed, at most three short sentences.',
+	'A card carries at most four elements, each one of:',
+	'{"kind":"text","text":"<p>...</p>"} - simple html, only <p>, <strong>, <ul>, <ol> and <li>, at most three short sentences;',
+	'{"kind":"link","title":"...","url":"https://..."} - a reference to a stable, well known public source;',
+	'only use domains you are sure exist and prefer their landing or article page over a deep link;',
+	'{"kind":"boardLink","title":"...","board":N} - a cross reference to the Nth board of this very room, counting from 1;',
+	'{"kind":"folder","title":"..."} - a folder for files the teacher will upload;',
+	'{"kind":"drawing"} - an empty whiteboard for sketches, mind maps and brainstorming;',
+	'{"kind":"collaborative"} - an empty shared text document for group work;',
+	'{"kind":"videoConference","title":"..."} - only where a meeting really belongs.',
+	'Colour cards to mark what they are for: use at most three colours and keep their meaning consistent,',
+	'for example red for tasks, blue for material and green for results. Allowed colours are',
+	'red, orange, amber, yellow, green, teal, blue, lightBlue, purple, grey and blueGrey.',
+	'Give the room two or three boards when the topic has phases, and cross-link them with boardLink.',
 	'Write placeholders where the teacher has to fill in facts you cannot know, never invent dates, names or grades.',
 	'Answer in the language the teacher used.',
 ].join(' ');
@@ -49,14 +74,12 @@ export class RoomAiTemplateService {
 			if (item === undefined) continue;
 			if (!this.isWithinLimits(item, counter, maxColumns)) continue;
 
+			if (item.type === 'card') {
+				item.elements = await this.usableElements(item.elements);
+			}
+
 			yield item;
 		}
-	}
-
-	private authHeader(): Record<string, string> {
-		return this.config.aiApiStyle === 'azure'
-			? { 'api-key': this.config.aiApiKey }
-			: { Authorization: `Bearer ${this.config.aiApiKey}` };
 	}
 
 	private async requestCompletion(prompt: string, maxColumns: number): Promise<Response> {
@@ -82,6 +105,12 @@ export class RoomAiTemplateService {
 		}
 
 		return response;
+	}
+
+	private authHeader(): Record<string, string> {
+		return this.config.aiApiStyle === 'azure'
+			? { 'api-key': this.config.aiApiKey }
+			: { Authorization: `Bearer ${this.config.aiApiKey}` };
 	}
 
 	/** turns the chunked server sent events of the completion api back into whole json lines */
@@ -133,7 +162,14 @@ export class RoomAiTemplateService {
 			return undefined;
 		}
 
-		const item = parsed as { type?: string; name?: unknown; title?: unknown; layout?: unknown; text?: unknown };
+		const item = parsed as {
+			type?: string;
+			name?: unknown;
+			title?: unknown;
+			layout?: unknown;
+			color?: unknown;
+			elements?: unknown;
+		};
 		const title = this.shorten(item.type === 'roomName' ? item.name : item.title, MAX_TITLE_LENGTH);
 		if (title === undefined) return undefined;
 
@@ -143,17 +179,101 @@ export class RoomAiTemplateService {
 		}
 		if (item.type === 'column') return { type: 'column', title };
 		if (item.type === 'card') {
-			return { type: 'card', title, text: this.shorten(item.text, MAX_TEXT_LENGTH) ?? '' };
+			return { type: 'card', title, color: this.cardColor(item.color), elements: this.parseElements(item.elements) };
 		}
 
 		return undefined;
 	}
 
-	private shorten(value: unknown, maxLength: number): string | undefined {
-		if (typeof value !== 'string') return undefined;
+	private cardColor(color: unknown): Colors | undefined {
+		return typeof color === 'string' && CARD_COLORS.has(color) ? (color as Colors) : undefined;
+	}
 
-		const trimmed = value.trim();
-		return trimmed.length === 0 ? undefined : trimmed.slice(0, maxLength);
+	private parseElements(elements: unknown): RoomAiElement[] {
+		if (!Array.isArray(elements)) return [];
+
+		return elements
+			.slice(0, MAX_ELEMENTS_PER_CARD)
+			.map((element) => this.parseElement(element))
+			.filter((element): element is RoomAiElement => element !== undefined);
+	}
+
+	private parseElement(element: unknown): RoomAiElement | undefined {
+		const candidate = element as { kind?: string; text?: unknown; title?: unknown; url?: unknown; board?: unknown };
+		const title = this.shorten(candidate.title, MAX_TITLE_LENGTH);
+
+		switch (candidate.kind) {
+			case 'text': {
+				const text = this.shorten(candidate.text, MAX_TEXT_LENGTH);
+				return text === undefined ? undefined : { kind: 'text', text };
+			}
+			case 'link': {
+				const url = this.publicUrl(candidate.url);
+				return title === undefined || url === undefined ? undefined : { kind: 'link', title, url };
+			}
+			case 'boardLink': {
+				const board = Number(candidate.board);
+				if (title === undefined || !Number.isInteger(board) || board < 1 || board > MAX_BOARDS) return undefined;
+
+				// the model counts boards from 1, the client addresses them from 0
+				return { kind: 'boardLink', title, boardIndex: board - 1 };
+			}
+			case 'folder':
+				return title === undefined ? undefined : { kind: 'folder', title };
+			case 'drawing':
+				return { kind: 'drawing' };
+			case 'collaborative':
+				return { kind: 'collaborative' };
+			case 'videoConference':
+				return title === undefined ? undefined : { kind: 'videoConference', title };
+			default:
+				return undefined;
+		}
+	}
+
+	/** only public https addresses, a made up scheme or an internal host has no place on a card */
+	private publicUrl(url: unknown): string | undefined {
+		if (typeof url !== 'string') return undefined;
+
+		try {
+			const parsed = new URL(url.trim());
+			const isPublicHost = parsed.hostname.includes('.') && !parsed.hostname.endsWith('.local');
+			const hasNoCredentials = parsed.username === '' && parsed.password === '';
+
+			return parsed.protocol === 'https:' && isPublicHost && hasNoCredentials ? parsed.toString() : undefined;
+		} catch {
+			return undefined;
+		}
+	}
+
+	/** a link the model made up is worse than no link at all, so every reference is probed once */
+	private async usableElements(elements: RoomAiElement[]): Promise<RoomAiElement[]> {
+		if (!this.config.aiCheckLinks) return elements;
+
+		const checked = await Promise.all(
+			elements.map(async (element) => {
+				if (element.kind !== 'link') return element;
+
+				return (await this.doesResolve(element.url)) ? element : undefined;
+			})
+		);
+
+		return checked.filter((element): element is RoomAiElement => element !== undefined);
+	}
+
+	private async doesResolve(url: string): Promise<boolean> {
+		try {
+			const response = await fetch(url, {
+				method: 'HEAD',
+				redirect: 'follow',
+				signal: AbortSignal.timeout(this.config.aiLinkCheckTimeoutMs),
+			});
+
+			// a site that dislikes HEAD still tells us that it exists
+			return response.status !== 404 && response.status !== 410;
+		} catch {
+			return false;
+		}
 	}
 
 	/** a model that keeps going must not be able to create an endless room */
@@ -181,5 +301,12 @@ export class RoomAiTemplateService {
 		}
 
 		return true;
+	}
+
+	private shorten(value: unknown, maxLength: number): string | undefined {
+		if (typeof value !== 'string') return undefined;
+
+		const trimmed = value.trim();
+		return trimmed.length === 0 ? undefined : trimmed.slice(0, maxLength);
 	}
 }
