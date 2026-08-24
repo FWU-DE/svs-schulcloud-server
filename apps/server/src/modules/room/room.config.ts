@@ -1,10 +1,9 @@
 import { ConfigProperty, Configuration } from '@infra/configuration';
-import { StringToBoolean, StringToNumber } from '@shared/controller/transformer';
-import { IsBoolean, IsEmail, IsIn, IsNumber, IsOptional, IsString, IsUrl } from 'class-validator';
+import { StringToBoolean } from '@shared/controller/transformer';
+import { IsBoolean, IsEmail, IsOptional, IsString, IsUrl } from 'class-validator';
 
 export const ROOM_PUBLIC_API_CONFIG_TOKEN = 'ROOM_PUBLIC_API_CONFIG_TOKEN';
 export const ROOM_CONFIG_TOKEN = 'ROOM_CONFIG_TOKEN';
-export const ROOM_AI_CONFIG_TOKEN = 'ROOM_AI_CONFIG_TOKEN';
 
 @Configuration()
 export class RoomPublicApiConfig {
@@ -60,36 +59,4 @@ export class RoomConfig extends RoomPublicApiConfig {
 	@ConfigProperty('SC_TITLE')
 	@IsString()
 	public productName = 'dBildungscloud';
-}
-
-@Configuration()
-export class RoomAiConfig {
-	@ConfigProperty('ROOM_AI_API_URL')
-	@IsUrl()
-	public aiApiUrl = 'https://api.openai.com/v1/chat/completions';
-
-	/** without a key the ai mode stays unavailable, even when the feature flag is on */
-	@ConfigProperty('ROOM_AI_API_KEY')
-	@IsString()
-	public aiApiKey = '';
-
-	@ConfigProperty('ROOM_AI_MODEL')
-	@IsString()
-	public aiModel = 'gpt-4o-mini';
-
-	/** azure sends the key as `api-key`, everything openai compatible as a bearer token */
-	@ConfigProperty('ROOM_AI_API_STYLE')
-	@IsIn(['openai', 'azure'])
-	public aiApiStyle: 'openai' | 'azure' = 'openai';
-
-	/** suggested links are probed once, so that a made up reference never reaches a card */
-	@ConfigProperty('ROOM_AI_CHECK_LINKS')
-	@IsBoolean()
-	@StringToBoolean()
-	public aiCheckLinks = true;
-
-	@ConfigProperty('ROOM_AI_LINK_CHECK_TIMEOUT_MS')
-	@IsNumber()
-	@StringToNumber()
-	public aiLinkCheckTimeoutMs = 3000;
 }

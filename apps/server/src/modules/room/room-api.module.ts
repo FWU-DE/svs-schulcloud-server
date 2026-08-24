@@ -2,6 +2,7 @@ import { RegisterTimeoutConfig } from '@core/interceptor/register-timeout-config
 import { LoggerModule } from '@core/logger';
 import { ConfigurationModule } from '@infra/configuration';
 import { AccountModule } from '@modules/account/account.module';
+import { AiSuggestionModule } from '@modules/ai-suggestion';
 import { AuthorizationModule } from '@modules/authorization';
 import { CopyHelperModule } from '@modules/copy-helper';
 import { SagaModule } from '@modules/saga';
@@ -31,13 +32,14 @@ import {
 	RoomBoardService,
 	RoomPermissionService,
 } from './api/service';
-import { ROOM_AI_CONFIG_TOKEN, ROOM_PUBLIC_API_CONFIG_TOKEN, RoomAiConfig, RoomPublicApiConfig } from './room.config';
+import { ROOM_PUBLIC_API_CONFIG_TOKEN, RoomPublicApiConfig } from './room.config';
 import { RoomModule } from './room.module';
 import { ROOM_TIMEOUT_CONFIG_TOKEN, RoomTimeoutConfig } from './timeout.config';
 
 @Module({
 	imports: [
 		RoomModule,
+		AiSuggestionModule,
 		AccountModule,
 		AuthorizationModule,
 		LoggerModule,
@@ -48,7 +50,6 @@ import { ROOM_TIMEOUT_CONFIG_TOKEN, RoomTimeoutConfig } from './timeout.config';
 		CopyHelperModule,
 		SagaModule,
 		ConfigurationModule.register(ROOM_PUBLIC_API_CONFIG_TOKEN, RoomPublicApiConfig),
-		ConfigurationModule.register(ROOM_AI_CONFIG_TOKEN, RoomAiConfig),
 		ConfigurationModule.register(ROOM_TIMEOUT_CONFIG_TOKEN, RoomTimeoutConfig),
 	],
 	controllers: [RoomAiTemplateController, RoomController, RoomInvitationLinkController],

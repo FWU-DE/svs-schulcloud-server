@@ -1,6 +1,6 @@
+import { AiSuggestionService } from '@modules/ai-suggestion';
 import { Colors } from '@modules/board';
-import { Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
-import { ROOM_AI_CONFIG_TOKEN, RoomAiConfig } from '../../room.config';
+import { Injectable } from '@nestjs/common';
 
 export type RoomAiBoardLayout = 'columns' | 'list';
 
@@ -59,17 +59,17 @@ const SYSTEM_PROMPT = [
  */
 @Injectable()
 export class RoomAiTemplateService {
-	constructor(@Inject(ROOM_AI_CONFIG_TOKEN) private readonly config: RoomAiConfig) {}
+	constructor(private readonly aiSuggestionService: AiSuggestionService) {}
 
 	public isConfigured(): boolean {
-		return this.config.aiApiKey.length > 0;
+		return this.aiSuggestionService.isConfigured();
 	}
 
 	public async *generate(prompt: string, maxColumns = DEFAULT_MAX_COLUMNS): AsyncGenerator<RoomAiTemplateItem> {
-		const response = await this.requestCompletion(prompt, maxColumns);
+		const systemPrompt = `${SYSTEM_PROMPT} Use at most ${maxColumns} columns per board.`;
 		const counter = { boards: 0, columns: 0, cardsOfColumn: 0 };
 
-		for await (const line of this.readLines(response)) {
+		for await (const line of this.aiSuggestionService.streamJsonLines(systemPrompt, prompt)) {
 			const item = this.parseItem(line);
 			if (item === undefined) continue;
 			if (!this.isWithinLimits(item, counter, maxColumns)) continue;
@@ -82,86 +82,7 @@ export class RoomAiTemplateService {
 		}
 	}
 
-	private async requestCompletion(prompt: string, maxColumns: number): Promise<Response> {
-		const response = await fetch(this.config.aiApiUrl, {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-				...this.authHeader(),
-			},
-			body: JSON.stringify({
-				model: this.config.aiModel,
-				stream: true,
-				messages: [
-					{ role: 'system', content: `${SYSTEM_PROMPT} Use at most ${maxColumns} columns per board.` },
-					{ role: 'user', content: prompt },
-				],
-			}),
-		});
-
-		if (!response.ok || response.body === null) {
-			// the body may carry the reason, but it can also carry the prompt back - keep it out of the logs
-			throw new InternalServerErrorException(`The ai service answered with status ${response.status}`);
-		}
-
-		return response;
-	}
-
-	private authHeader(): Record<string, string> {
-		return this.config.aiApiStyle === 'azure'
-			? { 'api-key': this.config.aiApiKey }
-			: { Authorization: `Bearer ${this.config.aiApiKey}` };
-	}
-
-	/** turns the chunked server sent events of the completion api back into whole json lines */
-	private async *readLines(response: Response): AsyncGenerator<string> {
-		const decoder = new TextDecoder();
-		let events = '';
-		let content = '';
-
-		for await (const chunk of response.body as unknown as AsyncIterable<Uint8Array>) {
-			events += decoder.decode(chunk, { stream: true });
-
-			const eventLines = events.split('\n');
-			events = eventLines.pop() ?? '';
-
-			for (const eventLine of eventLines) {
-				content += this.contentOf(eventLine);
-
-				const contentLines = content.split('\n');
-				content = contentLines.pop() ?? '';
-
-				for (const contentLine of contentLines) {
-					if (contentLine.trim().length > 0) yield contentLine;
-				}
-			}
-		}
-
-		if (content.trim().length > 0) yield content;
-	}
-
-	private contentOf(eventLine: string): string {
-		if (!eventLine.startsWith('data:')) return '';
-
-		const payload = eventLine.slice('data:'.length).trim();
-		if (payload.length === 0 || payload === '[DONE]') return '';
-
-		try {
-			const event = JSON.parse(payload) as { choices?: { delta?: { content?: string } }[] };
-			return event.choices?.[0]?.delta?.content ?? '';
-		} catch {
-			return '';
-		}
-	}
-
-	private parseItem(line: string): RoomAiTemplateItem | undefined {
-		let parsed: unknown;
-		try {
-			parsed = JSON.parse(line.trim());
-		} catch {
-			return undefined;
-		}
-
+	private parseItem(parsed: unknown): RoomAiTemplateItem | undefined {
 		const item = parsed as {
 			type?: string;
 			name?: unknown;
@@ -208,7 +129,7 @@ export class RoomAiTemplateService {
 				return text === undefined ? undefined : { kind: 'text', text };
 			}
 			case 'link': {
-				const url = this.publicUrl(candidate.url);
+				const url = this.aiSuggestionService.publicUrl(candidate.url);
 				return title === undefined || url === undefined ? undefined : { kind: 'link', title, url };
 			}
 			case 'boardLink': {
@@ -231,49 +152,19 @@ export class RoomAiTemplateService {
 		}
 	}
 
-	/** only public https addresses, a made up scheme or an internal host has no place on a card */
-	private publicUrl(url: unknown): string | undefined {
-		if (typeof url !== 'string') return undefined;
-
-		try {
-			const parsed = new URL(url.trim());
-			const isPublicHost = parsed.hostname.includes('.') && !parsed.hostname.endsWith('.local');
-			const hasNoCredentials = parsed.username === '' && parsed.password === '';
-
-			return parsed.protocol === 'https:' && isPublicHost && hasNoCredentials ? parsed.toString() : undefined;
-		} catch {
-			return undefined;
-		}
-	}
-
 	/** a link the model made up is worse than no link at all, so every reference is probed once */
 	private async usableElements(elements: RoomAiElement[]): Promise<RoomAiElement[]> {
-		if (!this.config.aiCheckLinks) return elements;
+		if (!this.aiSuggestionService.checksLinks) return elements;
 
 		const checked = await Promise.all(
 			elements.map(async (element) => {
 				if (element.kind !== 'link') return element;
 
-				return (await this.doesResolve(element.url)) ? element : undefined;
+				return (await this.aiSuggestionService.doesResolve(element.url)) ? element : undefined;
 			})
 		);
 
 		return checked.filter((element): element is RoomAiElement => element !== undefined);
-	}
-
-	private async doesResolve(url: string): Promise<boolean> {
-		try {
-			const response = await fetch(url, {
-				method: 'HEAD',
-				redirect: 'follow',
-				signal: AbortSignal.timeout(this.config.aiLinkCheckTimeoutMs),
-			});
-
-			// a site that dislikes HEAD still tells us that it exists
-			return response.status !== 404 && response.status !== 410;
-		} catch {
-			return false;
-		}
 	}
 
 	/** a model that keeps going must not be able to create an endless room */

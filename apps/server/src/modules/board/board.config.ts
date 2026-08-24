@@ -47,6 +47,11 @@ export class BoardPublicApiConfig {
 	@IsBoolean()
 	public featureColumnBoardCollaboraEnabled = true;
 
+	@ConfigProperty('FEATURE_BOARD_AI_CARDS_ENABLED')
+	@IsBoolean()
+	@StringToBoolean()
+	public featureBoardAiCardsEnabled = false;
+
 	@ConfigProperty('FEATURE_TLDRAW_ENABLED')
 	@StringToBoolean()
 	@IsBoolean()

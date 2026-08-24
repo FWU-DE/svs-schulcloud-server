@@ -241,6 +241,9 @@ export class ConfigResponse {
 	FEATURE_ROOM_AI_TEMPLATE_ENABLED: boolean;
 
 	@ApiProperty()
+	FEATURE_BOARD_AI_CARDS_ENABLED: boolean;
+
+	@ApiProperty()
 	FEATURE_ROOM_SHARE: boolean;
 
 	@ApiProperty()
@@ -360,6 +363,7 @@ export class ConfigResponse {
 		this.FEATURE_EXTERNAL_PERSON_REGISTRATION_ENABLED = config.featureExternalPersonRegistrationEnabled;
 		this.FEATURE_ROOM_COPY_ENABLED = config.featureRoomCopyEnabled;
 		this.FEATURE_ROOM_AI_TEMPLATE_ENABLED = config.featureRoomAiTemplateEnabled;
+		this.FEATURE_BOARD_AI_CARDS_ENABLED = config.featureBoardAiCardsEnabled;
 		this.FEATURE_ROOM_SHARE = config.featureRoomShare;
 		this.FEATURE_ROOM_ADD_EXTERNAL_PERSONS_ENABLED = config.featureRoomAddExternalPersonsEnabled;
 		this.FEATURE_ROOM_REGISTER_EXTERNAL_PERSONS_ENABLED = config.featureRoomRegisterExternalPersonsEnabled;
