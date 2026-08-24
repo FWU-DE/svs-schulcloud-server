@@ -10,7 +10,14 @@ import { Module } from '@nestjs/common';
 import { BoardModule } from '../board';
 import { RoomMembershipModule } from '../room-membership/room-membership.module';
 import { UserModule } from '../user';
-import { RoomController, RoomInvitationLinkController, RoomInvitationLinkUc, RoomUc } from './api';
+import {
+	RoomAiTemplateController,
+	RoomAiTemplateUc,
+	RoomController,
+	RoomInvitationLinkController,
+	RoomInvitationLinkUc,
+	RoomUc,
+} from './api';
 import { RoomArrangementUc } from './api/room-arrangement.uc';
 import { RoomContentUc } from './api/room-content.uc';
 import { RoomCopyUc } from './api/room-copy.uc';
@@ -18,12 +25,13 @@ import { CopyRoomStep } from './api/saga';
 import { CopyRoomContentStep } from './api/saga/copy-room-content.step';
 import { DeleteUserRoomDataStep } from './api/saga/delete-user-room-data.step';
 import {
+	RoomAiTemplateService,
 	RoomBoardCreatedHandler,
 	RoomBoardDeletedHandler,
 	RoomBoardService,
 	RoomPermissionService,
 } from './api/service';
-import { ROOM_PUBLIC_API_CONFIG_TOKEN, RoomPublicApiConfig } from './room.config';
+import { ROOM_CONFIG_TOKEN, ROOM_PUBLIC_API_CONFIG_TOKEN, RoomConfig, RoomPublicApiConfig } from './room.config';
 import { RoomModule } from './room.module';
 import { ROOM_TIMEOUT_CONFIG_TOKEN, RoomTimeoutConfig } from './timeout.config';
 
@@ -40,11 +48,14 @@ import { ROOM_TIMEOUT_CONFIG_TOKEN, RoomTimeoutConfig } from './timeout.config';
 		CopyHelperModule,
 		SagaModule,
 		ConfigurationModule.register(ROOM_PUBLIC_API_CONFIG_TOKEN, RoomPublicApiConfig),
+		ConfigurationModule.register(ROOM_CONFIG_TOKEN, RoomConfig),
 		ConfigurationModule.register(ROOM_TIMEOUT_CONFIG_TOKEN, RoomTimeoutConfig),
 	],
-	controllers: [RoomController, RoomInvitationLinkController],
+	controllers: [RoomAiTemplateController, RoomController, RoomInvitationLinkController],
 	providers: [
 		RoomUc,
+		RoomAiTemplateUc,
+		RoomAiTemplateService,
 		RoomInvitationLinkUc,
 		RoomCopyUc,
 		RoomArrangementUc,

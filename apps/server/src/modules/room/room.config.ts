@@ -37,6 +37,11 @@ export class RoomPublicApiConfig {
 	@StringToBoolean()
 	public featureRoomRegisterExternalPersonsEnabled = false;
 
+	@ConfigProperty('FEATURE_ROOM_AI_TEMPLATE_ENABLED')
+	@IsBoolean()
+	@StringToBoolean()
+	public featureRoomAiTemplateEnabled = false;
+
 	@ConfigProperty('ROOM_MEMBER_INFO_URL')
 	@IsUrl({ require_tld: false })
 	public roomMemberInfoUrl!: string;
@@ -54,4 +59,17 @@ export class RoomConfig extends RoomPublicApiConfig {
 	@ConfigProperty('SC_TITLE')
 	@IsString()
 	public productName = 'dBildungscloud';
+
+	@ConfigProperty('ROOM_AI_API_URL')
+	@IsUrl()
+	public aiApiUrl = 'https://api.openai.com/v1/chat/completions';
+
+	/** without a key the ai mode stays unavailable, even when the feature flag is on */
+	@ConfigProperty('ROOM_AI_API_KEY')
+	@IsString()
+	public aiApiKey = '';
+
+	@ConfigProperty('ROOM_AI_MODEL')
+	@IsString()
+	public aiModel = 'gpt-4o-mini';
 }
