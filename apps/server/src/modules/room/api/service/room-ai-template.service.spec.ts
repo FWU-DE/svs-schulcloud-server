@@ -22,9 +22,7 @@ describe('RoomAiTemplateService', () => {
 		'data: [DONE]\n',
 	];
 
-	const setup = (
-		options: { chunks?: string[]; ok?: boolean; apiKey?: string; apiStyle?: 'openai' | 'azure' } = {}
-	) => {
+	const setup = (options: { chunks?: string[]; ok?: boolean; apiKey?: string; apiStyle?: 'openai' | 'azure' } = {}) => {
 		const { chunks = [], ok = true, apiKey = 'test-key', apiStyle = 'openai' } = options;
 
 		const config = new RoomAiConfig();
