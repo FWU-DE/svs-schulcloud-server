@@ -103,6 +103,14 @@ describe('ContentSearchService', () => {
 			expect(results).toEqual([]);
 		});
 
+		it('should cut the result down to what was asked for', async () => {
+			const { service } = setup({ resources: Array.from({ length: 12 }, () => resource) });
+
+			const results = await service.search('Fotosynthese', 4);
+
+			expect(results).toHaveLength(4);
+		});
+
 		it('should survive an answer that carries no resources', async () => {
 			const { service } = setup(undefined);
 

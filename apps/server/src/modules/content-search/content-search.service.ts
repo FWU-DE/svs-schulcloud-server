@@ -54,16 +54,19 @@ export class ContentSearchService {
 	) {}
 
 	public async search(query: string, limit = 6, language = 'de'): Promise<ContentSearchResult[]> {
+		const wanted = Math.min(limit, MAX_LIMIT);
 		const answer = (await this.mcpClientService.callTool('search_resources', {
 			query,
-			limit: Math.min(limit, MAX_LIMIT),
+			limit: wanted,
 			language,
 			relays: this.relays(),
 		})) as { resources?: AmbResource[] } | undefined;
 
+		// the remote server applies the limit per relay, so asking two relays returns twice as much
 		return (answer?.resources ?? [])
 			.map((resource) => this.toResult(resource))
-			.filter((result) => result !== undefined);
+			.filter((result) => result !== undefined)
+			.slice(0, wanted);
 	}
 
 	public relays(): string[] {
