@@ -51,6 +51,7 @@ import {
 	RegistrationPublicApiConfig,
 } from '@modules/registration';
 import { ROOM_PUBLIC_API_CONFIG_TOKEN, RoomPublicApiConfig } from '@modules/room';
+import { ContentSearchApiModule } from '@modules/content-search';
 import { RoomApiModule } from '@modules/room/room-api.module';
 import { ROSTER_PUBLIC_API_CONFIG_TOKEN, RosterPublicApiConfig } from '@modules/roster';
 import { RosterModule } from '@modules/roster/roster.module';
@@ -167,6 +168,7 @@ const serverModules = [
 	SchoolLicenseApiModule,
 	RegistrationModule,
 	RegistrationApiModule,
+	ContentSearchApiModule,
 	RoomApiModule,
 	RosterModule,
 	ShdApiModule,
