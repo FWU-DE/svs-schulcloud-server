@@ -16,6 +16,10 @@ function jsonRpcError(message: string): { jsonrpc: '2.0'; error: { code: number;
  * bound to that user is created, the request is handled, and everything is torn down on
  * connection close. GET/DELETE (used for SSE streams / session teardown in stateful mode)
  * are intentionally not supported.
+ *
+ * Clients must send `Accept: application/json, text/event-stream` — the transport rejects
+ * anything else with 406, even though `enableJsonResponse` makes it answer in plain JSON.
+ * Nothing here pushes to the client, so a stream would only complicate every caller.
  */
 @ApiTags('MCP')
 @JwtAuthentication()
@@ -30,7 +34,7 @@ export class McpController {
 		@Res() res: Response
 	): Promise<void> {
 		const server = this.factory.build(currentUser);
-		const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
+		const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
 
 		res.on('close', () => {
 			void transport.close();

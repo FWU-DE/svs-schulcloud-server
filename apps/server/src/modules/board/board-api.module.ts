@@ -38,6 +38,8 @@ import { BoardErrorReportUc, BoardUc, CardUc, ColumnUc, ElementUc } from './uc';
 	],
 	controllers: [BoardController, ColumnController, CardController, ElementController, BoardErrorReportController],
 	providers: [BoardUc, BoardErrorReportUc, ColumnUc, CardUc, ElementUc, CopyRoomBoardsStep],
+	// Exported so the MCP server can drive board content through the same use-cases as the REST API.
+	exports: [BoardUc, ColumnUc, CardUc, ElementUc],
 })
 @RegisterTimeoutConfig(BOARD_TIMEOUT_CONFIG_TOKEN)
 export class BoardApiModule {}
