@@ -2,7 +2,9 @@ import { ErrorResponse } from '@core/error/dto';
 import { CurrentUser, ICurrentUser, JwtAuthentication } from '@infra/auth-guard';
 import { Body, Controller, Post, Res } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { RequestTimeout } from '@shared/common/decorators';
 import { Response } from 'express';
+import { ROOM_INCOMING_REQUEST_TIMEOUT_AI_TEMPLATE_KEY } from '../timeout.config';
 import { RoomAiTemplateBodyParams } from './dto/request/room-ai-template.body.params';
 import { RoomAiTemplateUc } from './room-ai-template.uc';
 
@@ -21,6 +23,7 @@ export class RoomAiTemplateController {
 	@ApiResponse({ status: 400, type: ErrorResponse })
 	@ApiResponse({ status: 403, type: ErrorResponse })
 	@ApiResponse({ status: 500, type: ErrorResponse })
+	@RequestTimeout(ROOM_INCOMING_REQUEST_TIMEOUT_AI_TEMPLATE_KEY)
 	@Post('ai-template')
 	public async generateAiTemplate(
 		@CurrentUser() currentUser: ICurrentUser,
