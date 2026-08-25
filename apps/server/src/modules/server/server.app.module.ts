@@ -1,14 +1,12 @@
 import { CoreModule } from '@core/core.module';
-import { LoggerModule } from '@core/logger';
 import { AuthGuardModule, AuthGuardOptions, JWT_AUTH_GUARD_CONFIG_TOKEN, JwtAuthGuardConfig } from '@infra/auth-guard';
 import { ConfigurationModule } from '@infra/configuration';
 import { DATABASE_CONFIG_TOKEN, DatabaseConfig, DatabaseModule } from '@infra/database';
-import { RABBITMQ_CONFIG_TOKEN, RabbitMQConfig } from '@infra/rabbitmq';
+import { LoggerModule } from '@infra/logger';
 import { SCHULCONNEX_CLIENT_CONFIG_TOKEN, SchulconnexClientConfig } from '@infra/schulconnex-client';
 import { SchulconnexClientModule } from '@infra/schulconnex-client/schulconnex-client.module';
 import { AccountApiModule } from '@modules/account/account-api.module';
-import { ALERT_PUBLIC_API_CONFIG, AlertPublicApiConfig } from '@modules/alert';
-import { AlertModule } from '@modules/alert/alert.module';
+import { ALERT_PUBLIC_API_CONFIG, AlertModule, AlertPublicApiConfig } from '@modules/alert';
 import { AuthenticationApiModule } from '@modules/authentication/authentication-api.module';
 import { AuthorizationReferenceApiModule } from '@modules/authorization-reference/authorization-reference.api.module';
 import { AuthorizationRulesModule } from '@modules/authorization-rules';
@@ -23,11 +21,6 @@ import { COMMON_CARTRIDGE_PUBLIC_API_CONFIG_TOKEN, CommonCartridgePublicApiConfi
 import { CourseApiModule } from '@modules/course/course-api.module';
 import { McpApiModule } from '@modules/mcp-server/mcp-api.module';
 import { DeletionPublicApiModule } from '@modules/deletion/deletion-public-api.module';
-import {
-	FILES_STORAGE_CLIENT_CONFIG_TOKEN,
-	FilesStorageClientConfig,
-	FilesStorageClientModule,
-} from '@modules/files-storage-client';
 import { FWU_PUBLIC_API_CONFIG_TOKEN, FwuPublicApiConfig } from '@modules/fwu-learning-contents';
 import { GroupApiModule } from '@modules/group/group-api.module';
 import { HelpdeskApiModule } from '@modules/helpdesk';
@@ -59,7 +52,6 @@ import { RuntimeConfigApiModule, ServerRuntimeConfigModule } from '@modules/runt
 import { SchoolApiModule } from '@modules/school/school-api.module';
 import { SHARING_PUBLIC_API_CONFIG_TOKEN, SharingPublicApiConfig } from '@modules/sharing';
 import { SharingApiModule } from '@modules/sharing/sharing-api.module';
-import { ShdApiModule } from '@modules/shd/shd.api.module';
 import { SystemApiModule } from '@modules/system/system-api.module';
 import { TASK_PUBLIC_API_CONFIG_TOKEN, TaskPublicApiConfig } from '@modules/task';
 import { TaskApiModule } from '@modules/task/task-api.module';
@@ -138,12 +130,6 @@ const serverModules = [
 	SchulconnexClientModule.register(SCHULCONNEX_CLIENT_CONFIG_TOKEN, SchulconnexClientConfig),
 	ImportUserModule,
 	LearnroomApiModule,
-	FilesStorageClientModule.register({
-		exchangeConfigConstructor: FilesStorageClientConfig,
-		exchangeConfigInjectionToken: FILES_STORAGE_CLIENT_CONFIG_TOKEN,
-		configInjectionToken: RABBITMQ_CONFIG_TOKEN,
-		configConstructor: RabbitMQConfig,
-	}),
 	SystemApiModule,
 	ServerMailModule,
 	VideoConferenceApiModule,
@@ -171,7 +157,6 @@ const serverModules = [
 	ContentSearchApiModule,
 	RoomApiModule,
 	RosterModule,
-	ShdApiModule,
 	OAuthApiModule,
 	MoinSchuleClassModule,
 	DeletionPublicApiModule,

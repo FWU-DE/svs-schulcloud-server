@@ -1,19 +1,15 @@
-import { ErrorLogger } from '@core/logger';
+import { ErrorLogger } from '@infra/logger';
 import { ICurrentUser } from '@infra/auth-guard';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { AnyBoardNode, BoardExternalReferenceType, BoardLayout, Card, Column, ColumnBoard } from '@modules/board';
 import {
-	AnyBoardNode,
 	AnyElementContentBody,
-	BoardExternalReferenceType,
-	BoardLayout,
-	Card,
-	Column,
-	ColumnBoard,
-	ContentElementType,
+	CreateBoardBodyParams,
 	LinkContentBody,
+	RenameBodyParams,
 	RichTextContentBody,
-} from '@modules/board';
-import { CreateBoardBodyParams, RenameBodyParams } from '@modules/board/controller/dto';
+} from '@modules/board/controller/dto';
+import { ContentElementType } from '@modules/board/domain';
 import { ColumnResponseMapper } from '@modules/board/controller/mapper';
 import { BoardUc, CardUc, ColumnUc, ElementUc } from '@modules/board/uc';
 import { Injectable, InternalServerErrorException } from '@nestjs/common';

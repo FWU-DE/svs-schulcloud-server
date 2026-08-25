@@ -1,7 +1,7 @@
+import { FeathersServiceProvider } from '@infra/feathers';
+import { LegacyLogger } from '@infra/logger';
 import { Injectable } from '@nestjs/common';
 import { EntityId } from '@shared/domain/types';
-import { FeathersServiceProvider } from '@infra/feathers';
-import { LegacyLogger } from '@core/logger';
 
 type PadResponse = { data: { padID: string } };
 
@@ -12,7 +12,7 @@ export class EtherpadService {
 		private logger: LegacyLogger
 	) {}
 
-	async createEtherpad(userId: EntityId, courseId: string, title: string): Promise<string | false> {
+	public async createEtherpad(userId: EntityId, courseId: string, title: string): Promise<string | false> {
 		const data = {
 			courseId,
 			padName: title,

@@ -1,6 +1,5 @@
 import { UnauthorizedException } from '@nestjs/common';
-import { Loggable } from '@core/logger/interfaces';
-import { ErrorLogMessage } from '@core/logger/types';
+import { type Loggable, type LoggableMessage } from '@shared/common/loggable';
 
 export class UnauthorizedLoggableException extends UnauthorizedException implements Loggable {
 	constructor(
@@ -10,8 +9,8 @@ export class UnauthorizedLoggableException extends UnauthorizedException impleme
 		super();
 	}
 
-	getLogMessage(): ErrorLogMessage {
-		const message: ErrorLogMessage = {
+	public getLogMessage(): LoggableMessage {
+		const message: LoggableMessage = {
 			type: 'UNAUTHORIZED_EXCEPTION',
 			stack: this.stack,
 			data: {

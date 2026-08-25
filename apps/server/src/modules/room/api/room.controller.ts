@@ -1,5 +1,5 @@
-import { ErrorResponse } from '@core/error/dto';
 import { CurrentUser, ICurrentUser, JwtAuthentication } from '@infra/auth-guard';
+import { ErrorResponse } from '@infra/error';
 import { CopyApiResponse, CopyMapper } from '@modules/copy-helper';
 import {
 	Body,
@@ -22,7 +22,10 @@ import { RequestTimeout } from '@shared/common/decorators';
 import { ApiValidationError } from '@shared/common/error';
 import { IFindOptions } from '@shared/domain/interface';
 import { Room } from '../domain';
-import { ROOM_INCOMING_REQUEST_TIMEOUT_COPY_API_KEY } from '../timeout.config';
+import {
+	ROOM_INCOMING_REQUEST_TIMEOUT_COPY_API_KEY,
+	ROOM_INCOMING_REQUEST_TIMEOUT_ROOM_STATS,
+} from '../timeout.config';
 import { AddByEmailBodyParams } from './dto/request/add-by-email.body.params';
 import { AddRoomMembersBodyParams } from './dto/request/add-room-members.body.params';
 import { ApplicantIdsBodyParams } from './dto/request/applicant-ids.body.params';
@@ -41,7 +44,7 @@ import { RoomInvitationLinkListResponse } from './dto/response/room-invitation-l
 import { RoomListResponse } from './dto/response/room-list.response';
 import { RoomMemberListResponse } from './dto/response/room-member-list.response';
 import { RoomRoleResponse } from './dto/response/room-role.response';
-import { RoomStatsListResponse } from './dto/response/room-stats-list.repsonse';
+import { RoomStatsListResponse } from './dto/response/room-stats-list.response';
 import { RoomInvitationLinkMapper } from './mapper/room-invitation-link.mapper';
 import { RoomMapper } from './mapper/room.mapper';
 import { RoomArrangementUc } from './room-arrangement.uc';
@@ -91,6 +94,7 @@ export class RoomController {
 		await this.roomArrangementUc.moveRoomInUserArrangement(currentUser.userId, bodyParams.id, bodyParams.toPosition);
 	}
 
+	@RequestTimeout(ROOM_INCOMING_REQUEST_TIMEOUT_ROOM_STATS)
 	@Get('stats')
 	@ApiOperation({ summary: 'Get a list of room statistics.' })
 	@ApiResponse({

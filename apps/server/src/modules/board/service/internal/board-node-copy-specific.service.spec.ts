@@ -1,19 +1,18 @@
-import { createMock, DeepMocked } from '@golevelup/ts-jest';
-import { StorageLocation } from '@infra/files-storage-client';
-import { CopyContentParams, CopyContentParentType, H5pEditorProducer } from '@infra/h5p-editor-client';
+import { createMock, type DeepMocked } from '@golevelup/ts-jest';
+import { type FilesStorageClientAdapterService, StorageLocation } from '@infra/files-storage-amqp-client';
+import { type CopyContentParams, CopyContentParentType, H5pEditorProducer } from '@infra/h5p-editor-client';
 import { ObjectId } from '@mikro-orm/mongodb';
-import { CopyElementType, CopyHelperService, CopyStatus, CopyStatusEnum } from '@modules/copy-helper';
-import { FilesStorageClientAdapterService } from '@modules/files-storage-client';
+import { CopyElementType, CopyHelperService, type CopyStatus, CopyStatusEnum } from '@modules/copy-helper';
 import { CopyContextExternalToolRejectData } from '@modules/tool/context-external-tool/domain';
 import { ContextExternalToolService } from '@modules/tool/context-external-tool/service';
 import {
 	contextExternalToolFactory,
 	copyContextExternalToolRejectDataFactory,
 } from '@modules/tool/context-external-tool/testing';
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test, type TestingModule } from '@nestjs/testing';
 
-import { BOARD_CONFIG_TOKEN, BoardConfig } from '@modules/board/board.config';
-import { copyFileDtoFactory } from '@modules/files-storage-client/testing';
+import { copyFileDtoFactory } from '@infra/files-storage-amqp-client/testing';
+import { BOARD_CONFIG_TOKEN, type BoardConfig } from '@modules/board/board.config';
 import {
 	Card,
 	CollaborativeTextEditorElement,
@@ -46,7 +45,7 @@ import {
 	richTextElementFactory,
 	videoConferenceElementFactory,
 } from '../../testing';
-import { BoardNodeCopyContext, BoardNodeCopyContextProps } from './board-node-copy-context';
+import { BoardNodeCopyContext, type BoardNodeCopyContextProps } from './board-node-copy-context';
 import { BoardNodeCopyService } from './board-node-copy.service';
 
 describe(BoardNodeCopyService.name, () => {

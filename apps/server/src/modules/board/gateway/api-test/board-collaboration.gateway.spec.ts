@@ -3,21 +3,21 @@ import { MongoIoAdapter } from '@infra/socketio';
 import { EntityManager } from '@mikro-orm/mongodb';
 import { courseEntityFactory } from '@modules/course/testing';
 import { schoolEntityFactory } from '@modules/school/testing';
-import { INestApplication } from '@nestjs/common';
+import { type INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { InputFormat } from '@shared/domain/types/input-format.types';
 import { cleanupCollections } from '@testing/cleanup-collections';
 import { UserAndAccountTestFactory } from '@testing/factory/user-and-account.test.factory';
 import { TestApiClient } from '@testing/test-api-client';
 import { TEST_JWT_CONFIG_TOKEN, TestJwtModuleConfig } from '@testing/test-jwt-module.config';
-import { Socket } from 'socket.io-client';
+import { type Socket } from 'socket.io-client';
 import { BoardCollaborationTestModule } from '../../board-collaboration.app.module';
 import {
 	BoardExternalReferenceType,
 	BoardLayout,
-	CardProps,
+	type CardProps,
 	Colors,
-	ColumnProps,
+	type ColumnProps,
 	ContentElementType,
 } from '../../domain';
 import {
@@ -130,6 +130,20 @@ describe(BoardCollaborationGateway.name, () => {
 				};
 
 				expect(Object.keys(success)).toEqual(expect.arrayContaining(['columnId', 'newCard']));
+			});
+
+			it('should answer with new card at the given position', async () => {
+				const { columnNode } = await setup();
+
+				ioClient.emit('create-card-request', { columnId: columnNode.id, position: 0 });
+				const success = (await waitForEvent(ioClient, 'create-card-success')) as {
+					columnId: string;
+					position: number;
+					newCard: CardProps;
+				};
+
+				expect(success).toEqual(expect.objectContaining({ columnId: columnNode.id, position: 0 }));
+				expect(success.newCard).toBeDefined();
 			});
 		});
 

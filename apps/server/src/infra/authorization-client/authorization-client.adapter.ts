@@ -1,21 +1,17 @@
-import { AxiosErrorLoggable } from '@core/error/loggable';
+import { AxiosErrorLoggable } from '@infra/error';
 import { Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { JwtExtractor } from '@shared/common/utils';
 import { isAxiosError, RawAxiosRequestConfig } from 'axios';
 import { Request } from 'express';
-import {
-	AuthorizationApi,
-	AuthorizationBodyParamsReferenceType,
-	AuthorizationContextParams,
-} from './authorization-api-client';
 import { AuthorizationErrorLoggableException, AuthorizationForbiddenLoggableException } from './error';
+import { AuthorizationApi, AuthorizationBodyParamsReferenceType, AuthorizationContextParams } from './generated';
 
 @Injectable()
 export class AuthorizationClientAdapter {
 	constructor(
 		private readonly authorizationApi: AuthorizationApi,
-		@Inject(REQUEST) private request: Request
+		@Inject(REQUEST) private readonly request: Request
 	) {}
 
 	public async checkPermissionsByReference(

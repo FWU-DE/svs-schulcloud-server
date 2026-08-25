@@ -1,16 +1,15 @@
-import { EntityId } from '@shared/domain/types';
-import { Loggable } from '@core/logger/interfaces';
-import { LogMessage } from '@core/logger/types';
+import { type Loggable, type LoggableMessage } from '@shared/common/loggable';
+import { type EntityId } from '@shared/domain/types';
 
 export class ShdUserCreateTokenLoggable implements Loggable {
 	constructor(
-		private supportUserId: EntityId,
-		private targetUserId: EntityId,
-		private expiredIn: number
+		private readonly supportUserId: EntityId,
+		private readonly targetUserId: EntityId,
+		private readonly expiredIn: number
 	) {}
 
-	getLogMessage(): LogMessage {
-		const message: LogMessage = {
+	public getLogMessage(): LoggableMessage {
+		const message: LoggableMessage = {
 			message: `The support employee with the Id ${
 				this.supportUserId
 			} has created  a short live JWT for the user with the Id ${this.targetUserId}. The JWT expires expires in ${

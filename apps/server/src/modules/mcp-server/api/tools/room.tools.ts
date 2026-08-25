@@ -1,4 +1,4 @@
-import { ErrorLogger } from '@core/logger';
+import { ErrorLogger } from '@infra/logger';
 import { ICurrentUser } from '@infra/auth-guard';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { RoomUc } from '@modules/room/api';

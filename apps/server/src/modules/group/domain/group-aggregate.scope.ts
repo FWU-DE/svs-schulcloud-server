@@ -1,9 +1,9 @@
 import { ObjectId } from '@mikro-orm/mongodb';
 import { StringValidator } from '@shared/common/validator';
-import { EntityId } from '@shared/domain/types';
+import { type EntityId } from '@shared/domain/types';
 import { MongoPatterns } from '@shared/repo/mongo.patterns';
 import { MongoDbScope } from '@shared/repo/mongodb-scope';
-import { GroupEntity } from '../entity';
+import { type GroupEntity } from '../entity';
 import { GroupTypes } from './group-types';
 
 export class GroupAggregateScope extends MongoDbScope<GroupEntity> {
@@ -67,22 +67,22 @@ export class GroupAggregateScope extends MongoDbScope<GroupEntity> {
 		return this;
 	}
 
-	public byUsersAndOrganizationsSchoolId(schoolId: EntityId | undefined): this {
-		if (schoolId) {
-			this.pipeline.push({
+	public byUsersAndOrganizationsSchoolId(schoolId: EntityId): this {
+		this.pipeline.push(
+			{
 				$lookup: {
 					from: 'users',
 					localField: 'users.user',
 					foreignField: '_id',
 					as: 'groupUsers',
 				},
-			});
-			this.pipeline.push({
+			},
+			{
 				$match: {
 					$or: [{ 'groupUsers.schoolId': new ObjectId(schoolId) }, { organization: new ObjectId(schoolId) }],
 				},
-			});
-		}
+			}
+		);
 
 		return this;
 	}

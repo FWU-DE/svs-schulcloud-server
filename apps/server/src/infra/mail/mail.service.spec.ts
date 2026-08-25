@@ -1,9 +1,9 @@
-import { Logger } from '@core/logger';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
-import { createMock, DeepMocked } from '@golevelup/ts-jest';
-import { Test, TestingModule } from '@nestjs/testing';
-import { MAIL_CONFIG_TOKEN, MailConfig } from './mail.config';
-import { Mail } from './mail.interface';
+import { createMock, type DeepMocked } from '@golevelup/ts-jest';
+import { Logger } from '@infra/logger';
+import { Test, type TestingModule } from '@nestjs/testing';
+import { MAIL_CONFIG_TOKEN, type MailConfig } from './mail.config';
+import { type Mail } from './mail.interface';
 import { MailService } from './mail.service';
 
 describe('MailService', () => {

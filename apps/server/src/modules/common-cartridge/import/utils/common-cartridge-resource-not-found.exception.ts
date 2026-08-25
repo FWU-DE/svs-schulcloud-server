@@ -1,5 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
-import { ErrorLogMessage, Loggable } from '@core/logger';
+import { type ErrorLogMessage } from '@shared/common/error';
+import { type Loggable } from '@shared/common/loggable';
 
 export class CommonCartridgeResourceNotFoundException extends BadRequestException implements Loggable {
 	constructor() {

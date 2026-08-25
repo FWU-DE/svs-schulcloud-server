@@ -1,9 +1,9 @@
-import { ErrorLoggable } from '@core/error/loggable';
-import { ErrorLogger } from '@core/logger';
+import { ErrorLoggable } from '@infra/error';
+import { type ErrorLogger } from '@infra/logger';
 import { GlobalValidationPipe } from '@core/validation/pipe/global-validation.pipe';
-import { ICurrentUser } from '@infra/auth-guard';
-import { McpServer, McpToolConfig, McpToolResult } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { HttpException, Type } from '@nestjs/common';
+import { type ICurrentUser } from '@infra/auth-guard';
+import { type McpServer, type McpToolConfig, type McpToolResult } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { HttpException, type Type } from '@nestjs/common';
 
 /**
  * The same pipe the REST controllers run their bodies through. Reusing it means a tool argument

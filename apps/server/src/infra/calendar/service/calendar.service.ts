@@ -1,5 +1,5 @@
-import { ErrorUtils } from '@core/error/utils';
-import { Logger } from '@core/logger';
+import { ErrorUtils } from '@infra/error';
+import { Logger } from '@infra/logger';
 import { HttpService } from '@nestjs/axios';
 import { Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { EntityId } from '@shared/domain/types';

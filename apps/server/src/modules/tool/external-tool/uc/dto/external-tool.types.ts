@@ -1,6 +1,11 @@
-import { CustomParameter } from '../../../common/domain';
-import { ToolContextType } from '../../../common/enum';
-import { BasicToolConfig, ExternalToolMedium, Lti11ToolConfig, Oauth2ToolConfig } from '../../domain';
+import { type CustomParameter } from '../../../common/domain';
+import { type ToolContextType } from '../../../common/enum';
+import {
+	type BasicToolConfig,
+	type ExternalToolMedium,
+	type Lti11ToolConfig,
+	type Oauth2ToolConfig,
+} from '../../domain';
 
 type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 
@@ -18,7 +23,7 @@ export type CustomParameterDto = CustomParameter;
 
 export type ExternalToolMediumDto = ExternalToolMedium;
 
-export type ExternalToolDto<T> = {
+type ExternalToolDto<T> = {
 	name: string;
 
 	description?: string;

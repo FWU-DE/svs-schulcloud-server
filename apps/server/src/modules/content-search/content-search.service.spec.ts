@@ -1,7 +1,7 @@
-import { createMock, DeepMocked } from '@golevelup/ts-jest';
+import { createMock, type DeepMocked } from '@golevelup/ts-jest';
 import { ContentSearchConfig } from './content-search.config';
 import { ContentSearchService } from './content-search.service';
-import { McpClientService } from './mcp-client.service';
+import { type McpClientService } from './mcp-client.service';
 
 describe('ContentSearchService', () => {
 	const AMB = 'wss://amb-relay.edufeed.org';

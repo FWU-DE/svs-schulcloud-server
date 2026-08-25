@@ -1,7 +1,7 @@
-import { Logger } from '@core/logger';
-import { createMock, DeepMocked } from '@golevelup/ts-jest';
+import { createMock, type DeepMocked } from '@golevelup/ts-jest';
+import { type Logger } from '@infra/logger';
 import { PassThrough } from 'node:stream';
-import { FileDo } from '../do';
+import { type FileDo } from '../do';
 import { ArchiveFactory } from './archive.factory';
 
 describe('ArchiveFactory', () => {

@@ -6,12 +6,12 @@ import { roomEntityFactory } from '@modules/room/testing';
 import { RoomRolesTestFactory } from '@modules/room/testing/room-roles.test.factory';
 import { schoolEntityFactory } from '@modules/school/testing';
 import { ServerTestModule } from '@modules/server';
-import { INestApplication } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
+import { type INestApplication } from '@nestjs/common';
+import { Test, type TestingModule } from '@nestjs/testing';
 import { cleanupCollections } from '@testing/cleanup-collections';
 import { UserAndAccountTestFactory } from '@testing/factory/user-and-account.test.factory';
-import { TestApiClient } from '@testing/test-api-client';
-import { BoardExternalReferenceType, ColumnBoardProps } from '../../domain';
+import { TestApiClientBuilder } from '@testing/test-api-client-builder';
+import { BoardExternalReferenceType, type ColumnBoardProps } from '../../domain';
 import { columnBoardEntityFactory } from '../../testing';
 
 const baseRouteName = '/boards';
@@ -19,7 +19,6 @@ const baseRouteName = '/boards';
 describe(`board copy with room relation (api)`, () => {
 	let app: INestApplication;
 	let em: EntityManager;
-	let testApiClient: TestApiClient;
 
 	beforeAll(async () => {
 		const module: TestingModule = await Test.createTestingModule({
@@ -29,7 +28,6 @@ describe(`board copy with room relation (api)`, () => {
 		app = module.createNestApplication();
 		await app.init();
 		em = module.get(EntityManager);
-		testApiClient = new TestApiClient(app, baseRouteName);
 	});
 
 	afterAll(async () => {
@@ -68,7 +66,7 @@ describe(`board copy with room relation (api)`, () => {
 				.flush();
 			em.clear();
 
-			const loggedInClient = await testApiClient.login(teacherAccount);
+			const loggedInClient = await new TestApiClientBuilder(app, baseRouteName).build(teacherAccount);
 
 			return { loggedInClient, columnBoardNode };
 		};

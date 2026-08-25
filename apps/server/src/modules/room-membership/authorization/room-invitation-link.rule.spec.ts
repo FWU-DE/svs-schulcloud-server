@@ -8,10 +8,10 @@ import { authorizationContextFactory } from '@modules/authorization/testing';
 import { RoleName } from '@modules/role';
 import { roleDtoFactory } from '@modules/role/testing';
 import { roomInvitationLinkTestFactory } from '@modules/room/testing/room-invitation-link.test.factory';
-import { RoomPublicApiConfig } from '@modules/room';
+import { type RoomPublicApiConfig } from '@modules/room';
 import { User } from '@modules/user/repo';
 import { userFactory } from '@modules/user/testing';
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test, type TestingModule } from '@nestjs/testing';
 import { Permission } from '@shared/domain/interface';
 import { setupEntities } from '@testing/database';
 import { FeatureDisabledLoggableException } from '@shared/common/loggable-exception';
@@ -32,6 +32,7 @@ describe(RoomInvitationLinkRule.name, () => {
 		featureRoomAddExternalPersonsEnabled: false,
 		featureRoomRegisterExternalPersonsEnabled: false,
 		featureAdministrateRoomsEnabled: true,
+		featureRoomAiTemplateEnabled: false,
 		roomMemberInfoUrl: 'http://example.com/room-member-info',
 	};
 
@@ -489,6 +490,7 @@ describe(RoomInvitationLinkRule.name, () => {
 				featureRoomAddExternalPersonsEnabled: false,
 				featureRoomRegisterExternalPersonsEnabled: false,
 				featureAdministrateRoomsEnabled: true,
+				featureRoomAiTemplateEnabled: false,
 				roomMemberInfoUrl: 'http://example.com/room-member-info',
 			};
 			const authorizable = new RoomInvitationLinkAuthorizable(

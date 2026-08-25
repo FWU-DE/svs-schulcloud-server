@@ -1,8 +1,8 @@
+import { AxiosErrorLoggable } from '@infra/error';
 import { InternalServerErrorException } from '@nestjs/common';
-import { Loggable } from '@core/logger/interfaces';
-import { ErrorLogMessage } from '@core/logger/types';
+import { type ErrorLogMessage } from '@shared/common/error';
+import { type Loggable } from '@shared/common/loggable';
 import { isAxiosError } from 'axios';
-import { AxiosErrorLoggable } from '@core/error/loggable';
 
 export class SynchronizationUnknownErrorLoggableException extends InternalServerErrorException implements Loggable {
 	constructor(

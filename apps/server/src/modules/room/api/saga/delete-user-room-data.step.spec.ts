@@ -1,5 +1,5 @@
-import { Logger } from '@core/logger';
 import { createMock } from '@golevelup/ts-jest';
+import { Logger } from '@infra/logger';
 import { NotFoundError } from '@mikro-orm/core';
 import { EntityManager } from '@mikro-orm/mongodb';
 import { RoomArrangementService } from '@modules/room/domain';
@@ -14,7 +14,7 @@ import {
 import { SagaRegistryService, SagaStepRegistryService } from '@modules/saga/service';
 import { User } from '@modules/user/repo';
 import { userFactory } from '@modules/user/testing';
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test, type TestingModule } from '@nestjs/testing';
 import { cleanupCollections } from '@testing/cleanup-collections';
 import { MongoMemoryDatabaseModule } from '@testing/database';
 import { RoomArrangementEntity, RoomArrangementRepo, RoomEntity } from '../../repo';

@@ -1,4 +1,4 @@
-import { ErrorResponse } from '@core/error/dto';
+import { ErrorResponse } from '@infra/error';
 import { CurrentUser, ICurrentUser, JwtAuthentication } from '@infra/auth-guard';
 import { Body, Controller, Param, Post, Res } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';

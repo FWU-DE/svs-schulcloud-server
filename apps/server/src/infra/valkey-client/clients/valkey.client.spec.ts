@@ -1,5 +1,5 @@
-import { DeepMocked, createMock } from '@golevelup/ts-jest';
-import { Redis } from 'iovalkey';
+import { type DeepMocked, createMock } from '@golevelup/ts-jest';
+import { type Redis } from 'iovalkey';
 import { ValkeyClient } from './valkey.client';
 
 describe('ValkeyClient', () => {
@@ -34,9 +34,15 @@ describe('ValkeyClient', () => {
 
 	describe('SET', () => {
 		it('should set a value with expiration', async () => {
-			await valkeyClient.set('key', 'value', 'EX', 60);
+			await valkeyClient.set('key', 'value', 60);
 
 			expect(redisMock.set).toHaveBeenCalledWith('key', 'value', 'EX', 60);
+		});
+
+		it('should set a value without expiration', async () => {
+			await valkeyClient.set('key', 'value');
+
+			expect(redisMock.set).toHaveBeenCalledWith('key', 'value');
 		});
 	});
 
@@ -75,17 +81,9 @@ describe('ValkeyClient', () => {
 
 	describe('ON', () => {
 		it('should register an event listener', () => {
-			const callback = jest.fn();
-			valkeyClient.on('event', callback);
-			expect(redisMock.on).toHaveBeenCalledWith('event', callback);
-		});
-	});
-
-	describe('EMIT', () => {
-		it('should emit an event with arguments', () => {
-			valkeyClient.emit('event', 'arg1', 'arg2');
-
-			expect(redisMock.emit).toHaveBeenCalledWith('event', ['arg1', 'arg2']);
+			const callback = jest.fn<void, [Error]>();
+			valkeyClient.on('error', callback);
+			expect(redisMock.on).toHaveBeenCalledWith('error', callback);
 		});
 	});
 });

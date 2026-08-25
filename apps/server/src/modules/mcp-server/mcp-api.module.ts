@@ -1,4 +1,4 @@
-import { LoggerModule } from '@core/logger';
+import { LoggerModule } from '@infra/logger';
 import { AuthorizationModule } from '@modules/authorization';
 import { BoardModule } from '@modules/board';
 import { BoardApiModule } from '@modules/board/board-api.module';

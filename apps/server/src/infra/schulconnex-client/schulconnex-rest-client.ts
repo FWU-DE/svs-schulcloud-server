@@ -1,10 +1,10 @@
-import { Logger } from '@core/logger';
+import { Logger } from '@infra/logger';
 import {
 	ClientCredentialsGrantTokenRequest,
 	OauthAdapterService,
 	OAuthGrantType,
 	OAuthTokenDto,
-} from '@modules/oauth-adapter';
+} from '@infra/oauth-adapter';
 import { HttpService } from '@nestjs/axios';
 import { Inject } from '@nestjs/common';
 import { AxiosResponse } from 'axios';

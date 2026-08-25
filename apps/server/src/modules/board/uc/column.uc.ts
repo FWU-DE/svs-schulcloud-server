@@ -1,13 +1,13 @@
-import { LegacyLogger } from '@core/logger';
-import { StorageLocation } from '@infra/files-storage-client';
+import { StorageLocation } from '@infra/files-storage-amqp-client';
+import { LegacyLogger } from '@infra/logger';
 import { AuthorizationService } from '@modules/authorization';
+import { CopyStatusEnum } from '@modules/copy-helper';
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { throwForbiddenIfFalse } from '@shared/common/utils';
 import { EntityId } from '@shared/domain/types';
 import { BoardNodeRule } from '../authorisation/board-node.rule';
 import { BoardNodeFactory, Card, Column, ColumnBoard, ContentElementType, isCard } from '../domain';
 import { BoardNodeAuthorizableService, BoardNodeService, ColumnBoardService } from '../service';
-import { CopyStatusEnum } from '@modules/copy-helper';
 
 @Injectable()
 export class ColumnUc {
@@ -51,7 +51,8 @@ export class ColumnUc {
 	public async createCard(
 		userId: EntityId,
 		columnId: EntityId,
-		requiredEmptyElements: ContentElementType[] = []
+		requiredEmptyElements: ContentElementType[] = [],
+		position?: number
 	): Promise<Card> {
 		const column = await this.boardNodeService.findByClassAndId(Column, columnId);
 		const user = await this.authorizationService.getUserWithPermissions(userId);
@@ -62,7 +63,7 @@ export class ColumnUc {
 		const elements = requiredEmptyElements.map((type) => this.boardNodeFactory.buildContentElement(type));
 		const card = this.boardNodeFactory.buildCard(elements);
 
-		await this.boardNodeService.addToParent(column, card);
+		await this.boardNodeService.addToParent(column, card, position);
 
 		return card;
 	}

@@ -1,4 +1,4 @@
-import { createMock, DeepMocked } from '@golevelup/ts-jest';
+import { createMock, type DeepMocked } from '@golevelup/ts-jest';
 import { EtherpadClientAdapter } from '@infra/etherpad-client';
 import { EntityManager, ObjectId } from '@mikro-orm/mongodb';
 import { BoardExternalReferenceType } from '@modules/board';
@@ -10,20 +10,21 @@ import {
 } from '@modules/board/testing';
 import { courseEntityFactory } from '@modules/course/testing';
 import { ServerTestModule } from '@modules/server';
-import { HttpStatus, INestApplication } from '@nestjs/common';
+import { HttpStatus, type INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { cleanupCollections } from '@testing/cleanup-collections';
 import { UserAndAccountTestFactory } from '@testing/factory/user-and-account.test.factory';
-import { TestApiClient } from '@testing/test-api-client';
+import { TestApiClientBuilder } from '@testing/test-api-client-builder';
 import {
 	COLLABORATIVE_TEXT_EDITOR_CONFIG_TOKEN,
-	CollaborativeTextEditorConfig,
+	type CollaborativeTextEditorConfig,
 } from '../../collaborative-text-editor.config';
+
+const baseRouteName = 'collaborative-text-editor';
 
 describe('Collaborative Text Editor Controller (API)', () => {
 	let app: INestApplication;
 	let em: EntityManager;
-	let testApiClient: TestApiClient;
 	let etherpadClientAdapter: DeepMocked<EtherpadClientAdapter>;
 	let collaborativeTextEditorConfig: CollaborativeTextEditorConfig;
 
@@ -38,7 +39,6 @@ describe('Collaborative Text Editor Controller (API)', () => {
 		app = module.createNestApplication();
 		await app.init();
 		em = app.get(EntityManager);
-		testApiClient = new TestApiClient(app, 'collaborative-text-editor');
 		etherpadClientAdapter = module.get(EtherpadClientAdapter);
 		collaborativeTextEditorConfig = module.get(COLLABORATIVE_TEXT_EDITOR_CONFIG_TOKEN);
 		expect(collaborativeTextEditorConfig.cookieExpiresInSeconds).toBeDefined();
@@ -60,7 +60,7 @@ describe('Collaborative Text Editor Controller (API)', () => {
 				await em.persist([studentAccount, studentUser]).flush();
 				em.clear();
 
-				const loggedInClient = await testApiClient.login(studentAccount);
+				const loggedInClient = await new TestApiClientBuilder(app, baseRouteName).build(studentAccount);
 
 				return { loggedInClient };
 			};
@@ -69,7 +69,7 @@ describe('Collaborative Text Editor Controller (API)', () => {
 				it('should return 401', async () => {
 					const someId = new ObjectId().toHexString();
 
-					const response = await testApiClient.get(`content-element/${someId}}`);
+					const response = await new TestApiClientBuilder(app, baseRouteName).build().get(`content-element/${someId}}`);
 
 					expect(response.status).toEqual(HttpStatus.UNAUTHORIZED);
 				});
@@ -133,7 +133,7 @@ describe('Collaborative Text Editor Controller (API)', () => {
 					await em.persist([collaborativeTextEditorElement, columnBoardNode, columnNode, cardNode]).flush();
 					em.clear();
 
-					const loggedInClient = await testApiClient.login(studentAccount);
+					const loggedInClient = await new TestApiClientBuilder(app, baseRouteName).build(studentAccount);
 
 					const editorId = 'editorId';
 					etherpadClientAdapter.getOrCreateEtherpadId.mockResolvedValueOnce(editorId);
@@ -205,7 +205,7 @@ describe('Collaborative Text Editor Controller (API)', () => {
 						.flush();
 					em.clear();
 
-					const loggedInClient = await testApiClient.login(studentAccount);
+					const loggedInClient = await new TestApiClientBuilder(app, baseRouteName).build(studentAccount);
 
 					const editorId = 'editorId';
 					etherpadClientAdapter.getOrCreateEtherpadId.mockResolvedValueOnce(editorId);
@@ -277,7 +277,7 @@ describe('Collaborative Text Editor Controller (API)', () => {
 						.flush();
 					em.clear();
 
-					const loggedInClient = await testApiClient.login(studentAccount);
+					const loggedInClient = await new TestApiClientBuilder(app, baseRouteName).build(studentAccount);
 
 					const editorId = 'editorId';
 					etherpadClientAdapter.getOrCreateEtherpadId.mockResolvedValueOnce(editorId);

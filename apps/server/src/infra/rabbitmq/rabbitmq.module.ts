@@ -1,6 +1,6 @@
-import { LoggerModule } from '@core/logger';
 import { RabbitMQModule } from '@golevelup/nestjs-rabbitmq';
 import { ConfigurationModule } from '@infra/configuration';
+import { LoggerModule } from '@infra/logger';
 import { DynamicModule, Module } from '@nestjs/common';
 import { AmqpConnectionGuard } from './amqp-connection.guard';
 import { InternalRabbitMQExchangeConfig, RabbitMQModuleOptions } from './rabbitmq-module.options';
@@ -14,7 +14,8 @@ export class RabbitMQWrapperModule {
 			imports: [
 				RabbitMQModule.forRootAsync({
 					useFactory: (config: RabbitMQConfig, exchange: InternalRabbitMQExchangeConfig) => {
-						return {
+						const rabbitMQConfig = {
+							name: options.connectionName,
 							prefetchCount: config.prefetchCount,
 							exchanges: [
 								{
@@ -27,6 +28,7 @@ export class RabbitMQWrapperModule {
 								heartbeatIntervalInSeconds: config.heartBeatIntervalInSeconds,
 							},
 						};
+						return rabbitMQConfig;
 					},
 					inject: [options.configInjectionToken, options.exchangeConfigInjectionToken],
 					imports: [

@@ -1,6 +1,6 @@
 import { RegisterTimeoutConfig } from '@core/interceptor/register-timeout-config.decorator';
-import { LoggerModule } from '@core/logger';
 import { ConfigurationModule } from '@infra/configuration';
+import { LoggerModule } from '@infra/logger';
 import { AccountModule } from '@modules/account/account.module';
 import { AiSuggestionModule } from '@modules/ai-suggestion';
 import { AuthorizationModule } from '@modules/authorization';

@@ -17,6 +17,10 @@ const {
 const {
 	modelServices: { prepareInternalParams },
 } = require('../../../utils');
+const { removeHomeworksByCourseId } = require('../../homework/removeDependentHomeworks');
+const { filesRepo } = require('../../fileStorage/repo');
+const { FileModel } = require('../../fileStorage/model');
+const { removeLessonsByCourseId } = require('./removeDependentLessons');
 
 const restrictToCurrentSchoolIfNotLocal = ifNotLocal(restrictToCurrentSchool);
 const restrictToUsersOwnCoursesIfNotLocal = ifNotLocal(restrictToUsersOwnCourses);
@@ -61,9 +65,22 @@ class Courses {
 		return this.app.service('courseModel').patch(id, data, prepareInternalParams(params));
 	}
 
-	remove(id, params) {
-		this.app.service('/calendar/courses').remove(id, prepareInternalParams(params));
-		return this.app.service('courseModel').remove(id, prepareInternalParams(params));
+	async remove(id, params) {
+		const internalParams = prepareInternalParams(params);
+		const courseFiles = await FileModel.find({
+			owner: id,
+			refOwnerModel: 'course',
+			deleted: { $ne: true },
+		})
+			.select({ _id: 1 })
+			.lean()
+			.exec();
+
+		await removeHomeworksByCourseId(id);
+		await removeLessonsByCourseId(id);
+		await Promise.all(courseFiles.map((file) => filesRepo.removeFileById(file._id)));
+		this.app.service('/calendar/courses').remove(id, internalParams);
+		return this.app.service('courseModel').remove(id, internalParams);
 	}
 
 	setup(app) {

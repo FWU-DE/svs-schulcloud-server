@@ -1,20 +1,20 @@
-import { Logger } from '@core/logger';
 import { faker } from '@faker-js/faker';
-import { createMock, DeepMocked } from '@golevelup/ts-jest';
-import archiver from 'archiver';
+import { createMock, type DeepMocked } from '@golevelup/ts-jest';
+import { type Logger } from '@infra/logger';
+import type archiver from 'archiver';
 import {
 	createCommonCartridgeMetadataElementProps,
 	createCommonCartridgeOrganizationProps,
 } from '../../testing/common-cartridge-element-props.factory';
 import {
-	createCommonCartridgeFileProps,
 	createCommonCartridgeFileFolderResourcePropsV130,
+	createCommonCartridgeFileProps,
 	createCommonCartridgeWebLinkResourceProps,
 } from '../../testing/common-cartridge-resource-props.factory';
 import { CommonCartridgeVersion } from '../common-cartridge.enums';
 import { CommonCartridgeElementFactory } from '../elements/common-cartridge-element-factory';
 import { MissingMetadataLoggableException } from '../errors';
-import { CommonCartridgeFileBuilder, CommonCartridgeFileBuilderProps } from './common-cartridge-file-builder';
+import { CommonCartridgeFileBuilder, type CommonCartridgeFileBuilderProps } from './common-cartridge-file-builder';
 import { CommonCartridgeOrganizationNode } from './common-cartridge-organization-node';
 
 describe('CommonCartridgeFileBuilder', () => {

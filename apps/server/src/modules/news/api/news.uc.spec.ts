@@ -1,12 +1,12 @@
-import { Logger } from '@core/logger';
 import { createMock } from '@golevelup/ts-jest';
+import { Logger } from '@infra/logger';
 import { ObjectId } from '@mikro-orm/mongodb';
 import { FeathersAuthorizationService } from '@modules/authorization';
 import { UnauthorizedException } from '@nestjs/common';
 import { NotFoundException } from '@nestjs/common/exceptions/not-found.exception';
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test, type TestingModule } from '@nestjs/testing';
 import { Permission } from '@shared/domain/interface';
-import { CreateNews, NewsTargetModel } from '../domain';
+import { type CreateNews, NewsTargetModel } from '../domain';
 import { NewsRepo } from '../repo';
 import { NewsUc } from './news.uc';
 

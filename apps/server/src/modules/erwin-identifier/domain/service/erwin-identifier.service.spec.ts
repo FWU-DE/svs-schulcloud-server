@@ -1,11 +1,11 @@
-import { Logger } from '@core/logger';
-import { createMock, DeepMocked } from '@golevelup/ts-jest';
-import { Test, TestingModule } from '@nestjs/testing';
+import { createMock, type DeepMocked } from '@golevelup/ts-jest';
+import { Logger } from '@infra/logger';
+import { Test, type TestingModule } from '@nestjs/testing';
 import { ReferencedEntityType } from '../../types';
-import { ErwinIdentifier } from '../do';
-import { ErwinIdentifierRepo } from '../interface';
+import { type ErwinIdentifier } from '../do';
+import { type ErwinIdentifierRepo } from '../interface';
 import { erwinIdentifierFactoryWithSchool, erwinIdentifierFactoryWithUser } from '../testing';
-import { ErwinIdentifierEntry, ErwinIdentifierService } from './erwin-identifier.service';
+import { type ErwinIdentifierEntry, ErwinIdentifierService } from './erwin-identifier.service';
 
 describe(ErwinIdentifierService.name, () => {
 	let module: TestingModule;

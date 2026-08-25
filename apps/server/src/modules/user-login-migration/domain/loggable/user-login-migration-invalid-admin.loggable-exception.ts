@@ -1,12 +1,12 @@
 import { UnprocessableEntityException } from '@nestjs/common';
-import { ErrorLogMessage, Loggable, LogMessage, ValidationErrorLogMessage } from '@core/logger';
+import { type Loggable, type LoggableMessage } from '@shared/common/loggable';
 
 export class UserLoginMigrationInvalidAdminLoggableException extends UnprocessableEntityException implements Loggable {
 	constructor(private readonly userId: string) {
 		super();
 	}
 
-	getLogMessage(): LogMessage | ErrorLogMessage | ValidationErrorLogMessage {
+	public getLogMessage(): LoggableMessage {
 		return {
 			type: 'USER_LOGIN_MIGRATION_INVALID_ADMIN',
 			message: 'The user is not an administrator',

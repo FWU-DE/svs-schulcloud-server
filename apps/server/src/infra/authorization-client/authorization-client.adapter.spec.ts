@@ -1,21 +1,21 @@
-import { AxiosErrorLoggable } from '@core/error/loggable';
-import { createMock, DeepMocked } from '@golevelup/ts-jest';
+import { createMock, type DeepMocked } from '@golevelup/ts-jest';
+import { AxiosErrorLoggable } from '@infra/error';
 import { REQUEST } from '@nestjs/core';
-import { Test, TestingModule } from '@nestjs/testing';
-import { AxiosResponse } from 'axios';
-import { Request } from 'express';
+import { Test, type TestingModule } from '@nestjs/testing';
+import { type AxiosResponse } from 'axios';
+import { type Request } from 'express';
+import { AuthorizationClientAdapter } from './authorization-client.adapter';
+import { AuthorizationErrorLoggableException, AuthorizationForbiddenLoggableException } from './error';
 import {
 	AuthorizationApi,
-	AuthorizationBodyParams,
+	type AuthorizationBodyParams,
 	AuthorizationBodyParamsReferenceType,
 	AuthorizationContextParamsAction,
 	AuthorizationContextParamsRequiredPermissions,
-	AuthorizedResponse,
-} from './authorization-api-client';
-import { AuthorizationClientAdapter } from './authorization-client.adapter';
-import { AuthorizationErrorLoggableException, AuthorizationForbiddenLoggableException } from './error';
+	type AuthorizedResponse,
+} from './generated';
 
-jest.mock('@core/error/loggable');
+jest.mock('@infra/error');
 jest.mock('axios', (): unknown => {
 	return {
 		...jest.requireActual('axios'),

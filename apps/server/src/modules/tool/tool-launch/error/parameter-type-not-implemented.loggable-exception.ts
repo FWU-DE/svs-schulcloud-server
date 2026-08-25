@@ -1,12 +1,12 @@
 import { NotImplementedException } from '@nestjs/common';
-import { ErrorLogMessage, Loggable, LogMessage, ValidationErrorLogMessage } from '@core/logger';
+import { type Loggable, type LoggableMessage } from '@shared/common/loggable';
 
 export class ParameterTypeNotImplementedLoggableException extends NotImplementedException implements Loggable {
 	constructor(private readonly parameterType: string) {
 		super();
 	}
 
-	getLogMessage(): LogMessage | ErrorLogMessage | ValidationErrorLogMessage {
+	public getLogMessage(): LoggableMessage {
 		return {
 			type: 'PARAMETER_TYPE_NOT_IMPLEMENTED',
 			message: 'Launching an external tool with this parameter type is not implemented.',

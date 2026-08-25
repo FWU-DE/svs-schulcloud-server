@@ -1,6 +1,6 @@
-import { createMock, DeepMocked } from '@golevelup/ts-jest';
-import { Test, TestingModule } from '@nestjs/testing';
-import { OAUTH_SESSION_TOKEN_REPO, OauthSessionTokenRepo } from '../repo';
+import { createMock, type DeepMocked } from '@golevelup/ts-jest';
+import { Test, type TestingModule } from '@nestjs/testing';
+import { OAUTH_SESSION_TOKEN_REPO, type OauthSessionTokenRepo } from '../repo';
 import { oauthSessionTokenFactory } from '../testing';
 import { OauthSessionTokenService } from './oauth-session-token.service';
 
@@ -38,8 +38,6 @@ describe(OauthSessionTokenService.name, () => {
 			const setup = () => {
 				const oauthSessionToken = oauthSessionTokenFactory.build();
 
-				repo.save.mockResolvedValue(oauthSessionToken);
-
 				return {
 					oauthSessionToken,
 				};
@@ -51,14 +49,6 @@ describe(OauthSessionTokenService.name, () => {
 				await service.save(oauthSessionToken);
 
 				expect(repo.save).toHaveBeenCalledWith(oauthSessionToken);
-			});
-
-			it('should return the saved token', async () => {
-				const { oauthSessionToken } = setup();
-
-				const result = await service.save(oauthSessionToken);
-
-				expect(result).toEqual(oauthSessionToken);
 			});
 		});
 	});

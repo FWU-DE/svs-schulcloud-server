@@ -1,5 +1,5 @@
 import { AiSuggestionService } from '@modules/ai-suggestion';
-import { Colors } from '@modules/board';
+import { Colors } from '@modules/board/domain';
 import { Injectable } from '@nestjs/common';
 
 export type RoomAiBoardLayout = 'columns' | 'list';

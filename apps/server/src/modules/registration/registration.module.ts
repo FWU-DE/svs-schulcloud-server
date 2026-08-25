@@ -1,8 +1,7 @@
-import { LoggerModule } from '@core/logger/logger.module';
 import { ConfigurationModule } from '@infra/configuration';
+import { LoggerModule } from '@infra/logger';
 import { AccountModule } from '@modules/account';
-import { RoleService } from '@modules/role';
-import { RoleRepo } from '@modules/role/repo';
+import { RoleModule } from '@modules/role';
 import { RoomModule } from '@modules/room';
 import { RoomMembershipModule } from '@modules/room-membership';
 import { SchoolModule } from '@modules/school';
@@ -10,21 +9,22 @@ import { ServerMailModule } from '@modules/serverDynamicModuleWrappers/server-ma
 import { UserModule } from '@modules/user';
 import { Module } from '@nestjs/common';
 import { RegistrationService } from './domain';
-import { RegistrationRepo } from './repo';
 import { REGISTRATION_CONFIG_TOKEN, RegistrationPublicApiConfig } from './registration.config';
+import { RegistrationRepo } from './repo';
 
 @Module({
 	imports: [
 		AccountModule,
 		RoomModule,
 		RoomMembershipModule,
+		RoleModule,
 		SchoolModule,
 		ServerMailModule,
 		UserModule,
 		LoggerModule,
 		ConfigurationModule.register(REGISTRATION_CONFIG_TOKEN, RegistrationPublicApiConfig),
 	],
-	providers: [RegistrationRepo, RegistrationService, RoleService, RoleRepo],
+	providers: [RegistrationRepo, RegistrationService],
 	exports: [RegistrationService],
 })
 export class RegistrationModule {}

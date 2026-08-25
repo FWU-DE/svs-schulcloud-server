@@ -1,0 +1,25 @@
+import { type EntityId } from '@shared/domain/types';
+import { type FileDomainObjectProps, type FileRecordParentType } from '../interfaces';
+
+export class FileDto {
+	id: EntityId;
+
+	name: string;
+
+	parentType: FileRecordParentType;
+
+	parentId: EntityId;
+
+	createdAt?: Date;
+
+	updatedAt?: Date;
+
+	constructor(props: FileDomainObjectProps) {
+		this.id = props.id;
+		this.name = props.name;
+		this.parentType = props.parentType;
+		this.parentId = props.parentId;
+		this.createdAt = props.createdAt;
+		this.updatedAt = props.updatedAt;
+	}
+}

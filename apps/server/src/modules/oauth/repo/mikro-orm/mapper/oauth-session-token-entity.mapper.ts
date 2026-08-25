@@ -1,31 +1,32 @@
-import { EntityManager } from '@mikro-orm/mongodb';
+import { type EntityManager } from '@mikro-orm/mongodb';
 import { SystemEntity } from '@modules/system/repo';
 import { User } from '@modules/user/repo';
 import { OauthSessionToken } from '../../../domain';
-import { OauthSessionTokenEntity, OauthSessionTokenEntityProps } from '../../../entity';
+import { type OauthSessionTokenEntity, type OauthSessionTokenEntityProps } from '../../../entity';
 
 export class OauthSessionTokenEntityMapper {
 	public static mapDOToEntityProperties(
 		domainObject: OauthSessionToken,
+		encryptedRefreshToken: string,
 		em: EntityManager
 	): OauthSessionTokenEntityProps {
 		const entityProps: OauthSessionTokenEntityProps = {
 			id: domainObject.id,
 			user: em.getReference(User, domainObject.userId),
 			system: em.getReference(SystemEntity, domainObject.systemId),
-			refreshToken: domainObject.refreshToken,
+			refreshToken: encryptedRefreshToken,
 			expiresAt: domainObject.expiresAt,
 		};
 
 		return entityProps;
 	}
 
-	public static mapEntityToDo(entity: OauthSessionTokenEntity) {
+	public static mapEntityToDo(entity: OauthSessionTokenEntity, decryptedRefreshToken: string): OauthSessionToken {
 		const domainObject = new OauthSessionToken({
 			id: entity.id,
 			userId: entity.user.id,
 			systemId: entity.system.id,
-			refreshToken: entity.refreshToken,
+			refreshToken: decryptedRefreshToken,
 			expiresAt: entity.expiresAt,
 		});
 

@@ -1,8 +1,8 @@
-import { DomainErrorHandler, ErrorModule } from '@core/error';
-import { Logger, LoggerModule } from '@core/logger';
 import { ConfigurationModule } from '@infra/configuration';
+import { DomainErrorHandler, ErrorModule } from '@infra/error';
+import { Logger, LoggerModule } from '@infra/logger';
 import { DynamicModule, Module } from '@nestjs/common';
-import { StorageClient, ValkeyClientModuleOptions } from './types';
+import type { StorageClient, ValkeyClientModuleOptions } from './types';
 import { IN_MEMORY_VALKEY_CLIENT_CONFIG, InMemoryConfig, ValkeyConfig } from './valkey.config';
 import { ValkeyFactory } from './valkey.factory';
 

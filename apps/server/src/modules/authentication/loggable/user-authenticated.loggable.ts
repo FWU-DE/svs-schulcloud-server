@@ -1,9 +1,8 @@
-import { Loggable } from '@core/logger/interfaces';
-import { LogMessage } from '@core/logger/types';
+import { type Loggable, type LoggableMessage } from '@shared/common/loggable';
 
 export class UserAuthenticatedLoggable implements Loggable {
-	public getLogMessage(): LogMessage {
-		const message: LogMessage = {
+	public getLogMessage(): LoggableMessage {
+		const message: LoggableMessage = {
 			message: 'SUCCESSFULLY_AUTHENTICATED',
 			data: {},
 		};

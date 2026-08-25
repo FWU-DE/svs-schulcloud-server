@@ -1,15 +1,15 @@
-import { DomainErrorHandler } from '@core/error';
-import { Logger } from '@core/logger';
 import { createMock } from '@golevelup/ts-jest';
+import { type DomainErrorHandler } from '@infra/error';
+import { type Logger } from '@infra/logger';
 import Valkey from 'iovalkey';
-import * as util from 'util';
+import * as util from 'node:util';
 import { InMemoryClient, ValkeyClient } from './clients';
 import { ConnectedLoggable } from './loggable';
 import { ValkeyMode } from './valkey.config';
 import { ValkeyFactory } from './valkey.factory';
 
 jest.mock('iovalkey');
-jest.mock('util');
+jest.mock('node:util');
 
 const domainErrorHandler = createMock<DomainErrorHandler>();
 const logger = createMock<Logger>();
@@ -42,7 +42,7 @@ describe(ValkeyFactory.name, () => {
 
 				const redisInstance = await ValkeyFactory.build(config, logger, domainErrorHandler);
 
-				redisInstance.emit('connect', { test: true });
+				(redisInstance as unknown as InMemoryClient).emit('connect', { test: true });
 
 				expect(logger.info).toHaveBeenNthCalledWith(1, new ConnectedLoggable({ test: true }));
 			});

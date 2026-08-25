@@ -1,9 +1,8 @@
-import { Loggable } from '@core/logger';
-import { Logger } from '@core/logger/logger';
-import { LogMessage } from '@core/logger/types/logging.types';
-import { MetricConfig, METRICS_CONFIG_TOKEN, MetricsModule, ResponseTimeMetricsInterceptor } from '@infra/metrics';
-import { INestApplication } from '@nestjs/common';
+import { Logger } from '@infra/logger';
+import { type MetricConfig, METRICS_CONFIG_TOKEN, MetricsModule, ResponseTimeMetricsInterceptor } from '@infra/metrics';
+import { type INestApplication } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { type Loggable, type LoggableMessage } from '@shared/common/loggable';
 import { AppStartLoggable } from './app-start-loggable';
 
 export const enum PrometheusMetricsSetupState {
@@ -15,7 +14,7 @@ export const enum PrometheusMetricsSetupState {
 export class PrometheusMetricsSetupStateLoggable implements Loggable {
 	constructor(private readonly state: PrometheusMetricsSetupState) {}
 
-	public getLogMessage(): LogMessage {
+	public getLogMessage(): LoggableMessage {
 		return {
 			message: 'Setting up Prometheus metrics...',
 			data: {

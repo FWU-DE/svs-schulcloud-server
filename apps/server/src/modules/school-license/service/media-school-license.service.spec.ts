@@ -1,5 +1,5 @@
-import { Logger } from '@core/logger';
-import { createMock, DeepMocked } from '@golevelup/ts-jest';
+import { createMock, type DeepMocked } from '@golevelup/ts-jest';
+import { Logger } from '@infra/logger';
 import { VidisClientAdapter } from '@infra/vidis-client';
 import { vidisOfferItemFactory } from '@infra/vidis-client/testing';
 import { ObjectId } from '@mikro-orm/mongodb';
@@ -7,13 +7,13 @@ import { MediaSourceDataFormat, MediaSourceService } from '@modules/media-source
 import { mediaSourceFactory } from '@modules/media-source/testing';
 import { SchoolService } from '@modules/school';
 import { schoolFactory } from '@modules/school/testing';
-import { ExternalToolMedium } from '@modules/tool/external-tool/domain';
+import { type ExternalToolMedium } from '@modules/tool/external-tool/domain';
 import { ExternalToolMediumStatus } from '@modules/tool/external-tool/enum';
-import { Test, TestingModule } from '@nestjs/testing';
-import { MediaSchoolLicense } from '../domain';
+import { Test, type TestingModule } from '@nestjs/testing';
+import { type MediaSchoolLicense } from '../domain';
 import { SchoolLicenseType } from '../enum';
 import { BuildMediaSchoolLicenseFailedLoggable, SchoolNumberNotFoundLoggableException } from '../loggable';
-import { MEDIA_SCHOOL_LICENSE_REPO, MediaSchoolLicenseRepo } from '../repo';
+import { MEDIA_SCHOOL_LICENSE_REPO, type MediaSchoolLicenseRepo } from '../repo';
 import { mediaSchoolLicenseFactory } from '../testing';
 import { MediaSchoolLicenseService } from './media-school-license.service';
 

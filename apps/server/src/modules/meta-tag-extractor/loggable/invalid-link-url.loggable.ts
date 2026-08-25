@@ -1,15 +1,15 @@
 import { BadRequestException } from '@nestjs/common';
-import { ErrorLogMessage, Loggable, LogMessage, ValidationErrorLogMessage } from '@core/logger';
+import { type Loggable, type LoggableMessage } from '@shared/common/loggable';
 
 export class InvalidLinkUrlLoggableException extends BadRequestException implements Loggable {
 	constructor(
 		private readonly url: string,
-		readonly message: string
+		public readonly message: string
 	) {
 		super();
 	}
 
-	getLogMessage(): LogMessage | ErrorLogMessage | ValidationErrorLogMessage {
+	public getLogMessage(): LoggableMessage {
 		return {
 			type: 'INVALID_LINK_URL',
 			message: this.message,

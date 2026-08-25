@@ -11,7 +11,7 @@ export class RoomAiTemplateBodyParams {
 	@MinLength(3)
 	@MaxLength(1000)
 	@SanitizeHtml()
-	public prompt!: string;
+	prompt!: string;
 
 	@ApiPropertyOptional({
 		description: 'Upper bound for the number of columns the suggestion may contain',
@@ -23,5 +23,5 @@ export class RoomAiTemplateBodyParams {
 	@IsInt()
 	@Min(1)
 	@Max(12)
-	public maxColumns?: number;
+	maxColumns?: number;
 }

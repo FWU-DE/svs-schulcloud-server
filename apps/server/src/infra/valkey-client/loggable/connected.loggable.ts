@@ -1,11 +1,10 @@
-import { Loggable } from '@core/logger/interfaces';
-import { LogMessage } from '@core/logger/types';
+import { type Loggable, type LoggableMessage } from '@shared/common/loggable';
 
 export class ConnectedLoggable implements Loggable {
 	constructor(private readonly message: unknown) {}
 
 	// istanbul ignore next
-	public getLogMessage(): LogMessage {
+	public getLogMessage(): LoggableMessage {
 		const log = {
 			message: JSON.stringify(this.message),
 		};

@@ -1,5 +1,5 @@
-import { Logger } from '@core/logger';
 import { createMock, type DeepMocked } from '@golevelup/ts-jest';
+import { Logger } from '@infra/logger';
 import { EntityManager } from '@mikro-orm/core';
 import { ObjectId } from '@mikro-orm/mongodb';
 import { RoleDto, RoleName, RoleService } from '@modules/role';
@@ -15,7 +15,7 @@ import { setupEntities } from '@testing/database';
 import { UserDto } from '../../api/dto';
 import { User, UserMikroOrmRepo } from '../../repo';
 import { userDoFactory, userFactory } from '../../testing';
-import { TeacherVisibilityForExternalTeamInvitation, USER_CONFIG_TOKEN, UserConfig } from '../../user.config';
+import { TeacherVisibilityForExternalTeamInvitation, USER_CONFIG_TOKEN, type UserConfig } from '../../user.config';
 import { UserDo } from '../do';
 import { USER_DO_REPO, type UserDoRepo } from '../interface';
 import { UserDiscoverableQuery, type UserQuery } from '../query';

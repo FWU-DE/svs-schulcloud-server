@@ -1,14 +1,14 @@
 import { faker } from '@faker-js/faker';
 import {
 	ContentElementType,
-	FileElementContent,
-	FileElementResponse,
-	TimestampsResponse,
+	type FileElementContent,
+	type FileElementResponse,
+	type TimestampsResponse,
 } from '@infra/common-cartridge-clients';
 import { BaseFactory } from '@testing/factory/base.factory';
 import { Factory } from 'fishery';
 
-export const fileElementContentFactory = Factory.define<FileElementContent>(() => {
+const fileElementContentFactory = Factory.define<FileElementContent>(() => {
 	return {
 		caption: faker.lorem.sentence(),
 		alternativeText: faker.lorem.sentence(),

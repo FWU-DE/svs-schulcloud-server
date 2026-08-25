@@ -1,12 +1,13 @@
-import { ErrorLogger } from '@core/logger';
-import { createMock, DeepMocked } from '@golevelup/ts-jest';
-import { ICurrentUser } from '@infra/auth-guard';
-import { McpServer, McpToolCallback, McpToolResult } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { ContentElementType, LinkContentBody, RichTextContentBody } from '@modules/board';
+import { ErrorLogger } from '@infra/logger';
+import { createMock, type DeepMocked } from '@golevelup/ts-jest';
+import { type ICurrentUser } from '@infra/auth-guard';
+import { type McpServer, type McpToolCallback, type McpToolResult } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { LinkContentBody, RichTextContentBody } from '@modules/board/controller/dto';
+import { ContentElementType } from '@modules/board/domain';
 import { cardFactory, columnBoardFactory, columnFactory, richTextElementFactory } from '@modules/board/testing';
 import { BoardUc, CardUc, ColumnUc, ElementUc } from '@modules/board/uc';
 import { ForbiddenException } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test, type TestingModule } from '@nestjs/testing';
 import { currentUserFactory } from '@testing/factory/currentuser.factory';
 import { BoardTools } from './board.tools';
 

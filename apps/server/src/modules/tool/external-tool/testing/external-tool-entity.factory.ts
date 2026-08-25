@@ -1,6 +1,6 @@
 import { ObjectId } from '@mikro-orm/mongodb';
 import { BaseFactory } from '@testing/factory/base.factory';
-import { DeepPartial } from 'fishery';
+import { type DeepPartial } from 'fishery';
 import {
 	CustomParameterLocation,
 	CustomParameterScope,
@@ -14,14 +14,14 @@ import {
 	BasicToolConfigEntity,
 	CustomParameterEntity,
 	ExternalToolEntity,
-	ExternalToolEntityProps,
+	type ExternalToolEntityProps,
 	ExternalToolMediumEntity,
 	Lti11ToolConfigEntity,
 	Oauth2ToolConfigEntity,
 } from '../repo';
 import { base64TestLogo } from './base64-test-logo';
 
-export const basicToolConfigEntityFactory = BaseFactory.define<BasicToolConfigEntity, BasicToolConfigEntity>(
+const basicToolConfigEntityFactory = BaseFactory.define<BasicToolConfigEntity, BasicToolConfigEntity>(
 	BasicToolConfigEntity,
 	() => {
 		return {
@@ -31,7 +31,7 @@ export const basicToolConfigEntityFactory = BaseFactory.define<BasicToolConfigEn
 	}
 );
 
-export const oauth2ToolConfigEntityFactory = BaseFactory.define<Oauth2ToolConfigEntity, Oauth2ToolConfigEntity>(
+const oauth2ToolConfigEntityFactory = BaseFactory.define<Oauth2ToolConfigEntity, Oauth2ToolConfigEntity>(
 	Oauth2ToolConfigEntity,
 	({ sequence }) => {
 		return {
@@ -70,7 +70,7 @@ export const mediumEntityFactory = BaseFactory.define<ExternalToolMediumEntity, 
 	}
 );
 
-export class ExternalToolEntityFactory extends BaseFactory<ExternalToolEntity, ExternalToolEntityProps> {
+class ExternalToolEntityFactory extends BaseFactory<ExternalToolEntity, ExternalToolEntityProps> {
 	public withName(name: string): this {
 		const params: DeepPartial<ExternalToolEntityProps> = {
 			name,

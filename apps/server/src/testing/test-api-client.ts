@@ -2,11 +2,11 @@
 import { JwtWhitelistAdapter } from '@infra/jwt-whitelist';
 import type { AccountEntity } from '@modules/account/repo';
 import { defaultTestPassword } from '@modules/account/testing/account.factory';
-import { INestApplication } from '@nestjs/common';
+import { type INestApplication } from '@nestjs/common';
 import type { Server } from 'node:net';
-import supertest, { Response } from 'supertest';
+import supertest, { type Response } from 'supertest';
 import { JwtAuthenticationFactory } from './factory/jwt-authentication.factory';
-import { TestJwtModuleConfig } from './test-jwt-module.config';
+import { type TestJwtModuleConfig } from './test-jwt-module.config';
 
 interface AccountForLogin {
 	id: string;
@@ -43,6 +43,7 @@ const testRequestConst = {
 
 /**
  * Note res.cookie is not supported atm, feel free to add this
+ * @deprecated please use TestApiClientBuilder instead.
  */
 export class TestApiClient {
 	private readonly app: INestApplication<Server>;

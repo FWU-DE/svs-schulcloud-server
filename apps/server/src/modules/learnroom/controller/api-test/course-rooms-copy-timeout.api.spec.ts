@@ -1,27 +1,28 @@
 import { createMock } from '@golevelup/ts-jest';
+import { FilesStorageClientAdapterService } from '@infra/files-storage-amqp-client';
 import { EntityManager } from '@mikro-orm/mongodb';
 import { courseEntityFactory } from '@modules/course/testing';
-import { FilesStorageClientAdapterService } from '@modules/files-storage-client';
 import {
 	LEARNROOM_INCOMING_REQUEST_TIMEOUT_COPY_API_KEY,
 	LEARNROOM_TIMEOUT_CONFIG_TOKEN,
-	LearnroomTimeoutConfig,
+	type LearnroomTimeoutConfig,
 } from '@modules/learnroom/timeout.config';
 import { lessonFactory } from '@modules/lesson/testing';
 import { ServerTestModule } from '@modules/server';
-import { INestApplication } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
+import { type INestApplication } from '@nestjs/common';
+import { Test, type TestingModule } from '@nestjs/testing';
 import { cleanupCollections } from '@testing/cleanup-collections';
 import { UserAndAccountTestFactory } from '@testing/factory/user-and-account.test.factory';
-import { TestApiClient } from '@testing/test-api-client';
-import { LEARNROOM_CONFIG_TOKEN, LearnroomConfig } from '../../learnroom.config';
+import { TestApiClientBuilder } from '@testing/test-api-client-builder';
+import { LEARNROOM_CONFIG_TOKEN, type LearnroomConfig } from '../../learnroom.config';
+
+const baseRouteName = '/course-rooms';
 
 // This needs to be in a separate test file because of the above configuration.
 // When we find a way to mock the config, it should be moved alongside the other API tests.
 describe('Course Rooms copy (API)', () => {
 	let app: INestApplication;
 	let em: EntityManager;
-	let apiClient: TestApiClient;
 	let config: LearnroomConfig;
 	let timeoutConfig: LearnroomTimeoutConfig;
 
@@ -37,7 +38,6 @@ describe('Course Rooms copy (API)', () => {
 		await app.init();
 		em = app.get(EntityManager);
 
-		apiClient = new TestApiClient(app, '/course-rooms');
 		config = app.get<LearnroomConfig>(LEARNROOM_CONFIG_TOKEN);
 		config.featureCopyServiceEnabled = true;
 		timeoutConfig = app.get(LEARNROOM_TIMEOUT_CONFIG_TOKEN);
@@ -57,7 +57,7 @@ describe('Course Rooms copy (API)', () => {
 			await em.persist([course, teacherAccount, teacherUser]).flush();
 			em.clear();
 
-			const loggedInClient = await apiClient.login(teacherAccount);
+			const loggedInClient = await new TestApiClientBuilder(app, baseRouteName).build(teacherAccount);
 
 			return { loggedInClient, course };
 		};
@@ -80,7 +80,7 @@ describe('Course Rooms copy (API)', () => {
 			await em.persist([course, lesson, teacherAccount, teacherUser]).flush();
 			em.clear();
 
-			const loggedInClient = await apiClient.login(teacherAccount);
+			const loggedInClient = await new TestApiClientBuilder(app, baseRouteName).build(teacherAccount);
 
 			return { loggedInClient, lesson };
 		};

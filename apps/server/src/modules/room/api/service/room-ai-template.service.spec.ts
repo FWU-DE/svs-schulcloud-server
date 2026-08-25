@@ -1,6 +1,6 @@
-import { createMock, DeepMocked } from '@golevelup/ts-jest';
-import { AiSuggestionService } from '@modules/ai-suggestion';
-import { RoomAiTemplateItem, RoomAiTemplateService } from './room-ai-template.service';
+import { createMock, type DeepMocked } from '@golevelup/ts-jest';
+import { type AiSuggestionService } from '@modules/ai-suggestion';
+import { type RoomAiTemplateItem, RoomAiTemplateService } from './room-ai-template.service';
 
 describe('RoomAiTemplateService', () => {
 	const setup = (options: { lines?: unknown[]; checkLinks?: boolean; deadLinks?: string[] } = {}) => {

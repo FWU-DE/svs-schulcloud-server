@@ -1,5 +1,5 @@
-import { ErrorLogMessage } from '@core/logger';
 import { ObjectId } from '@mikro-orm/mongodb';
+import { type ErrorLogMessage } from '@shared/common/error';
 import { CourseSyncHistoryGroupExternalSourceMissingLoggableException } from './course-sync-history-group-external-source-missing.loggable-exception';
 
 describe(CourseSyncHistoryGroupExternalSourceMissingLoggableException.name, () => {

@@ -1,4 +1,4 @@
-import { Logger } from '@core/logger';
+import { Logger } from '@infra/logger';
 import { Account, AccountSave, AccountService } from '@modules/account';
 import { AuthorizationService } from '@modules/authorization';
 import { LegacySchoolService } from '@modules/legacy-school';
@@ -95,7 +95,7 @@ export class UserImportUc {
 		const importUser = await this.importUserRepo.findById(importUserId);
 		const userMatch = await this.userService.getUserEntityWithRoles(userMatchId);
 
-		this.userImportService.validateSameSchool(school.id!, importUser, userMatch);
+		this.userImportService.validateSameSchool(school.id as string, importUser, userMatch);
 
 		// check user is not already assigned
 		const hasMatch = await this.importUserRepo.hasMatch(userMatch);

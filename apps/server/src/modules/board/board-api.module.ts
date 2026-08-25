@@ -1,6 +1,6 @@
 import { RegisterTimeoutConfig } from '@core/interceptor/register-timeout-config.decorator';
-import { LoggerModule } from '@core/logger';
 import { ConfigurationModule } from '@infra/configuration';
+import { LoggerModule } from '@infra/logger';
 import { AiSuggestionModule } from '@modules/ai-suggestion';
 import { AuthorizationModule } from '@modules/authorization';
 import { CopyHelperModule } from '@modules/copy-helper';
@@ -49,7 +49,16 @@ import { BoardErrorReportUc, BoardUc, CardUc, ColumnUc, ElementUc } from './uc';
 		ElementController,
 		BoardErrorReportController,
 	],
-	providers: [BoardUc, BoardAiUc, BoardAiCardsService, BoardErrorReportUc, ColumnUc, CardUc, ElementUc, CopyRoomBoardsStep],
+	providers: [
+		BoardUc,
+		BoardAiUc,
+		BoardAiCardsService,
+		BoardErrorReportUc,
+		ColumnUc,
+		CardUc,
+		ElementUc,
+		CopyRoomBoardsStep,
+	],
 	// Exported so the MCP server can drive board content through the same use-cases as the REST API.
 	exports: [BoardUc, ColumnUc, CardUc, ElementUc],
 })

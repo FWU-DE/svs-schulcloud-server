@@ -1,14 +1,13 @@
 import { InternalServerErrorException } from '@nestjs/common';
-import { Loggable } from '@core/logger/interfaces';
-import { ErrorLogMessage } from '@core/logger/types';
-import { ValidationError } from 'class-validator';
+import { type ValidationError } from 'class-validator';
+import { type Loggable, type LoggableMessage } from '../loggable/interfaces';
 
 export class ValidationErrorLoggableException extends InternalServerErrorException implements Loggable {
 	constructor(private readonly validationErrors: ValidationError[]) {
 		super();
 	}
 
-	getLogMessage(): ErrorLogMessage {
+	public getLogMessage(): LoggableMessage {
 		const validationErrorListObject: { [key: number]: string } = this.validationErrors.reduce(
 			(accumulator, currentValue, currentIndex) => {
 				return {
@@ -19,7 +18,7 @@ export class ValidationErrorLoggableException extends InternalServerErrorExcepti
 			{}
 		);
 
-		const message: ErrorLogMessage = {
+		const message: LoggableMessage = {
 			type: 'VALIDATION_ERROR',
 			stack: this.stack,
 			data: {

@@ -1,14 +1,14 @@
 import { UnprocessableEntityException } from '@nestjs/common';
-import { EntityId } from '@shared/domain/types';
-import { ErrorLogMessage, Loggable } from '@core/logger';
+import { type Loggable, type LoggableMessage } from '@shared/common/loggable';
+import { type EntityId } from '@shared/domain/types';
 
 export class CourseAlreadySynchronizedLoggableException extends UnprocessableEntityException implements Loggable {
 	constructor(private readonly courseId: EntityId) {
 		super();
 	}
 
-	getLogMessage(): ErrorLogMessage {
-		const message: ErrorLogMessage = {
+	public getLogMessage(): LoggableMessage {
+		const message: LoggableMessage = {
 			type: 'COURSE_ALREADY_SYNCHRONIZED',
 			stack: this.stack,
 			data: {

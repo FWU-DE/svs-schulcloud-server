@@ -6,6 +6,7 @@ import { IsNumber } from 'class-validator';
 export const ROOM_TIMEOUT_CONFIG_TOKEN = 'ROOM_TIMEOUT_CONFIG_TOKEN';
 export const ROOM_INCOMING_REQUEST_TIMEOUT_COPY_API_KEY = 'roomIncomingRequestTimeoutCopyApi';
 export const ROOM_INCOMING_REQUEST_TIMEOUT_AI_TEMPLATE_KEY = 'roomIncomingRequestTimeoutAiTemplate';
+export const ROOM_INCOMING_REQUEST_TIMEOUT_ROOM_STATS = 'roomIncomingRequestTimeoutRoomStats';
 
 @Configuration()
 export class RoomTimeoutConfig extends TimeoutConfig {
@@ -19,4 +20,9 @@ export class RoomTimeoutConfig extends TimeoutConfig {
 	@IsNumber()
 	@StringToNumber()
 	public [ROOM_INCOMING_REQUEST_TIMEOUT_AI_TEMPLATE_KEY] = 120000;
+
+	@ConfigProperty('INCOMING_REQUEST_TIMEOUT_ROOM_STATS_MS')
+	@IsNumber()
+	@StringToNumber()
+	public [ROOM_INCOMING_REQUEST_TIMEOUT_ROOM_STATS] = 16000;
 }

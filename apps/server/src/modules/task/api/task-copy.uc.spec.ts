@@ -1,24 +1,24 @@
-import { createMock, DeepMocked } from '@golevelup/ts-jest';
+import { createMock, type DeepMocked } from '@golevelup/ts-jest';
+import { FilesStorageClientAdapterService } from '@infra/files-storage-amqp-client';
 import { ObjectId } from '@mikro-orm/mongodb';
 import { Action, AuthorizationContextBuilder, AuthorizationService } from '@modules/authorization';
 import { CopyElementType, CopyHelperService, CopyStatusEnum } from '@modules/copy-helper';
 import { CourseService } from '@modules/course';
 import { CourseEntity, CourseGroupEntity } from '@modules/course/repo';
 import { courseEntityFactory } from '@modules/course/testing';
-import { FilesStorageClientAdapterService } from '@modules/files-storage-client';
 import { LessonService } from '@modules/lesson';
 import { LessonEntity, Material } from '@modules/lesson/repo';
 import { lessonFactory } from '@modules/lesson/testing';
 import { User } from '@modules/user/repo';
 import { userFactory } from '@modules/user/testing';
 import { ForbiddenException, InternalServerErrorException, NotFoundException } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test, type TestingModule } from '@nestjs/testing';
 import { setupEntities } from '@testing/database';
 import { TaskCopyService } from '../domain';
 import { Submission, Task, TaskRepo } from '../repo';
-import { TASK_PUBLIC_API_CONFIG_TOKEN, TaskPublicApiConfig } from '../task.config';
+import { TASK_PUBLIC_API_CONFIG_TOKEN, type TaskPublicApiConfig } from '../task.config';
 import { taskFactory } from '../testing';
-import { TaskCopyParentParams } from './dto';
+import { type TaskCopyParentParams } from './dto';
 import { TaskCopyUC } from './task-copy.uc';
 
 describe('task copy uc', () => {

@@ -1,6 +1,6 @@
 import { faker } from '@faker-js/faker';
-import { createMock, DeepMocked } from '@golevelup/ts-jest';
-import { TspUserInfo } from '@infra/sync';
+import { createMock, type DeepMocked } from '@golevelup/ts-jest';
+import { Logger } from '@infra/logger';
 import { AccountService } from '@modules/account';
 import { accountDoFactory } from '@modules/account/testing';
 import { ClassService, ClassSourceOptions } from '@modules/class';
@@ -9,9 +9,11 @@ import { RoleName, RoleService } from '@modules/role';
 import { roleDtoFactory, roleFactory } from '@modules/role/testing';
 import { SchoolService } from '@modules/school';
 import { schoolFactory } from '@modules/school/testing';
-import { ParentConsent, UserConsent, UserService } from '@modules/user';
+import type { TspUserInfo } from '@modules/tsp-sync';
+
+import { type ParentConsent, type UserConsent, UserService } from '@modules/user';
 import { userDoFactory } from '@modules/user/testing';
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test, type TestingModule } from '@nestjs/testing';
 import { NotFoundLoggableException } from '@shared/common/loggable-exception';
 import { BadDataLoggableException } from '../loggable';
 import {
@@ -22,7 +24,6 @@ import {
 	provisioningSystemDtoFactory,
 } from '../testing';
 import { TspProvisioningService } from './tsp-provisioning.service';
-import { Logger } from '@core/logger';
 
 describe('TspProvisioningService', () => {
 	let module: TestingModule;

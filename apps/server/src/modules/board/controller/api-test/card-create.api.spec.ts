@@ -1,26 +1,26 @@
 import { EntityManager } from '@mikro-orm/mongodb';
+import { GroupEntityTypes } from '@modules/group/entity';
+import { groupEntityFactory } from '@modules/group/testing';
+import { roomMembershipEntityFactory } from '@modules/room-membership/testing';
+import { roomEntityFactory } from '@modules/room/testing';
+import { RoomRolesTestFactory } from '@modules/room/testing/room-roles.test.factory';
+import { schoolEntityFactory } from '@modules/school/testing';
 import { ServerTestModule } from '@modules/server/server.app.module';
-import { INestApplication } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
+import { type INestApplication } from '@nestjs/common';
+import { Test, type TestingModule } from '@nestjs/testing';
 import { cleanupCollections } from '@testing/cleanup-collections';
 import { UserAndAccountTestFactory } from '@testing/factory/user-and-account.test.factory';
-import { TestApiClient } from '@testing/test-api-client';
+import { TestApiClientBuilder } from '@testing/test-api-client-builder';
 import { BoardExternalReferenceType, ContentElementType } from '../../domain';
-import { columnBoardEntityFactory, columnEntityFactory } from '../../testing';
-import { CardResponse } from '../dto';
-import { roomEntityFactory } from '@modules/room/testing';
-import { roomMembershipEntityFactory } from '@modules/room-membership/testing';
-import { groupEntityFactory } from '@modules/group/testing';
-import { GroupEntityTypes } from '@modules/group/entity';
-import { schoolEntityFactory } from '@modules/school/testing';
-import { RoomRolesTestFactory } from '@modules/room/testing/room-roles.test.factory';
+import { BoardNodeEntity } from '../../repo';
+import { cardEntityFactory, columnBoardEntityFactory, columnEntityFactory } from '../../testing';
+import { type CardResponse } from '../dto';
 
 const baseRouteName = '/columns';
 
 describe(`card create (api)`, () => {
 	let app: INestApplication;
 	let em: EntityManager;
-	let apiClient: TestApiClient;
 
 	beforeAll(async () => {
 		const module: TestingModule = await Test.createTestingModule({
@@ -30,7 +30,6 @@ describe(`card create (api)`, () => {
 		app = module.createNestApplication();
 		await app.init();
 		em = module.get(EntityManager);
-		apiClient = new TestApiClient(app, baseRouteName);
 	});
 
 	afterAll(async () => {
@@ -87,8 +86,8 @@ describe(`card create (api)`, () => {
 			requiredEmptyElements: [ContentElementType.RICH_TEXT, ContentElementType.FILE, ContentElementType.LINK],
 		};
 
-		const loggedInTeacherClient = await apiClient.login(teacherAccount);
-		const loggedInStudentClient = await apiClient.login(studentAccount);
+		const loggedInTeacherClient = await new TestApiClientBuilder(app, baseRouteName).build(teacherAccount);
+		const loggedInStudentClient = await new TestApiClientBuilder(app, baseRouteName).build(studentAccount);
 
 		return {
 			teacherUser,
@@ -186,6 +185,30 @@ describe(`card create (api)`, () => {
 
 			expect(response.status).toEqual(400);
 		});
+
+		describe('when position is provided', () => {
+			it('should insert the card at the given position', async () => {
+				const { columnNode, loggedInTeacherClient } = await setup();
+
+				const existingCard0 = cardEntityFactory.withParent(columnNode).build({ position: 0 });
+				const existingCard1 = cardEntityFactory.withParent(columnNode).build({ position: 1 });
+				await em.persist([existingCard0, existingCard1]).flush();
+				em.clear();
+
+				const response = await loggedInTeacherClient.post(`${columnNode.id}/cards`, { position: 0 });
+				const result = response.body as CardResponse;
+
+				expect(response.status).toEqual(201);
+
+				const newCardInDb = await em.findOneOrFail(BoardNodeEntity, result.id);
+				expect(newCardInDb.position).toEqual(0);
+
+				const shiftedCard0 = await em.findOneOrFail(BoardNodeEntity, existingCard0.id);
+				const shiftedCard1 = await em.findOneOrFail(BoardNodeEntity, existingCard1.id);
+				expect(shiftedCard0.position).toEqual(1);
+				expect(shiftedCard1.position).toEqual(2);
+			});
+		});
 	});
 
 	describe('with invalid user', () => {
@@ -194,8 +217,7 @@ describe(`card create (api)`, () => {
 			const { teacherAccount: account, teacherUser: user } = UserAndAccountTestFactory.buildTeacher();
 			await em.persist([user, account]).flush();
 
-			const api = new TestApiClient(app, baseRouteName);
-			const loggedInClient = await api.login(account);
+			const loggedInClient = await new TestApiClientBuilder(app, baseRouteName).build(account);
 
 			const response = await loggedInClient.post(`${columnNode.id}/cards`);
 
@@ -209,7 +231,7 @@ describe(`card create (api)`, () => {
 			const { teacherAccount: account, teacherUser: user } = UserAndAccountTestFactory.buildTeacher();
 			await em.persist([user, account]).flush();
 
-			const response = await apiClient.post(`${columnNode.id}/cards`);
+			const response = await new TestApiClientBuilder(app, baseRouteName).build().post(`${columnNode.id}/cards`);
 
 			expect(response.status).toEqual(401);
 		});

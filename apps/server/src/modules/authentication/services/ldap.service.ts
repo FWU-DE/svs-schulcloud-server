@@ -1,4 +1,4 @@
-import { Logger } from '@core/logger';
+import { Logger } from '@infra/logger';
 import type { System } from '@modules/system';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { Client, createClient } from 'ldapjs';
@@ -11,7 +11,7 @@ export class LdapService {
 		this.logger.setContext(LdapService.name);
 	}
 
-	async checkLdapCredentials(system: System, username: string, password: string): Promise<void> {
+	public async checkLdapCredentials(system: System, username: string, password: string): Promise<void> {
 		const connection = await this.connect(system, username, password);
 		if (connection.connected) {
 			connection.unbind();

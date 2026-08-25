@@ -1,8 +1,8 @@
-import { EntityId } from '@shared/domain/types';
-import { OauthSessionToken } from '../domain';
+import { type EntityId } from '@shared/domain/types';
+import { type OauthSessionToken } from '../domain';
 
 export interface OauthSessionTokenRepo {
-	save(domainObject: OauthSessionToken): Promise<OauthSessionToken>;
+	save(domainObject: OauthSessionToken): Promise<void>;
 	delete(domainObject: OauthSessionToken): Promise<void>;
 	findLatestByUserId(userId: EntityId): Promise<OauthSessionToken | null>;
 }

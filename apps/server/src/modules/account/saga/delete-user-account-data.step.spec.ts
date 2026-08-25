@@ -1,16 +1,16 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { DeleteUserAccountDataStep } from './delete-user-account-data.step';
-import { createMock, DeepMocked } from '@golevelup/ts-jest';
-import { Logger } from '@core/logger';
-import { AccountService } from '../domain';
+import { createMock, type DeepMocked } from '@golevelup/ts-jest';
+import { Logger } from '@infra/logger';
+import { ObjectId } from '@mikro-orm/mongodb';
 import {
 	ModuleName,
 	SagaService,
 	StepOperationType,
-	StepReport,
+	type StepReport,
 	UserDeletionStepOperationLoggable,
 } from '@modules/saga';
-import { ObjectId } from '@mikro-orm/mongodb';
+import { Test, type TestingModule } from '@nestjs/testing';
+import { AccountService } from '../domain';
+import { DeleteUserAccountDataStep } from './delete-user-account-data.step';
 
 describe(DeleteUserAccountDataStep.name, () => {
 	let module: TestingModule;

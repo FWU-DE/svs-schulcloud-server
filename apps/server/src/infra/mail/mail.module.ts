@@ -1,6 +1,6 @@
-import { Logger, LoggerModule } from '@core/logger';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { ConfigurationModule } from '@infra/configuration';
+import { Logger, LoggerModule } from '@infra/logger';
 import { RabbitMQWrapperModule } from '@infra/rabbitmq/rabbitmq.module';
 import { DynamicModule, Module } from '@nestjs/common';
 import { InternalMailConfig, MailModuleOptions } from './interfaces';
@@ -23,7 +23,7 @@ export class MailModule {
 			module: MailModule,
 			imports: [
 				ConfigurationModule.register(options.exchangeConfigInjectionToken, options.exchangeConfigConstructor),
-				RabbitMQWrapperModule.register(options),
+				RabbitMQWrapperModule.register({ ...options, connectionName: 'mail' }),
 				LoggerModule,
 			],
 			providers,

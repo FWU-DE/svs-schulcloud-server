@@ -1,9 +1,9 @@
-import { RoomRole, RoleName } from '@modules/role';
+import { RoleName, RoomRole } from '@modules/role';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsArray, IsEnum, IsMongoId } from 'class-validator';
 
 export type AssignableRoomRole = Exclude<RoomRole, RoleName.ROOMOWNER>;
-export enum AssignableRoomRoleEnum {
+enum AssignableRoomRoleEnum {
 	ROOMADMIN = RoleName.ROOMADMIN,
 	ROOMEDITOR = RoleName.ROOMEDITOR,
 	ROOMVIEWER = RoleName.ROOMVIEWER,
@@ -16,7 +16,7 @@ export class ChangeRoomRoleBodyParams {
 	})
 	@IsArray()
 	@IsMongoId({ each: true })
-	public userIds!: string[];
+	userIds!: string[];
 
 	@ApiProperty({
 		description: 'The role to assign to the users. Must be a Room Role role other than ROOMOWNER.',
@@ -24,5 +24,5 @@ export class ChangeRoomRoleBodyParams {
 		enum: AssignableRoomRoleEnum,
 	})
 	@IsEnum(AssignableRoomRoleEnum)
-	public roleName!: AssignableRoomRole;
+	roleName!: AssignableRoomRole;
 }

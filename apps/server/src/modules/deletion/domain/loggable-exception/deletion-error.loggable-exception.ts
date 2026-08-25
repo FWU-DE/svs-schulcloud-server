@@ -1,7 +1,6 @@
+import { AxiosErrorLoggable } from '@infra/error';
 import { InternalServerErrorException } from '@nestjs/common';
-import { Loggable } from '@core/logger';
-import { ErrorLogMessage } from '@core/logger/types';
-import { AxiosErrorLoggable } from '@core/error/loggable';
+import { type Loggable, type LoggableMessage } from '@shared/common/loggable';
 import { isAxiosError } from 'axios';
 export class DeletionErrorLoggableException extends InternalServerErrorException implements Loggable {
 	constructor(
@@ -11,12 +10,12 @@ export class DeletionErrorLoggableException extends InternalServerErrorException
 		super();
 	}
 
-	public getLogMessage(): ErrorLogMessage {
+	public getLogMessage(): LoggableMessage {
 		let { error } = this;
 		if (isAxiosError(this.error)) {
 			error = new AxiosErrorLoggable(this.error, 'DELETION_3RD_PARTY_ERROR');
 		}
-		const message: ErrorLogMessage = {
+		const message: LoggableMessage = {
 			type: 'DELETION_ERROR',
 			stack: this.stack,
 			data: {

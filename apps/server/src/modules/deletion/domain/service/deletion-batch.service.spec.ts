@@ -1,17 +1,18 @@
-import { createMock, DeepMocked } from '@golevelup/ts-jest';
+import { createMock, type DeepMocked } from '@golevelup/ts-jest';
 import { ObjectId } from '@mikro-orm/mongodb';
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test, type TestingModule } from '@nestjs/testing';
 import { Page } from '@shared/domain/domainobject';
-import { IFindOptions } from '@shared/domain/interface';
+import { type IFindOptions } from '@shared/domain/interface';
 import { DeletionBatchRepo, DeletionBatchUsersRepo } from '../../repo';
 import { DeletionBatch, DeletionRequest } from '../do';
 import { BatchStatus, DomainName, StatusModel } from '../types';
 import {
-	CreateDeletionBatchParams,
-	DeletionBatchDetails,
+	type CreateDeletionBatchParams,
+	type DeletionBatchDetails,
 	DeletionBatchService,
-	DeletionBatchSummary,
+	type DeletionBatchSummary,
 } from './deletion-batch.service';
+import { DeletionLogService } from './deletion-log.service';
 import { DeletionRequestService } from './deletion-request.service';
 
 describe('DeletionBatchService', () => {
@@ -19,6 +20,7 @@ describe('DeletionBatchService', () => {
 	let deletionBatchRepo: DeepMocked<DeletionBatchRepo>;
 	let deletionBatchUsersRepo: DeepMocked<DeletionBatchUsersRepo>;
 	let deletionRequestService: DeepMocked<DeletionRequestService>;
+	let deletionLogService: DeepMocked<DeletionLogService>;
 
 	beforeEach(async () => {
 		const module: TestingModule = await Test.createTestingModule({
@@ -36,6 +38,10 @@ describe('DeletionBatchService', () => {
 					provide: DeletionRequestService,
 					useValue: createMock<DeletionRequestService>(),
 				},
+				{
+					provide: DeletionLogService,
+					useValue: createMock<DeletionLogService>(),
+				},
 			],
 		}).compile();
 
@@ -43,6 +49,7 @@ describe('DeletionBatchService', () => {
 		deletionBatchRepo = module.get(DeletionBatchRepo);
 		deletionBatchUsersRepo = module.get(DeletionBatchUsersRepo);
 		deletionRequestService = module.get(DeletionRequestService);
+		deletionLogService = module.get(DeletionLogService);
 	});
 
 	describe('findById', () => {
@@ -359,6 +366,53 @@ describe('DeletionBatchService', () => {
 			const result = await service.requestDeletionForBatch(batch.id, new Date());
 
 			expect(result).toEqual(expectedSummary);
+		});
+	});
+
+	describe('retryFailedDeletionRequestsForBatch', () => {
+		const setup = () => {
+			const batchId = new ObjectId().toHexString();
+			const targetRefId1 = new ObjectId().toHexString();
+			const targetRefId2 = new ObjectId().toHexString();
+			const deletionRequestId = new ObjectId().toHexString();
+			const batch = new DeletionBatch({
+				id: batchId,
+				name: 'Test Batch',
+				status: BatchStatus.DELETION_REQUESTED,
+				targetRefDomain: DomainName.USER,
+				targetRefIds: [targetRefId1, targetRefId2],
+				invalidIds: [],
+				skippedIds: [],
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			});
+
+			deletionBatchRepo.findById.mockResolvedValue(batch);
+			deletionRequestService.findFailedDeletionRequestIdsByBatchAndTargetRefIds.mockResolvedValue([deletionRequestId]);
+
+			return { batch, targetRefId1, targetRefId2, deletionRequestId };
+		};
+
+		it('should throw when targetRefIds are not part of batch', async () => {
+			const { batch } = setup();
+
+			await expect(
+				service.resetFailedDeletionRequestsForBatch(batch.id, [new ObjectId().toHexString()])
+			).rejects.toThrow('not part of batch');
+		});
+
+		it('should reset only failed USER deletion requests for selected targetRefIds', async () => {
+			const { batch, targetRefId1, deletionRequestId } = setup();
+
+			await service.resetFailedDeletionRequestsForBatch(batch.id, [targetRefId1]);
+
+			expect(deletionRequestService.findFailedDeletionRequestIdsByBatchAndTargetRefIds).toHaveBeenCalledWith(
+				batch.id,
+				[targetRefId1],
+				DomainName.USER
+			);
+			expect(deletionLogService.deleteByDeletionRequestIds).toHaveBeenCalledWith([deletionRequestId]);
+			expect(deletionRequestService.resetFailedDeletionRequestsToRegistered).toHaveBeenCalledWith([deletionRequestId]);
 		});
 	});
 });

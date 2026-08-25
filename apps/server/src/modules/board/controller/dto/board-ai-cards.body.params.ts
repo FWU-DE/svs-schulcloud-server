@@ -11,7 +11,7 @@ export class BoardAiCardsBodyParams {
 		enum: BOARD_AI_PRESETS,
 	})
 	@IsIn(BOARD_AI_PRESETS)
-	public preset!: BoardAiPreset;
+	preset!: BoardAiPreset;
 
 	@ApiPropertyOptional({
 		description: 'What the teacher asks for, used by the free preset',
@@ -21,5 +21,5 @@ export class BoardAiCardsBodyParams {
 	@IsString()
 	@MaxLength(1000)
 	@SanitizeHtml()
-	public prompt?: string;
+	prompt?: string;
 }

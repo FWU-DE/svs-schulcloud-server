@@ -1,5 +1,7 @@
-import { createMock, DeepMocked } from '@golevelup/ts-jest';
+import { createMock, type DeepMocked } from '@golevelup/ts-jest';
 import { CalendarService } from '@infra/calendar';
+import { type FileDO, FileRecordParentType, ScanStatus } from '@infra/files-storage-amqp-client';
+import { FilesStorageProducer } from '@infra/files-storage-amqp-client/service';
 import { EntityManager, ObjectId } from '@mikro-orm/mongodb';
 import { AccountEntity } from '@modules/account/repo';
 import { BoardExternalReferenceType } from '@modules/board';
@@ -8,16 +10,14 @@ import { mediaBoardEntityFactory } from '@modules/board/testing';
 import { classEntityFactory } from '@modules/class/entity/testing';
 import { CourseEntity } from '@modules/course/repo';
 import { courseEntityFactory, courseGroupEntityFactory } from '@modules/course/testing';
-import { FileDO, FileRecordParentType, ScanStatus } from '@modules/files-storage-client';
-import { FilesStorageProducer } from '@modules/files-storage-client/service';
 import { FileOwnerModel } from '@modules/files/domain';
 import { FileEntity } from '@modules/files/entity';
 import { fileEntityFactory } from '@modules/files/entity/testing';
 import { GroupEntity } from '@modules/group/entity';
 import { groupEntityFactory } from '@modules/group/testing';
 import { DashboardEntity } from '@modules/learnroom/repo/mikro-orm/dashboard.entity';
-import { DASHBOARD_REPO, IDashboardRepo } from '@modules/learnroom/repo/mikro-orm/dashboard.repo';
-import { ComponentProperties, ComponentType, LessonEntity } from '@modules/lesson/repo';
+import { DASHBOARD_REPO, type IDashboardRepo } from '@modules/learnroom/repo/mikro-orm/dashboard.repo';
+import { type ComponentProperties, ComponentType, LessonEntity } from '@modules/lesson/repo';
 import { lessonFactory } from '@modules/lesson/testing';
 import { schoolNewsFactory } from '@modules/news/testing';
 import { ExternalToolPseudonymEntity } from '@modules/pseudonym/entity';
@@ -34,13 +34,13 @@ import { submissionFactory, taskFactory } from '@modules/task/testing';
 import { TeamEntity } from '@modules/team/repo';
 import { teamFactory, teamUserFactory } from '@modules/team/testing';
 import { User } from '@modules/user/repo';
-import { INestApplication } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
+import { USER_CONFIG_TOKEN } from '@modules/user/user.config';
+import { type INestApplication } from '@nestjs/common';
+import { Test, type TestingModule } from '@nestjs/testing';
 import { cleanupCollections } from '@testing/cleanup-collections';
 import { UserAndAccountTestFactory } from '@testing/factory/user-and-account.test.factory';
-import { TestApiClient } from '@testing/test-api-client';
+import { type TestApiClient, TestApiClientBuilder } from '@testing/test-api-client-builder';
 import { deletionRequestEntityFactory } from '../../../repo/entity/testing';
-import { USER_CONFIG_TOKEN } from '@modules/user/user.config';
 
 const baseRouteName = '/deletionExecutions';
 
@@ -85,7 +85,7 @@ describe(`deletionExecution (api)`, () => {
 	describe('executeDeletions', () => {
 		describe('when execute deletionRequests with default limit', () => {
 			const setup = async () => {
-				testApiClient = new TestApiClient(app, baseRouteName, API_KEY, true);
+				testApiClient = new TestApiClientBuilder(app, baseRouteName).withApiKey(API_KEY).build();
 				const deletionRequest = deletionRequestEntityFactory.build();
 
 				await em.persist(deletionRequest).flush();
@@ -120,7 +120,7 @@ describe(`deletionExecution (api)`, () => {
 
 		describe('without token', () => {
 			it('should refuse with wrong token', async () => {
-				testApiClient = new TestApiClient(app, baseRouteName, 'thisisaninvalidapikey', true);
+				testApiClient = new TestApiClientBuilder(app, baseRouteName).withApiKey('thisisaninvalidapikey').build();
 
 				const response = await testApiClient.post('');
 
@@ -128,7 +128,7 @@ describe(`deletionExecution (api)`, () => {
 			});
 
 			it('should refuse without token', async () => {
-				testApiClient = new TestApiClient(app, baseRouteName, '', true);
+				testApiClient = new TestApiClientBuilder(app, baseRouteName).withApiKey('').build();
 
 				const response = await testApiClient.post('');
 
@@ -263,7 +263,7 @@ describe(`deletionExecution (api)`, () => {
 				await em.persist([deletionRequestsTeacher, deletionRequestsStudent]).flush();
 				const deletionRequestIds = [deletionRequestsTeacher.id, deletionRequestsStudent.id];
 
-				testApiClient = new TestApiClient(app, baseRouteName, API_KEY, true);
+				testApiClient = new TestApiClientBuilder(app, baseRouteName).withApiKey(API_KEY).build();
 
 				return {
 					deletionRequestIds,
@@ -423,7 +423,7 @@ describe(`deletionExecution (api)`, () => {
 
 	describe('findAllItemsToExecute', () => {
 		const setup = async () => {
-			testApiClient = new TestApiClient(app, baseRouteName, API_KEY, true);
+			testApiClient = new TestApiClientBuilder(app, baseRouteName).withApiKey(API_KEY).build();
 
 			const deletionRequest = deletionRequestEntityFactory.build();
 

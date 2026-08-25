@@ -8,20 +8,19 @@ import { RoomRolesTestFactory } from '@modules/room/testing/room-roles.test.fact
 import { schoolEntityFactory } from '@modules/school/testing';
 import { ServerTestModule } from '@modules/server/server.app.module';
 import { userFactory } from '@modules/user/testing';
-import { INestApplication } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
+import { type INestApplication } from '@nestjs/common';
+import { Test, type TestingModule } from '@nestjs/testing';
 import { cleanupCollections } from '@testing/cleanup-collections';
-import { TestApiClient } from '@testing/test-api-client';
+import { TestApiClientBuilder } from '@testing/test-api-client-builder';
 import { BoardExternalReferenceType, BoardLayout } from '../../domain';
 import { BoardNodeEntity } from '../../repo';
-import { CreateBoardBodyParams } from '../dto';
+import { type CreateBoardBodyParams } from '../dto';
 
 const baseRouteName = '/boards';
 
 describe(`create board in room (api)`, () => {
 	let app: INestApplication;
 	let em: EntityManager;
-	let testApiClient: TestApiClient;
 
 	beforeAll(async () => {
 		const module: TestingModule = await Test.createTestingModule({
@@ -31,7 +30,6 @@ describe(`create board in room (api)`, () => {
 		app = module.createNestApplication();
 		await app.init();
 		em = module.get(EntityManager);
-		testApiClient = new TestApiClient(app, baseRouteName);
 	});
 
 	afterAll(async () => {
@@ -67,7 +65,7 @@ describe(`create board in room (api)`, () => {
 				await em.persist([account, user, roomEditorRole, userGroup, room, roomMembership]).flush();
 				em.clear();
 
-				const loggedInClient = await testApiClient.login(account);
+				const loggedInClient = await new TestApiClientBuilder(app, baseRouteName).build(account);
 
 				return { loggedInClient, room };
 			};
@@ -205,7 +203,7 @@ describe(`create board in room (api)`, () => {
 				await em.persist([account, user, roomViewerRole, userGroup, room, roomMembership]).flush();
 				em.clear();
 
-				const loggedInClient = await testApiClient.login(account);
+				const loggedInClient = await new TestApiClientBuilder(app, baseRouteName).build(account);
 
 				return { loggedInClient, room };
 			};
@@ -234,7 +232,7 @@ describe(`create board in room (api)`, () => {
 				await em.persist([account, user, room]).flush();
 				em.clear();
 
-				const loggedInClient = await testApiClient.login(account);
+				const loggedInClient = await new TestApiClientBuilder(app, baseRouteName).build(account);
 
 				return { loggedInClient, room };
 			};
@@ -273,7 +271,7 @@ describe(`create board in room (api)`, () => {
 			await em.persist([account, user, roomEditorRole, userGroup, room, roomMembership]).flush();
 			em.clear();
 
-			const loggedInClient = await testApiClient.login(account);
+			const loggedInClient = await new TestApiClientBuilder(app, baseRouteName).build(account);
 
 			return { loggedInClient, room };
 		};

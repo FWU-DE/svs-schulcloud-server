@@ -17,7 +17,7 @@ export class AiSuggestionService {
 		return this.config.apiKey.length > 0;
 	}
 
-	public get checksLinks(): boolean {
+	get checksLinks(): boolean {
 		return this.config.checkLinks;
 	}
 

@@ -1,7 +1,7 @@
-import { createMock, DeepMocked } from '@golevelup/ts-jest';
-import { AiSuggestionService } from '@modules/ai-suggestion';
+import { createMock, type DeepMocked } from '@golevelup/ts-jest';
+import { type AiSuggestionService } from '@modules/ai-suggestion';
 import { cardFactory, richTextElementFactory } from '../testing';
-import { BoardAiCard, BoardAiCardsService } from './board-ai-cards.service';
+import { type BoardAiCard, BoardAiCardsService } from './board-ai-cards.service';
 
 describe('BoardAiCardsService', () => {
 	const setup = (options: { lines?: unknown[]; checkLinks?: boolean; deadLinks?: string[] } = {}) => {
@@ -128,7 +128,9 @@ describe('BoardAiCardsService', () => {
 
 		it('should stop after six cards, however long the model keeps writing', async () => {
 			const { service } = setup({
-				lines: Array.from({ length: 12 }, (_unused, index) => ({ type: 'card', title: `Karte ${index + 1}` })),
+				lines: Array.from({ length: 12 }, (_unused, index) => {
+					return { type: 'card', title: `Karte ${index + 1}` };
+				}),
 			});
 
 			const cards = await collect(service.generate([sourceCard()], 'free', 'Schreib viel'));
