@@ -13,6 +13,10 @@ export enum BoardNodeType {
 	VIDEO_CONFERENCE_ELEMENT = 'video-conference-element',
 	H5P_ELEMENT = 'h5p-element',
 	POLL_ELEMENT = 'poll-element',
+	DEADLINE_ELEMENT = 'deadline-element',
+	CODE_ELEMENT = 'code-element',
+	FORMULA_ELEMENT = 'formula-element',
+	CHECKLIST_ELEMENT = 'checklist-element',
 
 	MEDIA_BOARD = 'media-board',
 	MEDIA_LINE = 'media-line',

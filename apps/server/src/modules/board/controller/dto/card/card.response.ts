@@ -11,6 +11,10 @@ import {
 	FileFolderElementResponse,
 	H5pElementResponse,
 	LinkElementResponse,
+	ChecklistElementResponse,
+	CodeElementResponse,
+	DeadlineElementResponse,
+	FormulaElementResponse,
 	PollElementResponse,
 	RichTextElementResponse,
 	VideoConferenceElementResponse,
@@ -32,7 +36,11 @@ import { Colors } from '../../../domain';
 	VideoConferenceElementResponse,
 	FileFolderElementResponse,
 	H5pElementResponse,
-	PollElementResponse
+	PollElementResponse,
+	DeadlineElementResponse,
+	CodeElementResponse,
+	FormulaElementResponse,
+	ChecklistElementResponse
 )
 export class CardResponse {
 	constructor({
@@ -87,6 +95,10 @@ export class CardResponse {
 				{ $ref: getSchemaPath(FileFolderElementResponse) },
 				{ $ref: getSchemaPath(H5pElementResponse) },
 				{ $ref: getSchemaPath(PollElementResponse) },
+				{ $ref: getSchemaPath(DeadlineElementResponse) },
+				{ $ref: getSchemaPath(CodeElementResponse) },
+				{ $ref: getSchemaPath(FormulaElementResponse) },
+				{ $ref: getSchemaPath(ChecklistElementResponse) },
 			],
 		},
 	})

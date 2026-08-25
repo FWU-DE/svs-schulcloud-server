@@ -8,6 +8,10 @@ import {
 	ExternalToolContentBody,
 	FileContentBody,
 	FileFolderContentBody,
+	ChecklistContentBody,
+	CodeContentBody,
+	DeadlineContentBody,
+	FormulaContentBody,
 	H5pContentBody,
 	LinkContentBody,
 	PollContentBody,
@@ -16,6 +20,10 @@ import {
 } from '../../controller/dto';
 import type {
 	AnyContentElement,
+	ChecklistElement,
+	CodeElement,
+	DeadlineElement,
+	FormulaElement,
 	PollElement,
 	DrawingElement,
 	ExternalToolElement,
@@ -32,6 +40,10 @@ import {
 	isFileElement,
 	isFileFolderElement,
 	isH5pElement,
+	isChecklistElement,
+	isCodeElement,
+	isDeadlineElement,
+	isFormulaElement,
 	isLinkElement,
 	isPollElement,
 	isRichTextElement,
@@ -63,6 +75,14 @@ export class ContentElementUpdateService {
 			this.updateH5pElement(element, content);
 		} else if (isPollElement(element) && content instanceof PollContentBody) {
 			this.updatePollElement(element, content);
+		} else if (isDeadlineElement(element) && content instanceof DeadlineContentBody) {
+			this.updateDeadlineElement(element, content);
+		} else if (isCodeElement(element) && content instanceof CodeContentBody) {
+			this.updateCodeElement(element, content);
+		} else if (isFormulaElement(element) && content instanceof FormulaContentBody) {
+			this.updateFormulaElement(element, content);
+		} else if (isChecklistElement(element) && content instanceof ChecklistContentBody) {
+			this.updateChecklistElement(element, content);
 		} else {
 			throw new Error(`Cannot update element of type: '${element.constructor.name}'`);
 		}
@@ -116,6 +136,33 @@ export class ContentElementUpdateService {
 
 	public updateFileFolderElement(element: FileFolderElement, content: FileFolderContentBody): void {
 		element.title = content.title;
+	}
+
+	public updateDeadlineElement(element: DeadlineElement, content: DeadlineContentBody): void {
+		element.title = sanitizeRichText(content.title, InputFormat.PLAIN_TEXT);
+		element.dueDate = content.dueDate ? new Date(content.dueDate) : undefined;
+	}
+
+	/**
+	 * The code is stored verbatim, not sanitised: mangling a snippet is the one thing a code
+	 * block must not do. It is rendered as text, never as markup.
+	 */
+	public updateCodeElement(element: CodeElement, content: CodeContentBody): void {
+		element.code = content.code;
+		element.language = sanitizeRichText(content.language, InputFormat.PLAIN_TEXT);
+	}
+
+	/** LaTeX source, likewise stored verbatim and rendered by the client's math renderer. */
+	public updateFormulaElement(element: FormulaElement, content: FormulaContentBody): void {
+		element.latex = content.latex;
+	}
+
+	public updateChecklistElement(element: ChecklistElement, content: ChecklistContentBody): void {
+		element.title = sanitizeRichText(content.title, InputFormat.PLAIN_TEXT);
+		element.setItems(
+			content.items.map((item) => ({ id: item.id, text: sanitizeRichText(item.text, InputFormat.PLAIN_TEXT) })),
+			() => new ObjectId().toHexString()
+		);
 	}
 
 	public updatePollElement(element: PollElement, content: PollContentBody): void {

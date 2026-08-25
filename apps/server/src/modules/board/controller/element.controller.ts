@@ -27,6 +27,16 @@ import {
 	FileElementResponse,
 	FileFolderElementContentBody,
 	FileFolderElementResponse,
+	ChecklistElementContentBody,
+	ChecklistElementResponse,
+	ChecklistItemCheckedBodyParams,
+	ChecklistItemUrlParams,
+	CodeElementContentBody,
+	CodeElementResponse,
+	DeadlineElementContentBody,
+	DeadlineElementResponse,
+	FormulaElementContentBody,
+	FormulaElementResponse,
 	H5pElementContentBody,
 	H5pElementResponse,
 	PollElementContentBody,
@@ -41,7 +51,12 @@ import {
 	VideoConferenceElementContentBody,
 	VideoConferenceElementResponse,
 } from './dto';
-import { ContentElementResponseFactory, ParentNodeInfoResponseMapper, PollElementResponseMapper } from './mapper';
+import {
+	ChecklistElementResponseMapper,
+	ContentElementResponseFactory,
+	ParentNodeInfoResponseMapper,
+	PollElementResponseMapper,
+} from './mapper';
 
 @ApiTags('Board Element')
 @JwtAuthentication()
@@ -108,7 +123,11 @@ export class ElementController {
 		VideoConferenceElementContentBody,
 		FileFolderElementContentBody,
 		H5pElementContentBody,
-		PollElementContentBody
+		PollElementContentBody,
+		DeadlineElementContentBody,
+		CodeElementContentBody,
+		FormulaElementContentBody,
+		ChecklistElementContentBody
 	)
 	@ApiResponse({
 		status: 200,
@@ -123,6 +142,10 @@ export class ElementController {
 				{ $ref: getSchemaPath(FileFolderElementResponse) },
 				{ $ref: getSchemaPath(H5pElementResponse) },
 				{ $ref: getSchemaPath(PollElementResponse) },
+				{ $ref: getSchemaPath(DeadlineElementResponse) },
+				{ $ref: getSchemaPath(CodeElementResponse) },
+				{ $ref: getSchemaPath(FormulaElementResponse) },
+				{ $ref: getSchemaPath(ChecklistElementResponse) },
 			],
 		},
 	})
@@ -171,6 +194,29 @@ export class ElementController {
 		const response = PollElementResponseMapper.getInstance().mapToResponse(element, viewContext);
 
 		return response;
+	}
+
+	@ApiOperation({ summary: 'Tick or untick an item of a checklist element.' })
+	@ApiResponse({ status: 200, type: ChecklistElementResponse })
+	@ApiResponse({ status: 400, type: ApiValidationError })
+	@ApiResponse({ status: 403, type: ForbiddenException })
+	@ApiResponse({ status: 404, type: NotFoundException })
+	@ApiResponse({ status: 422, type: UnprocessableEntityException })
+	@HttpCode(200)
+	@Put(':contentElementId/checklist/:itemId')
+	public async setChecklistItemChecked(
+		@Param() urlParams: ChecklistItemUrlParams,
+		@Body() bodyParams: ChecklistItemCheckedBodyParams,
+		@CurrentUser() currentUser: ICurrentUser
+	): Promise<ChecklistElementResponse> {
+		const element = await this.elementUc.setChecklistItemChecked(
+			currentUser.userId,
+			urlParams.contentElementId,
+			urlParams.itemId,
+			bodyParams.checked
+		);
+
+		return ChecklistElementResponseMapper.getInstance().mapToResponse(element);
 	}
 
 	@ApiOperation({ summary: 'Delete a single content element.' })

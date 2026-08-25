@@ -7,6 +7,10 @@ import { type FileElement, isFileElement } from '../file-element.do';
 import { type FileFolderElement, isFileFolderElement } from '../file-folder-element.do';
 import { type H5pElement, isH5pElement } from '../h5p-element.do';
 import { isLinkElement, type LinkElement } from '../link-element.do';
+import { type ChecklistElement, isChecklistElement } from '../checklist-element.do';
+import { type CodeElement, isCodeElement } from '../code-element.do';
+import { type DeadlineElement, isDeadlineElement } from '../deadline-element.do';
+import { type FormulaElement, isFormulaElement } from '../formula-element.do';
 import { isPollElement, type PollElement } from '../poll-element.do';
 import { isRichTextElement, type RichTextElement } from '../rich-text-element.do';
 import { isVideoConferenceElement, type VideoConferenceElement } from '../video-conference-element.do';
@@ -25,7 +29,11 @@ export type AnyContentElement =
 	| DeletedElement
 	| VideoConferenceElement
 	| H5pElement
-	| PollElement;
+	| PollElement
+	| DeadlineElement
+	| CodeElement
+	| FormulaElement
+	| ChecklistElement;
 
 export const isContentElement = (boardNode: AnyBoardNode): boardNode is AnyContentElement => {
 	const result: boolean =
@@ -39,7 +47,11 @@ export const isContentElement = (boardNode: AnyBoardNode): boardNode is AnyConte
 		isDeletedElement(boardNode) ||
 		isVideoConferenceElement(boardNode) ||
 		isH5pElement(boardNode) ||
-		isPollElement(boardNode);
+		isPollElement(boardNode) ||
+		isDeadlineElement(boardNode) ||
+		isCodeElement(boardNode) ||
+		isFormulaElement(boardNode) ||
+		isChecklistElement(boardNode);
 
 	return result;
 };

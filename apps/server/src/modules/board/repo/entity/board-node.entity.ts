@@ -9,6 +9,7 @@ import {
 	CardComment,
 	CardReaction,
 	CardReactionType,
+	ChecklistItem,
 	ContentElementType,
 	Colors,
 	PollOption,
@@ -167,4 +168,27 @@ export class BoardNodeEntity extends BaseEntityWithTimestamps implements BoardNo
 
 	@Property({ type: 'string', nullable: true })
 	voterSalt: string | undefined;
+
+	// DeadlineElement
+	// --------------------------------------------------------------------------
+	@Property({ type: 'Date', nullable: true })
+	dueDate: Date | undefined;
+
+	// CodeElement
+	// --------------------------------------------------------------------------
+	@Property({ type: 'string', nullable: true })
+	code: string | undefined;
+
+	@Property({ type: 'string', nullable: true })
+	language: string | undefined;
+
+	// FormulaElement
+	// --------------------------------------------------------------------------
+	@Property({ type: 'string', nullable: true })
+	latex: string | undefined;
+
+	// ChecklistElement
+	// --------------------------------------------------------------------------
+	@Property({ type: 'json', nullable: true })
+	items: ChecklistItem[] | undefined;
 }

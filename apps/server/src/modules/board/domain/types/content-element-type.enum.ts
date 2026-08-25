@@ -10,4 +10,8 @@ export enum ContentElementType {
 	DELETED = 'deleted',
 	H5P = 'h5p',
 	POLL = 'poll',
+	DEADLINE = 'deadline',
+	CODE = 'code',
+	FORMULA = 'formula',
+	CHECKLIST = 'checklist',
 }

@@ -12,6 +12,10 @@ import { FileElement } from './file-element.do';
 import { FileFolderElement } from './file-folder-element.do';
 import { H5pElement } from './h5p-element.do';
 import { LinkElement } from './link-element.do';
+import { ChecklistElement } from './checklist-element.do';
+import { CodeElement } from './code-element.do';
+import { DeadlineElement } from './deadline-element.do';
+import { FormulaElement } from './formula-element.do';
 import { ROOT_PATH } from './path-utils';
 import { PollElement } from './poll-element.do';
 import { RichTextElement } from './rich-text-element.do';
@@ -133,6 +137,32 @@ export class BoardNodeFactory {
 					resultsReleased: false,
 					votes: [],
 					voterSalt: randomBytes(16).toString('hex'),
+				});
+				break;
+			case ContentElementType.DEADLINE:
+				element = new DeadlineElement({
+					...this.getBaseProps(),
+					title: '',
+				});
+				break;
+			case ContentElementType.CODE:
+				element = new CodeElement({
+					...this.getBaseProps(),
+					code: '',
+					language: 'plaintext',
+				});
+				break;
+			case ContentElementType.FORMULA:
+				element = new FormulaElement({
+					...this.getBaseProps(),
+					latex: '',
+				});
+				break;
+			case ContentElementType.CHECKLIST:
+				element = new ChecklistElement({
+					...this.getBaseProps(),
+					title: '',
+					items: [],
 				});
 				break;
 			case ContentElementType.H5P:

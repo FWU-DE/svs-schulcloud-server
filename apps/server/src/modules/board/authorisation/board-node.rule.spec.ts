@@ -791,6 +791,7 @@ describe(BoardNodeRule.name, () => {
 
 					// element / pollElement
 					voteInPoll: true,
+					checkChecklistItem: true,
 
 					// element / videoConferenceElement
 					manageVideoConference: true,
@@ -884,6 +885,7 @@ describe(BoardNodeRule.name, () => {
 
 					// element / pollElement
 					voteInPoll: true,
+					checkChecklistItem: true,
 
 					// element / videoConferenceElement
 					manageVideoConference: true,
@@ -978,6 +980,7 @@ describe(BoardNodeRule.name, () => {
 
 					// element / pollElement
 					voteInPoll: true,
+					checkChecklistItem: true,
 
 					// element / videoConferenceElement
 					manageVideoConference: false,
@@ -1085,6 +1088,7 @@ describe(BoardNodeRule.name, () => {
 
 					// element / pollElement
 					voteInPoll: false,
+					checkChecklistItem: false,
 
 					// element / videoConferenceElement
 					manageVideoConference: false,

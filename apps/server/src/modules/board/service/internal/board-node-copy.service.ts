@@ -28,6 +28,10 @@ import {
 	FileFolderElementFactory,
 	getBoardNodeType,
 	H5pElement,
+	ChecklistElement,
+	CodeElement,
+	DeadlineElement,
+	FormulaElement,
 	PollElement,
 	handleNonExhaustiveSwitch,
 	LinkElement,
@@ -104,6 +108,18 @@ export class BoardNodeCopyService {
 				break;
 			case BoardNodeType.FILE_FOLDER_ELEMENT:
 				result = await this.copyFileFolderElement(boardNode as FileFolderElement, context);
+				break;
+			case BoardNodeType.DEADLINE_ELEMENT:
+				result = await this.copyPlainElement(boardNode as DeadlineElement, DeadlineElement, CopyElementType.DEADLINE_ELEMENT);
+				break;
+			case BoardNodeType.CODE_ELEMENT:
+				result = await this.copyPlainElement(boardNode as CodeElement, CodeElement, CopyElementType.CODE_ELEMENT);
+				break;
+			case BoardNodeType.FORMULA_ELEMENT:
+				result = await this.copyPlainElement(boardNode as FormulaElement, FormulaElement, CopyElementType.FORMULA_ELEMENT);
+				break;
+			case BoardNodeType.CHECKLIST_ELEMENT:
+				result = await this.copyChecklistElement(boardNode as ChecklistElement);
 				break;
 			case BoardNodeType.POLL_ELEMENT:
 				result = await this.copyPollElement(boardNode as PollElement);
@@ -442,6 +458,44 @@ export class BoardNodeCopyService {
 		};
 
 		return Promise.resolve(result);
+	}
+
+	/** These elements carry no state that a copy would have to reset. */
+	private copyPlainElement<T extends DeadlineElement | CodeElement | FormulaElement>(
+		original: T,
+		Constructor: new (props: ReturnType<T['getProps']>) => T,
+		type: CopyElementType
+	): Promise<CopyStatus> {
+		const copy = new Constructor({
+			...original.getProps(),
+			...this.buildSpecificProps([]),
+		} as ReturnType<T['getProps']>);
+
+		return Promise.resolve({
+			copyEntity: copy,
+			type,
+			status: CopyStatusEnum.SUCCESS,
+			elements: [],
+		});
+	}
+
+	/**
+	 * A copied checklist starts unticked: the copy is a fresh task, not a record of what the
+	 * original group already did.
+	 */
+	private copyChecklistElement(original: ChecklistElement): Promise<CopyStatus> {
+		const copy = new ChecklistElement({
+			...original.getProps(),
+			...this.buildSpecificProps([]),
+			items: original.items.map((item) => ({ ...item, checked: false, checkedAt: undefined })),
+		});
+
+		return Promise.resolve({
+			copyEntity: copy,
+			type: CopyElementType.CHECKLIST_ELEMENT,
+			status: CopyStatusEnum.SUCCESS,
+			elements: [],
+		});
 	}
 
 	/**

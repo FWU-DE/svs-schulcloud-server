@@ -6,6 +6,10 @@ import type { FileElementResponse } from './file-element.response';
 import type { FileFolderElementResponse } from './file-folder-element.response';
 import type { H5pElementResponse } from './h5p-element.response';
 import type { LinkElementResponse } from './link-element.response';
+import type { ChecklistElementResponse } from './checklist-element.response';
+import type { CodeElementResponse } from './code-element.response';
+import type { DeadlineElementResponse } from './deadline-element.response';
+import type { FormulaElementResponse } from './formula-element.response';
 import type { PollElementResponse } from './poll-element.response';
 import type { RichTextElementResponse } from './rich-text-element.response';
 import type { VideoConferenceElementResponse } from './video-conference-element.response';
@@ -21,4 +25,8 @@ export type AnyContentElementResponse =
 	| VideoConferenceElementResponse
 	| FileFolderElementResponse
 	| H5pElementResponse
-	| PollElementResponse;
+	| PollElementResponse
+	| DeadlineElementResponse
+	| CodeElementResponse
+	| FormulaElementResponse
+	| ChecklistElementResponse;

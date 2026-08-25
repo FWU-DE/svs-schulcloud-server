@@ -9,8 +9,10 @@ import { AnyElementContentBody } from '../controller/dto';
 import {
 	AnyContentElement,
 	BoardNodeFactory,
+	type ChecklistElement,
 	ContentElementWithParentHierarchy,
 	type BoardViewContext,
+	isChecklistElement,
 	isPollElement,
 	PollElement,
 } from '../domain';
@@ -94,6 +96,33 @@ export class ElementUc {
 		throwForbiddenIfFalse(this.boardNodeRule.can('updateElement', user, boardNodeAuthorizable));
 
 		await this.boardNodeService.updateContent(element, content);
+
+		return element;
+	}
+
+	/**
+	 * Ticking a shared checklist item, like voting, needs read access rather than write access:
+	 * the point is that participants can record progress on a board they may not edit.
+	 */
+	public async setChecklistItemChecked(
+		userId: EntityId,
+		elementId: EntityId,
+		itemId: string,
+		checked: boolean
+	): Promise<ChecklistElement> {
+		const user = await this.authorizationService.getUserWithPermissions(userId);
+		const element = await this.boardNodeService.findContentElementById(elementId);
+
+		if (!isChecklistElement(element)) {
+			throw new UnprocessableEntityException(`Element '${elementId}' is not a checklist`);
+		}
+
+		const boardNode = await this.boardNodeService.findRoot(element);
+		const boardNodeAuthorizable = await this.boardNodeAuthorizableService.getBoardAuthorizable(boardNode);
+
+		throwForbiddenIfFalse(this.boardNodeRule.can('checkChecklistItem', user, boardNodeAuthorizable));
+
+		await this.boardNodeService.setChecklistItemChecked(element, itemId, checked);
 
 		return element;
 	}

@@ -8,6 +8,7 @@ export * from './board-node-type.enum';
 export * from './content-element-type.enum';
 export * from './colors.enum';
 export * from './card-comment';
+export * from './checklist';
 export * from './card-reaction';
 export * from './board-view-context';
 export * from './poll';

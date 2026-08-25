@@ -9,6 +9,7 @@ import {
 	BoardExternalReferenceType,
 	Card,
 	CardReactionType,
+	ChecklistElement,
 	ColumnBoard,
 	isAnyMediaElement,
 	isContentElement,
@@ -97,6 +98,12 @@ export class BoardNodeService {
 
 	public async saveCard(card: Card): Promise<void> {
 		await this.boardNodeRepo.save(card);
+	}
+
+	public async setChecklistItemChecked(element: ChecklistElement, itemId: string, checked: boolean): Promise<void> {
+		element.setChecked(itemId, checked);
+
+		await this.boardNodeRepo.save(element);
 	}
 
 	public async voteInPoll(element: PollElement, userId: EntityId, optionIds: string[]): Promise<void> {

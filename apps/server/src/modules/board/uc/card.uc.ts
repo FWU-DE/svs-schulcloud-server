@@ -54,7 +54,13 @@ const reactionTypeOf = (authorizable: BoardNodeAuthorizable): CardReactionType =
 };
 
 /** The element types behind FEATURE_COLUMN_BOARD_INTERACTIVE_ELEMENTS_ENABLED. */
-const INTERACTIVE_ELEMENT_TYPES: ContentElementType[] = [ContentElementType.POLL];
+const INTERACTIVE_ELEMENT_TYPES: ContentElementType[] = [
+	ContentElementType.POLL,
+	ContentElementType.DEADLINE,
+	ContentElementType.CODE,
+	ContentElementType.FORMULA,
+	ContentElementType.CHECKLIST,
+];
 
 /**
  * A card plus what its elements may show this particular user — see {@link BoardViewContext}.

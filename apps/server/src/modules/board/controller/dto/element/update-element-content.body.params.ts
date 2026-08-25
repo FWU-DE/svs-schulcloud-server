@@ -5,6 +5,7 @@ import {
 	ArrayMaxSize,
 	ArrayMinSize,
 	IsArray,
+	IsDateString,
 	IsBoolean,
 	IsEnum,
 	IsMongoId,
@@ -13,7 +14,7 @@ import {
 	MaxLength,
 	ValidateNested,
 } from 'class-validator';
-import { ContentElementType, PollResultVisibility } from '../../../domain/types';
+import { ContentElementType, MAX_CHECKLIST_ITEMS, PollResultVisibility } from '../../../domain/types';
 
 abstract class ElementContentBody {
 	@IsEnum(ContentElementType)
@@ -231,6 +232,99 @@ export class PollElementContentBody extends ElementContentBody {
 	content!: PollContentBody;
 }
 
+export class DeadlineContentBody {
+	@IsString()
+	@MaxLength(200)
+	@ApiProperty()
+	title!: string;
+
+	@IsDateString()
+	@IsOptional()
+	@ApiPropertyOptional({ type: String, format: 'date-time', description: 'Omit to clear the date.' })
+	dueDate?: string;
+}
+
+export class DeadlineElementContentBody extends ElementContentBody {
+	@ApiProperty({ type: () => ContentElementType.DEADLINE })
+	type!: ContentElementType.DEADLINE;
+
+	@ValidateNested()
+	@ApiProperty()
+	content!: DeadlineContentBody;
+}
+
+export class CodeContentBody {
+	@IsString()
+	@MaxLength(20000)
+	@ApiProperty()
+	code!: string;
+
+	@IsString()
+	@MaxLength(40)
+	@ApiProperty()
+	language!: string;
+}
+
+export class CodeElementContentBody extends ElementContentBody {
+	@ApiProperty({ type: () => ContentElementType.CODE })
+	type!: ContentElementType.CODE;
+
+	@ValidateNested()
+	@ApiProperty()
+	content!: CodeContentBody;
+}
+
+export class FormulaContentBody {
+	@IsString()
+	@MaxLength(5000)
+	@ApiProperty()
+	latex!: string;
+}
+
+export class FormulaElementContentBody extends ElementContentBody {
+	@ApiProperty({ type: () => ContentElementType.FORMULA })
+	type!: ContentElementType.FORMULA;
+
+	@ValidateNested()
+	@ApiProperty()
+	content!: FormulaContentBody;
+}
+
+export class ChecklistItemBody {
+	@IsMongoId()
+	@IsOptional()
+	@ApiPropertyOptional({ description: 'Omit to add a new item. Keeping the id keeps its checked state.' })
+	id?: string;
+
+	@IsString()
+	@MaxLength(500)
+	@ApiProperty()
+	text!: string;
+}
+
+export class ChecklistContentBody {
+	@IsString()
+	@MaxLength(200)
+	@ApiProperty()
+	title!: string;
+
+	@IsArray()
+	@ArrayMaxSize(MAX_CHECKLIST_ITEMS)
+	@ValidateNested({ each: true })
+	@Type(() => ChecklistItemBody)
+	@ApiProperty({ type: [ChecklistItemBody] })
+	items!: ChecklistItemBody[];
+}
+
+export class ChecklistElementContentBody extends ElementContentBody {
+	@ApiProperty({ type: () => ContentElementType.CHECKLIST })
+	type!: ContentElementType.CHECKLIST;
+
+	@ValidateNested()
+	@ApiProperty()
+	content!: ChecklistContentBody;
+}
+
 export type AnyElementContentBody =
 	| FileContentBody
 	| DrawingContentBody
@@ -240,7 +334,11 @@ export type AnyElementContentBody =
 	| VideoConferenceContentBody
 	| FileFolderContentBody
 	| H5pContentBody
-	| PollContentBody;
+	| PollContentBody
+	| DeadlineContentBody
+	| CodeContentBody
+	| FormulaContentBody
+	| ChecklistContentBody;
 
 export class UpdateElementContentBodyParams {
 	@ValidateNested()
@@ -257,6 +355,10 @@ export class UpdateElementContentBodyParams {
 				{ value: FileFolderElementContentBody, name: ContentElementType.FILE_FOLDER },
 				{ value: H5pElementContentBody, name: ContentElementType.H5P },
 				{ value: PollElementContentBody, name: ContentElementType.POLL },
+				{ value: DeadlineElementContentBody, name: ContentElementType.DEADLINE },
+				{ value: CodeElementContentBody, name: ContentElementType.CODE },
+				{ value: FormulaElementContentBody, name: ContentElementType.FORMULA },
+				{ value: ChecklistElementContentBody, name: ContentElementType.CHECKLIST },
 			],
 		},
 		keepDiscriminatorProperty: true,
@@ -272,6 +374,10 @@ export class UpdateElementContentBodyParams {
 			{ $ref: getSchemaPath(FileFolderElementContentBody) },
 			{ $ref: getSchemaPath(H5pElementContentBody) },
 			{ $ref: getSchemaPath(PollElementContentBody) },
+			{ $ref: getSchemaPath(DeadlineElementContentBody) },
+			{ $ref: getSchemaPath(CodeElementContentBody) },
+			{ $ref: getSchemaPath(FormulaElementContentBody) },
+			{ $ref: getSchemaPath(ChecklistElementContentBody) },
 		],
 	})
 	data!:
@@ -283,5 +389,9 @@ export class UpdateElementContentBodyParams {
 		| VideoConferenceElementContentBody
 		| FileFolderElementContentBody
 		| H5pElementContentBody
-		| PollElementContentBody;
+		| PollElementContentBody
+		| DeadlineElementContentBody
+		| CodeElementContentBody
+		| FormulaElementContentBody
+		| ChecklistElementContentBody;
 }

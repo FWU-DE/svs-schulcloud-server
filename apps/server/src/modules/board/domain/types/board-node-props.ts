@@ -5,6 +5,7 @@ import type { BoardExternalReference } from './board-external-reference';
 import type { BoardLayout } from './board-layout.enum';
 import type { CardComment } from './card-comment';
 import type { CardReaction, CardReactionType } from './card-reaction';
+import type { ChecklistItem } from './checklist';
 import type { ContentElementType } from './content-element-type.enum';
 import type { PollOption, PollResultVisibility, PollVote } from './poll';
 
@@ -97,6 +98,25 @@ export interface PollElementProps extends BoardNodeProps {
 	voterSalt: string;
 }
 
+export interface DeadlineElementProps extends BoardNodeProps {
+	title: string;
+	dueDate?: Date;
+}
+
+export interface CodeElementProps extends BoardNodeProps {
+	code: string;
+	language: string;
+}
+
+export interface FormulaElementProps extends BoardNodeProps {
+	latex: string;
+}
+
+export interface ChecklistElementProps extends BoardNodeProps {
+	title: string;
+	items: ChecklistItem[];
+}
+
 export interface MediaBoardProps extends BoardNodeProps {
 	context: BoardExternalReference;
 	backgroundColor: Colors;
@@ -132,4 +152,8 @@ export type AnyBoardNodeProps =
 	| DeletedElementProps
 	| H5pElementProps
 	| PollElementProps
+	| DeadlineElementProps
+	| CodeElementProps
+	| FormulaElementProps
+	| ChecklistElementProps
 	| MediaBoardNodeProps;

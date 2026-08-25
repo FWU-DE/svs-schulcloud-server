@@ -64,6 +64,9 @@ export const BoardOperationValues = [
 	// element / pollElement
 	'voteInPoll',
 
+	// element / checklistElement
+	'checkChecklistItem',
+
 	// element / videoConferenceElement
 	'manageVideoConference',
 
@@ -210,6 +213,10 @@ export class BoardNodeRule implements Rule<BoardNodeAuthorizable> {
 
 			// element / pollElement
 			voteInPoll: _canViewBoard,
+
+			// element / checklistElement
+			// Ticking a shared checklist is progress on a task, not an edit of the board.
+			checkChecklistItem: _canViewBoard,
 
 			// element / videoConferenceElement
 			manageVideoConference: canManageVideoConference,

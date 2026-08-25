@@ -11,6 +11,10 @@ import { FileFolderElement } from './file-folder-element.do';
 import { H5pElement } from './h5p-element.do';
 import { LinkElement } from './link-element.do';
 import { MediaBoard, MediaExternalToolElement, MediaLine } from './media-board';
+import { ChecklistElement } from './checklist-element.do';
+import { CodeElement } from './code-element.do';
+import { DeadlineElement } from './deadline-element.do';
+import { FormulaElement } from './formula-element.do';
 import { PollElement } from './poll-element.do';
 import { RichTextElement } from './rich-text-element.do';
 import { type AnyBoardNode, BoardNodeType } from './types';
@@ -35,6 +39,10 @@ const BoardNodeTypeToConstructor = {
 	[BoardNodeType.DELETED_ELEMENT]: DeletedElement,
 	[BoardNodeType.H5P_ELEMENT]: H5pElement,
 	[BoardNodeType.POLL_ELEMENT]: PollElement,
+	[BoardNodeType.DEADLINE_ELEMENT]: DeadlineElement,
+	[BoardNodeType.CODE_ELEMENT]: CodeElement,
+	[BoardNodeType.FORMULA_ELEMENT]: FormulaElement,
+	[BoardNodeType.CHECKLIST_ELEMENT]: ChecklistElement,
 } as const;
 
 export const getBoardNodeConstructor = <T extends BoardNodeType>(type: T): (typeof BoardNodeTypeToConstructor)[T] =>
