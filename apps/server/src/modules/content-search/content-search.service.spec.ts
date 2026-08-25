@@ -6,6 +6,7 @@ import { McpClientService } from './mcp-client.service';
 describe('ContentSearchService', () => {
 	const AMB = 'wss://amb-relay.edufeed.org';
 	const OERSI = 'wss://oersi.edufeed.org';
+	const SODIX = 'wss://sodix.edufeed.org';
 
 	const resource = (overrides: Record<string, unknown> = {}) => {
 		return {
@@ -26,13 +27,15 @@ describe('ContentSearchService', () => {
 
 	/** answers per relay, in the order the relays are configured */
 	const setup = (...perRelay: (unknown[] | Error)[]) => {
+		const relays = [AMB, OERSI, SODIX].slice(0, Math.max(perRelay.length, 2));
+
 		const config = new ContentSearchConfig();
-		config.relays = `${AMB},${OERSI}`;
+		config.relays = relays.join(',');
 
 		const mcpClientService: DeepMocked<McpClientService> = createMock<McpClientService>();
 		mcpClientService.callTool.mockImplementation((_name, args) => {
 			const relay = (args as { relays: string[] }).relays[0];
-			const answer = perRelay[relay === AMB ? 0 : 1];
+			const answer = perRelay[relays.indexOf(relay)];
 
 			return answer instanceof Error ? Promise.reject(answer) : Promise.resolve({ resources: answer ?? [] });
 		});
@@ -44,19 +47,23 @@ describe('ContentSearchService', () => {
 
 	describe('search', () => {
 		it('should ask every relay on its own', async () => {
-			const { service, mcpClientService } = setup([], []);
+			const { service, mcpClientService } = setup([], [], []);
 
 			await service.search('Fotosynthese');
 
-			expect(mcpClientService.callTool).toHaveBeenCalledTimes(2);
+			expect(mcpClientService.callTool).toHaveBeenCalledTimes(3);
 			expect(mcpClientService.callTool).toHaveBeenCalledWith(
 				'search_resources',
 				expect.objectContaining({ query: 'Fotosynthese', relays: [AMB] })
 			);
-			// oersi is an extra corpus the remote leaves out unless it is named
+			// oersi and sodix are extra corpora the remote leaves out unless they are named
 			expect(mcpClientService.callTool).toHaveBeenCalledWith(
 				'search_resources',
 				expect.objectContaining({ query: 'Fotosynthese', relays: [OERSI] })
+			);
+			expect(mcpClientService.callTool).toHaveBeenCalledWith(
+				'search_resources',
+				expect.objectContaining({ query: 'Fotosynthese', relays: [SODIX] })
 			);
 		});
 
@@ -103,6 +110,8 @@ describe('ContentSearchService', () => {
 			{ id: 'https://creativecommons.org/publicdomain/zero/1.0/', label: 'CC0' },
 			{ id: 'https://creativecommons.org/licenses/by/4.0/', label: 'CC BY' },
 			{ id: 'https://creativecommons.org/licenses/by-nc-nd/4.0/', label: 'CC BY-NC-ND' },
+			// not everything on the relays is creative commons
+			{ id: 'https://www.apache.org/licenses/LICENSE-2.0', label: 'Apache 2.0' },
 		])('should name the licence $label', async ({ id, label }) => {
 			const { service } = setup([resource({ license: { id } })], []);
 
@@ -136,16 +145,24 @@ describe('ContentSearchService', () => {
 			expect(results).toEqual([]);
 		});
 
-		describe('when both relays answer', () => {
+		describe('when several relays answer', () => {
 			it('should give every relay a share instead of filling up from the first', async () => {
 				const { service } = setup(
 					[named('amb 1'), named('amb 2'), named('amb 3'), named('amb 4')],
-					[named('oersi 1'), named('oersi 2'), named('oersi 3'), named('oersi 4')]
+					[named('oersi 1'), named('oersi 2'), named('oersi 3'), named('oersi 4')],
+					[named('sodix 1'), named('sodix 2'), named('sodix 3'), named('sodix 4')]
 				);
 
-				const results = await service.search('Mathematik', 4);
+				const results = await service.search('Mathematik', 6);
 
-				expect(results.map((result) => result.title)).toEqual(['amb 1', 'oersi 1', 'amb 2', 'oersi 2']);
+				expect(results.map((result) => result.title)).toEqual([
+					'amb 1',
+					'oersi 1',
+					'sodix 1',
+					'amb 2',
+					'oersi 2',
+					'sodix 2',
+				]);
 			});
 
 			it('should fill up from the other relay when one has little to offer', async () => {

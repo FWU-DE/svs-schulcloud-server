@@ -63,7 +63,7 @@ export class ContentSearchListResponse {
 	@ApiProperty({ type: [ContentSearchResultResponse] })
 	public data: ContentSearchResultResponse[];
 
-	@ApiProperty({ type: [String], description: 'The relays that were searched, oersi among them' })
+	@ApiProperty({ type: [String], description: 'The relays that were searched, oersi and sodix among them' })
 	public relays: string[];
 
 	constructor(data: ContentSearchResultResponse[], relays: string[]) {
@@ -81,7 +81,7 @@ export class ContentSearchController {
 	@ApiOperation({
 		summary: 'Search open educational resources',
 		description:
-			'Asks the public amb relay through its mcp server. Both the amb relay and the oersi relay are searched, because oersi is an extra corpus the remote server would otherwise leave out.',
+			'Asks the public amb relay through its mcp server. The amb, oersi and sodix relays are all searched, because oersi and sodix are extra corpora the remote server would otherwise leave out.',
 	})
 	@ApiResponse({ status: 200, type: ContentSearchListResponse })
 	@ApiResponse({ status: 400, type: ErrorResponse })

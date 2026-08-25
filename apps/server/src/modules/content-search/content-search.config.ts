@@ -11,13 +11,15 @@ export class ContentSearchConfig {
 	public mcpUrl = 'https://mcp.amb.edufeed.org/mcp';
 
 	/**
-	 * The relays the search runs against, separated by commas. The relay of the amb metadata is
-	 * searched by default, oersi is an extra corpus the server only reads when it is asked to -
-	 * so it has to be named here or its material never shows up.
+	 * The relays the search runs against, separated by commas. Only the amb relay is searched by
+	 * default; oersi and sodix are extra corpora the remote server reads solely when it is asked
+	 * to - so they have to be named here or their material never shows up. Both carry most of the
+	 * school material: for subjects like photosynthesis or fractions the amb relay alone answers
+	 * with nothing.
 	 */
 	@ConfigProperty('CONTENT_SEARCH_RELAYS')
 	@IsString()
-	public relays = 'wss://amb-relay.edufeed.org,wss://oersi.edufeed.org';
+	public relays = 'wss://amb-relay.edufeed.org,wss://oersi.edufeed.org,wss://sodix.edufeed.org';
 
 	@ConfigProperty('CONTENT_SEARCH_TIMEOUT_MS')
 	@IsNumber()

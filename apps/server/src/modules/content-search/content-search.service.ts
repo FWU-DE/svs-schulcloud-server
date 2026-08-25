@@ -74,6 +74,11 @@ const LICENSES: { pattern: string; label: string }[] = [
 	{ pattern: '/licenses/by-nc', label: 'CC BY-NC' },
 	{ pattern: '/licenses/by-sa', label: 'CC BY-SA' },
 	{ pattern: '/licenses/by', label: 'CC BY' },
+	{ pattern: '/publicdomain/mark', label: 'Public Domain' },
+	{ pattern: 'apache.org/licenses/LICENSE-2.0', label: 'Apache 2.0' },
+	{ pattern: 'opensource.org/licenses/MIT', label: 'MIT' },
+	{ pattern: 'gnu.org/licenses/gpl', label: 'GPL' },
+	{ pattern: 'opendatacommons.org/licenses/odbl', label: 'ODbL' },
 ];
 
 /**
