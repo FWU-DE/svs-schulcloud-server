@@ -1,24 +1,41 @@
 import { LegacyLogger } from '@infra/logger';
 import { AuthorizationService } from '@modules/authorization';
-import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, UnprocessableEntityException } from '@nestjs/common';
 import { FeatureDisabledLoggableException } from '@shared/common/loggable-exception';
 import { EntityId } from '@shared/domain/types';
 
 import { throwForbiddenIfFalse } from '@shared/common/utils';
 import { BoardNodeRule } from '../authorisation/board-node.rule';
-import { AnyContentElement, BoardNodeFactory, Card, Colors, ContentElementType, type ElementViewContext } from '../domain';
+import {
+	AnyContentElement,
+	type BoardNodeAuthorizable,
+	BoardNodeFactory,
+	type BoardViewContext,
+	Card,
+	CardReactionType,
+	Colors,
+	ContentElementType,
+	isColumnBoard,
+} from '../domain';
 import { BOARD_CONFIG_TOKEN, BoardConfig } from '../board.config';
 import { BoardNodeAuthorizableService, BoardNodeService } from '../service';
+
+/** The reaction kind is a board-wide setting, so it is read off the card's root board. */
+const reactionTypeOf = (authorizable: BoardNodeAuthorizable): CardReactionType => {
+	const root = authorizable.rootNode;
+
+	return isColumnBoard(root) ? root.reactionType : CardReactionType.NONE;
+};
 
 /** The element types behind FEATURE_COLUMN_BOARD_INTERACTIVE_ELEMENTS_ENABLED. */
 const INTERACTIVE_ELEMENT_TYPES: ContentElementType[] = [ContentElementType.POLL];
 
 /**
- * A card plus what its elements may show this particular user — see {@link ElementViewContext}.
+ * A card plus what its elements may show this particular user — see {@link BoardViewContext}.
  */
 export interface CardWithViewContext {
 	card: Card;
-	viewContext: ElementViewContext;
+	viewContext: BoardViewContext;
 }
 
 @Injectable()
@@ -52,6 +69,7 @@ export class CardUc {
 					viewContext: {
 						userId,
 						canEdit: this.boardNodeRule.can('updateElement', user, boardNodeAuthorizable),
+						reactionType: reactionTypeOf(boardNodeAuthorizable),
 					},
 				});
 			}
@@ -59,6 +77,38 @@ export class CardUc {
 		}, []);
 
 		return allowedCards;
+	}
+
+	/**
+	 * Reacting needs read access, not write access: the whole point is that participants who
+	 * may not edit a card can still respond to it.
+	 */
+	public async reactToCard(userId: EntityId, cardId: EntityId, value?: number): Promise<CardWithViewContext> {
+		if (!this.boardConfig.featureColumnBoardInteractiveElementsEnabled) {
+			throw new FeatureDisabledLoggableException('FEATURE_COLUMN_BOARD_INTERACTIVE_ELEMENTS_ENABLED');
+		}
+
+		const card = await this.boardNodeService.findByClassAndId(Card, cardId);
+		const user = await this.authorizationService.getUserWithPermissions(userId);
+		const boardNodeAuthorizable = await this.boardNodeAuthorizableService.getBoardAuthorizable(card);
+
+		throwForbiddenIfFalse(this.boardNodeRule.can('reactToCard', user, boardNodeAuthorizable));
+
+		const reactionType = reactionTypeOf(boardNodeAuthorizable);
+		if (reactionType === CardReactionType.NONE) {
+			throw new UnprocessableEntityException('Reactions are turned off for this board');
+		}
+
+		await this.boardNodeService.reactToCard(card, userId, reactionType, value);
+
+		return {
+			card,
+			viewContext: {
+				userId,
+				canEdit: this.boardNodeRule.can('updateElement', user, boardNodeAuthorizable),
+				reactionType,
+			},
+		};
 	}
 
 	public async updateCardHeight(userId: EntityId, cardId: EntityId, height: number): Promise<Card> {

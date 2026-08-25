@@ -1,7 +1,14 @@
 /* istanbul ignore file */
 import { ObjectId } from '@mikro-orm/mongodb';
 import { BaseFactory } from '@testing/factory/base.factory';
-import { BoardExternalReferenceType, BoardLayout, ColumnBoard, type ColumnBoardProps, ROOT_PATH } from '../domain';
+import {
+	BoardExternalReferenceType,
+	BoardLayout,
+	CardReactionType,
+	ColumnBoard,
+	type ColumnBoardProps,
+	ROOT_PATH,
+} from '../domain';
 
 class ColumnBoardFactory extends BaseFactory<ColumnBoard, ColumnBoardProps> {
 	public withoutContext(): this {
@@ -27,6 +34,7 @@ export const columnBoardFactory = ColumnBoardFactory.define(ColumnBoard, ({ sequ
 		isVisible: true,
 		layout: BoardLayout.COLUMNS,
 		readersCanEdit: false,
+		reactionType: CardReactionType.NONE,
 	};
 
 	return props;

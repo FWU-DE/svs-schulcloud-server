@@ -7,6 +7,8 @@ import {
 	AnyContentElement,
 	AnyMediaElement,
 	BoardExternalReferenceType,
+	Card,
+	CardReactionType,
 	ColumnBoard,
 	isAnyMediaElement,
 	isContentElement,
@@ -81,6 +83,16 @@ export class BoardNodeService {
 
 	public async updateContent(element: AnyContentElement, content: AnyElementContentBody): Promise<void> {
 		await this.contentElementUpdateService.updateContent(element, content);
+	}
+
+	public async reactToCard(card: Card, userId: EntityId, type: CardReactionType, value?: number): Promise<void> {
+		if (value === undefined) {
+			card.withdrawReaction(userId);
+		} else {
+			card.react(userId, type, value);
+		}
+
+		await this.boardNodeRepo.save(card);
 	}
 
 	public async voteInPoll(element: PollElement, userId: EntityId, optionIds: string[]): Promise<void> {

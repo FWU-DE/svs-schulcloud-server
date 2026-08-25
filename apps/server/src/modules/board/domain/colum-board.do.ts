@@ -1,6 +1,7 @@
 import { BoardNode } from './board-node.do';
 import { Column } from './column.do';
 import type { AnyBoardNode, BoardExternalReference, BoardLayout, ColumnBoardProps } from './types';
+import { CardReactionType } from './types/card-reaction';
 
 export class ColumnBoard extends BoardNode<ColumnBoardProps> {
 	get title(): string {
@@ -44,6 +45,15 @@ export class ColumnBoard extends BoardNode<ColumnBoardProps> {
 
 	set readersCanEdit(readersCanEdit: boolean) {
 		this.props.readersCanEdit = readersCanEdit;
+	}
+
+	get reactionType(): CardReactionType {
+		// Boards created before reactions existed have no such field.
+		return this.props.reactionType ?? CardReactionType.NONE;
+	}
+
+	set reactionType(reactionType: CardReactionType) {
+		this.props.reactionType = reactionType;
 	}
 
 	public canHaveChild(childNode: AnyBoardNode): boolean {

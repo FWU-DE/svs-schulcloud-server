@@ -23,6 +23,7 @@ export class BoardResponseMapper {
 			timestamps: new TimestampsResponse({ lastUpdatedAt: board.updatedAt, createdAt: board.createdAt }),
 			isVisible: board.isVisible,
 			readersCanEdit: board.readersCanEdit,
+			reactionType: board.reactionType,
 			layout: board.layout,
 			features,
 			allowedOperations,

@@ -2,7 +2,7 @@ import { NotImplementedException } from '@nestjs/common';
 import { type AnyBoardNode } from '../../domain';
 import { type AnyContentElementResponse } from '../dto';
 import { type BaseResponseMapper } from './base-mapper.interface';
-import type { ElementViewContext } from '../../domain';
+import type { BoardViewContext } from '../../domain';
 import { CollaborativeTextEditorElementResponseMapper } from './collaborative-text-editor-element-response.mapper';
 import { DeletedElementResponseMapper } from './deleted-element-response.mapper';
 import { DrawingElementResponseMapper } from './drawing-element-response.mapper';
@@ -30,7 +30,7 @@ export class ContentElementResponseFactory {
 		PollElementResponseMapper.getInstance(),
 	];
 
-	public static mapToResponse(element: AnyBoardNode, context?: ElementViewContext): AnyContentElementResponse {
+	public static mapToResponse(element: AnyBoardNode, context?: BoardViewContext): AnyContentElementResponse {
 		const elementMapper = this.mappers.find((mapper) => mapper.canMap(element));
 
 		if (!elementMapper) {

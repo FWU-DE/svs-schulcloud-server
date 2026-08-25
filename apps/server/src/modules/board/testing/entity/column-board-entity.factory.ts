@@ -1,7 +1,14 @@
 /* istanbul ignore file */
 import { ObjectId } from '@mikro-orm/mongodb';
 import { BoardNodeEntityFactory, type PropsWithType } from './board-node-entity.factory';
-import { BoardExternalReferenceType, BoardLayout, BoardNodeType, type ColumnBoardProps, ROOT_PATH } from '../../domain';
+import {
+	BoardExternalReferenceType,
+	BoardLayout,
+	BoardNodeType,
+	CardReactionType,
+	type ColumnBoardProps,
+	ROOT_PATH,
+} from '../../domain';
 import { Context } from '../../repo/entity/embeddables';
 
 class ColumnBoardEntityFactory extends BoardNodeEntityFactory<PropsWithType<ColumnBoardProps>> {
@@ -36,6 +43,7 @@ export const columnBoardEntityFactory = ColumnBoardEntityFactory.define(({ seque
 		isVisible: true,
 		readersCanEdit: params.readersCanEdit ?? false,
 		layout: BoardLayout.COLUMNS,
+		reactionType: CardReactionType.NONE,
 		type: BoardNodeType.COLUMN_BOARD,
 	};
 

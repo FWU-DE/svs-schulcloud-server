@@ -21,4 +21,6 @@ export { UpdateCardHeightMessageParams } from './update-card-height.message.para
 export { UpdateCardTitleMessageParams } from './update-card-title.message.param';
 export { UpdateColumnTitleMessageParams } from './update-column-title.message.param';
 export { UpdateContentElementMessageParams } from './update-content-element.message.param';
+export { ReactToCardMessageParams } from './react-to-card.message.param';
+export { UpdateBoardReactionTypeMessageParams } from './update-board-reaction-type.message.param';
 export { VoteInPollMessageParams } from './vote-in-poll.message.param';

@@ -1,5 +1,7 @@
 export * from './card-ids.params';
 export * from './card-list.response';
+export * from './card-reaction.body.params';
+export * from './card-reactions.response';
 export * from './card.response';
 export * from './move-content-element.body.params';
 export * from './visibility-settings.response';

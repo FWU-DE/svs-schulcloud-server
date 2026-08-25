@@ -11,7 +11,7 @@ import { isPollElement, type PollElement } from '../poll-element.do';
 import { isRichTextElement, type RichTextElement } from '../rich-text-element.do';
 import { isVideoConferenceElement, type VideoConferenceElement } from '../video-conference-element.do';
 import { type AnyBoardNode } from './any-board-node';
-import { type ElementViewContext } from './element-view-context';
+import { type BoardViewContext } from './board-view-context';
 import { type BoardExternalReferenceType } from './board-external-reference';
 
 export type AnyContentElement =
@@ -61,5 +61,5 @@ export interface ParentNodeInfo {
 export interface ContentElementWithParentHierarchy {
 	readonly element: AnyContentElement;
 	readonly parentHierarchy: ParentNodeInfo[];
-	readonly viewContext: ElementViewContext;
+	readonly viewContext: BoardViewContext;
 }

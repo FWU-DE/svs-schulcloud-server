@@ -14,6 +14,7 @@ export const cardFactory = BaseFactory.define<Card, CardProps>(Card, ({ sequence
 		createdAt: new Date(),
 		updatedAt: new Date(),
 		height: 42,
+		reactions: [],
 	};
 
 	return props;

@@ -14,6 +14,7 @@ export const cardEntityFactory = BoardNodeEntityFactory.define<PropsWithType<Car
 		createdAt: new Date(),
 		updatedAt: new Date(),
 		height: 42,
+		reactions: [],
 		type: BoardNodeType.CARD,
 		backgroundColor: Colors.TRANSPARENT,
 	};

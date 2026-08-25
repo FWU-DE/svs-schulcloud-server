@@ -745,6 +745,7 @@ describe(BoardNodeRule.name, () => {
 					// board
 					copyBoard: true,
 					deleteBoard: true,
+					updateBoardReactionType: true,
 					findBoard: true,
 					relocateContent: true,
 					shareBoard: true,
@@ -770,6 +771,7 @@ describe(BoardNodeRule.name, () => {
 					updateCardHeight: true,
 					updateCardTitle: true,
 					updateCardColor: true,
+					reactToCard: true,
 
 					// element
 					createElement: true,
@@ -833,6 +835,7 @@ describe(BoardNodeRule.name, () => {
 					// board
 					copyBoard: true,
 					deleteBoard: true,
+					updateBoardReactionType: true,
 					findBoard: true,
 					relocateContent: false,
 					shareBoard: false,
@@ -858,6 +861,7 @@ describe(BoardNodeRule.name, () => {
 					updateCardHeight: true,
 					updateCardTitle: true,
 					updateCardColor: true,
+					reactToCard: true,
 
 					// element
 					createElement: true,
@@ -922,6 +926,7 @@ describe(BoardNodeRule.name, () => {
 					// board
 					copyBoard: false,
 					deleteBoard: false,
+					updateBoardReactionType: false,
 					findBoard: true,
 					relocateContent: false,
 					shareBoard: false,
@@ -947,6 +952,7 @@ describe(BoardNodeRule.name, () => {
 					updateCardHeight: false,
 					updateCardTitle: false,
 					updateCardColor: false,
+					reactToCard: true,
 
 					// element
 					createElement: false,
@@ -1024,6 +1030,7 @@ describe(BoardNodeRule.name, () => {
 					// board
 					copyBoard: false,
 					deleteBoard: false,
+					updateBoardReactionType: false,
 					findBoard: false,
 					relocateContent: false,
 					shareBoard: false,
@@ -1049,6 +1056,7 @@ describe(BoardNodeRule.name, () => {
 					updateCardHeight: false,
 					updateCardTitle: false,
 					updateCardColor: false,
+					reactToCard: false,
 
 					// element
 					createElement: false,

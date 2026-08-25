@@ -20,6 +20,7 @@ import {
 	BoardFeature,
 	BoardLayout,
 	BoardNodeFactory,
+	CardReactionType,
 	Column,
 	ColumnBoard,
 	isColumn,
@@ -210,6 +211,30 @@ export class BoardUc {
 		await this.boardNodeService.updateVisibility(board, isVisible);
 
 		return board;
+	}
+
+	public async updateReactionType(
+		userId: EntityId,
+		boardId: EntityId,
+		reactionType: CardReactionType
+	): Promise<ColumnBoard> {
+		this.checkInteractiveElementsEnabled();
+
+		const board = await this.boardNodeService.findByClassAndId(ColumnBoard, boardId);
+		const user = await this.authorizationService.getUserWithPermissions(userId);
+		const boardNodeAuthorizable = await this.boardNodeAuthorizableService.getBoardAuthorizable(board);
+
+		throwForbiddenIfFalse(this.boardNodeRule.can('updateBoardReactionType', user, boardNodeAuthorizable));
+
+		await this.columnBoardService.updateReactionType(board, reactionType);
+
+		return board;
+	}
+
+	private checkInteractiveElementsEnabled(): void {
+		if (!this.config.featureColumnBoardInteractiveElementsEnabled) {
+			throw new FeatureDisabledLoggableException('FEATURE_COLUMN_BOARD_INTERACTIVE_ELEMENTS_ENABLED');
+		}
 	}
 
 	public async updateReadersCanEdit(

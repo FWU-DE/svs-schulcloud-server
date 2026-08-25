@@ -29,6 +29,7 @@ import {
 } from './dto';
 import { BoardContextResponse } from './dto/board/board-context.reponse';
 import { ReadersCanEditBodyParams } from './dto/board/readers-can-edit.body.params';
+import { ReactionTypeBodyParams } from './dto/board/reaction-type.body.params';
 import { BoardResponseMapper, ColumnResponseMapper, CreateBoardResponseMapper } from './mapper';
 
 @ApiTags('Board')
@@ -178,6 +179,21 @@ export class BoardController {
 		@CurrentUser() currentUser: ICurrentUser
 	): Promise<void> {
 		await this.boardUc.updateReadersCanEdit(currentUser.userId, urlParams.boardId, bodyParams.readersCanEdit);
+	}
+
+	@ApiOperation({ summary: 'Update the reaction kind for the cards of a board.' })
+	@ApiResponse({ status: 204 })
+	@ApiResponse({ status: 400, type: ApiValidationError })
+	@ApiResponse({ status: 403, type: ForbiddenException })
+	@ApiResponse({ status: 404, type: NotFoundException })
+	@HttpCode(204)
+	@Patch(':boardId/reaction-type')
+	public async updateReactionType(
+		@Param() urlParams: BoardUrlParams,
+		@Body() bodyParams: ReactionTypeBodyParams,
+		@CurrentUser() currentUser: ICurrentUser
+	): Promise<void> {
+		await this.boardUc.updateReactionType(currentUser.userId, urlParams.boardId, bodyParams.reactionType);
 	}
 
 	@ApiOperation({ summary: 'Update the layout of a board.' })

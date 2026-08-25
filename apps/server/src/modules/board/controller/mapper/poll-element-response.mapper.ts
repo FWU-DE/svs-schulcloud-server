@@ -1,4 +1,4 @@
-import { ContentElementType, type ElementViewContext, PollElement, PollResultVisibility } from '../../domain';
+import { ContentElementType, type BoardViewContext, PollElement, PollResultVisibility } from '../../domain';
 import { PollElementContent, PollElementResponse, PollOptionResponse, TimestampsResponse } from '../dto';
 import type { BaseResponseMapper } from './base-mapper.interface';
 
@@ -13,7 +13,7 @@ export class PollElementResponseMapper implements BaseResponseMapper {
 		return PollElementResponseMapper.instance;
 	}
 
-	public mapToResponse(element: PollElement, context: ElementViewContext = {}): PollElementResponse {
+	public mapToResponse(element: PollElement, context: BoardViewContext = {}): PollElementResponse {
 		const ownVote = context.userId ? element.getVoteOf(context.userId) : [];
 		const resultsVisible = this.areResultsVisible(element, ownVote.length > 0, context.canEdit ?? false);
 

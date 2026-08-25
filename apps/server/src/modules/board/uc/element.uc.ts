@@ -10,7 +10,7 @@ import {
 	AnyContentElement,
 	BoardNodeFactory,
 	ContentElementWithParentHierarchy,
-	type ElementViewContext,
+	type BoardViewContext,
 	isPollElement,
 	PollElement,
 } from '../domain';
@@ -42,7 +42,7 @@ export class ElementUc {
 		throwForbiddenIfFalse(this.boardNodeRule.can('viewElement', user, boardNodeAuthorizable));
 
 		const parentHierarchy = await this.boardContextApiHelperService.getParentsOfElement(element.rootId);
-		const viewContext: ElementViewContext = {
+		const viewContext: BoardViewContext = {
 			userId,
 			canEdit: this.boardNodeRule.can('updateElement', user, boardNodeAuthorizable),
 		};
@@ -58,7 +58,7 @@ export class ElementUc {
 		userId: EntityId,
 		elementId: EntityId,
 		optionIds: string[]
-	): Promise<{ element: PollElement; viewContext: ElementViewContext }> {
+	): Promise<{ element: PollElement; viewContext: BoardViewContext }> {
 		const user = await this.authorizationService.getUserWithPermissions(userId);
 		const element = await this.boardNodeService.findContentElementById(elementId);
 
@@ -73,7 +73,7 @@ export class ElementUc {
 
 		await this.boardNodeService.voteInPoll(element, userId, optionIds);
 
-		const viewContext: ElementViewContext = {
+		const viewContext: BoardViewContext = {
 			userId,
 			canEdit: this.boardNodeRule.can('updateElement', user, boardNodeAuthorizable),
 		};

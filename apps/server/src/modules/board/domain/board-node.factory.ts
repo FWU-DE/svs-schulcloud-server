@@ -21,6 +21,7 @@ import {
 	BoardExternalReference,
 	BoardLayout,
 	BoardNodeProps,
+	CardReactionType,
 	Colors,
 	ContentElementType,
 	PollResultVisibility,
@@ -30,7 +31,13 @@ import { VideoConferenceElement } from './video-conference-element.do';
 @Injectable()
 export class BoardNodeFactory {
 	public buildColumnBoard(props: { context: BoardExternalReference; title: string; layout: BoardLayout }): ColumnBoard {
-		const columnBoard = new ColumnBoard({ ...this.getBaseProps(), isVisible: false, readersCanEdit: false, ...props });
+		const columnBoard = new ColumnBoard({
+			...this.getBaseProps(),
+			isVisible: false,
+			readersCanEdit: false,
+			reactionType: CardReactionType.NONE,
+			...props,
+		});
 
 		return columnBoard;
 	}
@@ -43,7 +50,13 @@ export class BoardNodeFactory {
 
 	public buildCard(children: AnyContentElement[] = []): Card {
 		// TODO right way to specify default card height?
-		const card = new Card({ ...this.getBaseProps(), backgroundColor: Colors.TRANSPARENT, height: 150, children });
+		const card = new Card({
+			...this.getBaseProps(),
+			backgroundColor: Colors.TRANSPARENT,
+			height: 150,
+			reactions: [],
+			children,
+		});
 
 		return card;
 	}

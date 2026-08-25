@@ -12,6 +12,7 @@ import {
 	Post,
 	Put,
 	Query,
+	UnprocessableEntityException,
 } from '@nestjs/common';
 import { ApiExtraModels, ApiOperation, ApiResponse, ApiTags, getSchemaPath } from '@nestjs/swagger';
 import { RequestTimeout } from '@shared/common/decorators';
@@ -22,6 +23,7 @@ import {
 	AnyContentElementResponse,
 	CardIdsParams,
 	CardListResponse,
+	CardReactionBodyParams,
 	CardResponse,
 	CardUrlParams,
 	ColorBodyParams,
@@ -69,6 +71,24 @@ export class CardController {
 			data: cardResponses,
 		});
 		return result;
+	}
+
+	@ApiOperation({ summary: 'React to a card, change or withdraw the reaction.' })
+	@ApiResponse({ status: 200, type: CardResponse })
+	@ApiResponse({ status: 400, type: ApiValidationError })
+	@ApiResponse({ status: 403, type: ForbiddenException })
+	@ApiResponse({ status: 404, type: NotFoundException })
+	@ApiResponse({ status: 422, type: UnprocessableEntityException })
+	@HttpCode(200)
+	@Put(':cardId/reaction')
+	public async reactToCard(
+		@Param() urlParams: CardUrlParams,
+		@Body() bodyParams: CardReactionBodyParams,
+		@CurrentUser() currentUser: ICurrentUser
+	): Promise<CardResponse> {
+		const { card, viewContext } = await this.cardUc.reactToCard(currentUser.userId, urlParams.cardId, bodyParams.value);
+
+		return CardResponseMapper.mapToResponse(card, viewContext);
 	}
 
 	@ApiOperation({ summary: 'Move a single card.' })

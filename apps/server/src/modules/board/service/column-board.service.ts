@@ -5,6 +5,7 @@ import {
 	AnyBoardNode,
 	BoardExternalReference,
 	BoardExternalReferenceType,
+	CardReactionType,
 	ColumnBoard,
 	ColumnBoardProps,
 	isColumnBoard,
@@ -45,6 +46,12 @@ export class ColumnBoardService {
 
 	public async updateVisibility(columnBoard: ColumnBoard, visibility: boolean): Promise<void> {
 		await this.boardNodeService.updateVisibility(columnBoard, visibility);
+	}
+
+	public async updateReactionType(board: ColumnBoard, reactionType: CardReactionType): Promise<void> {
+		board.reactionType = reactionType;
+
+		await this.boardNodeRepo.save(board);
 	}
 
 	public async updateReadersCanEdit(columnBoard: ColumnBoard, readersCanEdit: boolean): Promise<void> {

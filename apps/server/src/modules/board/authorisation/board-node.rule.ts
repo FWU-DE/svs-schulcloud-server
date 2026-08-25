@@ -23,6 +23,7 @@ export const BoardOperationValues = [
 	'updateBoardLayout',
 	'updateBoardTitle',
 	'updateReadersCanEditSetting',
+	'updateBoardReactionType',
 
 	// column
 	'copyColumn',
@@ -42,6 +43,7 @@ export const BoardOperationValues = [
 	'updateCardHeight',
 	'updateCardTitle',
 	'updateCardColor',
+	'reactToCard',
 
 	// element
 	'createElement',
@@ -163,6 +165,7 @@ export class BoardNodeRule implements Rule<BoardNodeAuthorizable> {
 			updateBoardLayout: _canManageBoard,
 			updateBoardTitle: canEditBoardTitle,
 			updateReadersCanEditSetting: canUpdateReadersCanEditSetting,
+			updateBoardReactionType: _canManageBoard,
 
 			// column
 			copyColumn: _canEditBoard,
@@ -182,6 +185,8 @@ export class BoardNodeRule implements Rule<BoardNodeAuthorizable> {
 			updateCardHeight: _canEditBoard,
 			updateCardTitle: _canEditBoard,
 			updateCardColor: _canEditBoard,
+			// Reacting is a reader's action, like voting in a poll — not an edit of the card.
+			reactToCard: _canViewBoard,
 
 			// element
 			createElement: _canEditBoard,

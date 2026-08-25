@@ -2,7 +2,7 @@ import { BoardOperation, BoardOperationValues } from '@modules/board/authorisati
 import { ApiProperty } from '@nestjs/swagger';
 import { bsonStringPattern } from '@shared/controller/bson-string-pattern';
 import { DecodeHtmlEntities } from '@shared/controller/transformer';
-import { BoardFeature, BoardLayout } from '../../../domain';
+import { BoardFeature, BoardLayout, CardReactionType } from '../../../domain';
 import { TimestampsResponse } from '../timestamps.response';
 import { ColumnResponse } from './column.response';
 
@@ -14,6 +14,7 @@ export class BoardResponse {
 		timestamps,
 		isVisible,
 		readersCanEdit,
+		reactionType,
 		layout,
 		features,
 		allowedOperations,
@@ -24,6 +25,7 @@ export class BoardResponse {
 		this.timestamps = timestamps;
 		this.isVisible = isVisible;
 		this.readersCanEdit = readersCanEdit;
+		this.reactionType = reactionType;
 		this.layout = layout;
 		this.features = features;
 		this.allowedOperations = allowedOperations;
@@ -51,6 +53,9 @@ export class BoardResponse {
 
 	@ApiProperty()
 	readersCanEdit: boolean;
+
+	@ApiProperty({ enum: CardReactionType, enumName: 'CardReactionType' })
+	reactionType: CardReactionType;
 
 	@ApiProperty({ enum: BoardLayout, enumName: 'BoardLayout' })
 	layout: BoardLayout;

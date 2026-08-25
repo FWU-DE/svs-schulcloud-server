@@ -49,6 +49,8 @@ import {
 	UpdateCardHeightMessageParams,
 	UpdateCardTitleMessageParams,
 	UpdateColumnTitleMessageParams,
+	ReactToCardMessageParams,
+	UpdateBoardReactionTypeMessageParams,
 	UpdateContentElementMessageParams,
 	VoteInPollMessageParams,
 } from './dto';
@@ -195,6 +197,46 @@ export class BoardCollaborationGateway implements OnGatewayConnection, OnGateway
 		try {
 			const card = await this.cardUc.updateCardColor(userId, data.cardId, data.backgroundColor);
 			emitter.emitToClientAndRoom(data, card);
+		} catch {
+			emitter.emitFailure(data);
+		}
+	}
+
+	/**
+	 * Like a poll vote, a reaction splits into two payloads: the room sees the new totals, the
+	 * reacting client alone learns its own value back.
+	 */
+	@SubscribeMessage('react-to-card-request')
+	@TrackExecutionTime()
+	@EnsureRequestContext()
+	public async reactToCard(socket: Socket, data: ReactToCardMessageParams): Promise<void> {
+		const emitter = this.buildBoardSocketEmitter({ socket, action: 'react-to-card' });
+		const { userId } = this.getCurrentUser(socket);
+		try {
+			const { card, viewContext } = await this.cardUc.reactToCard(userId, data.cardId, data.value);
+
+			emitter.emitToClient({ ...data, card: CardResponseMapper.mapToResponse(card, viewContext) });
+			emitter.emitToRoom(
+				{
+					cardId: data.cardId,
+					card: CardResponseMapper.mapToResponse(card, { ...viewContext, userId: undefined }),
+				},
+				card
+			);
+		} catch {
+			emitter.emitFailure(data);
+		}
+	}
+
+	@SubscribeMessage('update-board-reaction-type-request')
+	@TrackExecutionTime()
+	@EnsureRequestContext()
+	public async updateBoardReactionType(socket: Socket, data: UpdateBoardReactionTypeMessageParams): Promise<void> {
+		const emitter = this.buildBoardSocketEmitter({ socket, action: 'update-board-reaction-type' });
+		const { userId } = this.getCurrentUser(socket);
+		try {
+			const board = await this.boardUc.updateReactionType(userId, data.boardId, data.reactionType);
+			emitter.emitToClientAndRoom(data, board);
 		} catch {
 			emitter.emitFailure(data);
 		}
