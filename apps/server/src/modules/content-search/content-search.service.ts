@@ -114,6 +114,14 @@ export class ContentSearchService {
 		);
 	}
 
+	/**
+	 * The remote server also offers search_content, which ranks across all content kinds at once.
+	 * Measured against search_resources over ten school topics it found no better material (38 of
+	 * 55 hits on topic against 37 of 59), the other kinds are empty for german school subjects -
+	 * seven broad queries turned up a single wiki entry, and that one a test record - and its
+	 * results carry no licence, which would cost one get_resource call per hit to fetch. So this
+	 * stays on search_resources.
+	 */
 	private async searchRelay(query: string, limit: number, language: string, relay: string): Promise<AmbResource[]> {
 		const answer = (await this.mcpClientService.callTool('search_resources', {
 			query,
