@@ -784,6 +784,9 @@ describe(BoardNodeRule.name, () => {
 					// element / fileElement
 					createFileElement: true,
 
+					// element / pollElement
+					voteInPoll: true,
+
 					// element / videoConferenceElement
 					manageVideoConference: true,
 
@@ -868,6 +871,9 @@ describe(BoardNodeRule.name, () => {
 
 					// element / fileElement
 					createFileElement: true,
+
+					// element / pollElement
+					voteInPoll: true,
 
 					// element / videoConferenceElement
 					manageVideoConference: true,
@@ -954,6 +960,9 @@ describe(BoardNodeRule.name, () => {
 
 					// element / fileElement
 					createFileElement: false,
+
+					// element / pollElement
+					voteInPoll: true,
 
 					// element / videoConferenceElement
 					manageVideoConference: false,
@@ -1053,6 +1062,9 @@ describe(BoardNodeRule.name, () => {
 
 					// element / fileElement
 					createFileElement: false,
+
+					// element / pollElement
+					voteInPoll: false,
 
 					// element / videoConferenceElement
 					manageVideoConference: false,

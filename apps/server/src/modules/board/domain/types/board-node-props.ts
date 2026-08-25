@@ -4,6 +4,7 @@ import type { AnyBoardNode } from './any-board-node';
 import type { BoardExternalReference } from './board-external-reference';
 import type { BoardLayout } from './board-layout.enum';
 import type { ContentElementType } from './content-element-type.enum';
+import type { PollOption, PollResultVisibility, PollVote } from './poll';
 
 export interface BoardNodeProps {
 	id: EntityId;
@@ -78,6 +79,18 @@ export interface H5pElementProps extends BoardNodeProps {
 	contentId?: string;
 }
 
+export interface PollElementProps extends BoardNodeProps {
+	question: string;
+	pollOptions: PollOption[];
+	anonymous: boolean;
+	multipleChoice: boolean;
+	closed: boolean;
+	showResults: PollResultVisibility;
+	resultsReleased: boolean;
+	votes: PollVote[];
+	voterSalt: string;
+}
+
 export interface MediaBoardProps extends BoardNodeProps {
 	context: BoardExternalReference;
 	backgroundColor: Colors;
@@ -112,4 +125,5 @@ export type AnyBoardNodeProps =
 	| VideoConferenceElementProps
 	| DeletedElementProps
 	| H5pElementProps
+	| PollElementProps
 	| MediaBoardNodeProps;

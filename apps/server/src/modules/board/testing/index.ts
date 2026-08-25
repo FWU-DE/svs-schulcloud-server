@@ -19,3 +19,4 @@ export * from './rich-text-element.factory';
 export * from './test-socket-api-client';
 export * from './video-conference-element.factory';
 export * from './h5p-element.factory';
+export * from './poll-element.factory';

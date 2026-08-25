@@ -42,6 +42,16 @@ export class BoardPublicApiConfig {
 	@IsBoolean()
 	public featureColumnBoardH5pEnabled = true;
 
+	/**
+	 * Padlet-inspired board elements and card interactions: poll, countdown, code, formula,
+	 * checklist, recording, plus reactions and comments on cards. One switch for the whole
+	 * group so they can be rolled out — or pulled — together.
+	 */
+	@ConfigProperty('FEATURE_COLUMN_BOARD_INTERACTIVE_ELEMENTS_ENABLED')
+	@StringToBoolean()
+	@IsBoolean()
+	public featureColumnBoardInteractiveElementsEnabled = false;
+
 	@ConfigProperty('FEATURE_COLUMN_BOARD_COLLABORA_ENABLED')
 	@StringToBoolean()
 	@IsBoolean()

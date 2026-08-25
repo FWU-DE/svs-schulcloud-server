@@ -1,8 +1,19 @@
 import { ApiProperty, ApiPropertyOptional, getSchemaPath } from '@nestjs/swagger';
 import { InputFormat } from '@shared/domain/types';
 import { Type } from 'class-transformer';
-import { IsEnum, IsMongoId, IsOptional, IsString, ValidateNested } from 'class-validator';
-import { ContentElementType } from '../../../domain/types';
+import {
+	ArrayMaxSize,
+	ArrayMinSize,
+	IsArray,
+	IsBoolean,
+	IsEnum,
+	IsMongoId,
+	IsOptional,
+	IsString,
+	MaxLength,
+	ValidateNested,
+} from 'class-validator';
+import { ContentElementType, PollResultVisibility } from '../../../domain/types';
 
 abstract class ElementContentBody {
 	@IsEnum(ContentElementType)
@@ -164,6 +175,62 @@ export class H5pElementContentBody extends ElementContentBody {
 	content!: H5pContentBody;
 }
 
+export class PollOptionBody {
+	@IsMongoId()
+	@IsOptional()
+	@ApiPropertyOptional({ description: 'Omit to add a new option. Keeping the id keeps the votes cast for it.' })
+	id?: string;
+
+	@IsString()
+	@MaxLength(200)
+	@ApiProperty()
+	text!: string;
+}
+
+export class PollContentBody {
+	@IsString()
+	@MaxLength(500)
+	@ApiProperty()
+	question!: string;
+
+	@IsArray()
+	@ArrayMinSize(2)
+	@ArrayMaxSize(20)
+	@ValidateNested({ each: true })
+	@Type(() => PollOptionBody)
+	@ApiProperty({ type: [PollOptionBody] })
+	options!: PollOptionBody[];
+
+	@IsBoolean()
+	@ApiProperty()
+	anonymous!: boolean;
+
+	@IsBoolean()
+	@ApiProperty()
+	multipleChoice!: boolean;
+
+	@IsBoolean()
+	@ApiProperty()
+	closed!: boolean;
+
+	@IsEnum(PollResultVisibility)
+	@ApiProperty({ enum: PollResultVisibility, enumName: 'PollResultVisibility' })
+	showResults!: PollResultVisibility;
+
+	@IsBoolean()
+	@ApiProperty({ description: 'Set by whoever may edit the poll to reveal the tally to participants.' })
+	resultsReleased!: boolean;
+}
+
+export class PollElementContentBody extends ElementContentBody {
+	@ApiProperty({ type: () => ContentElementType.POLL })
+	type!: ContentElementType.POLL;
+
+	@ValidateNested()
+	@ApiProperty()
+	content!: PollContentBody;
+}
+
 export type AnyElementContentBody =
 	| FileContentBody
 	| DrawingContentBody
@@ -172,7 +239,8 @@ export type AnyElementContentBody =
 	| ExternalToolContentBody
 	| VideoConferenceContentBody
 	| FileFolderContentBody
-	| H5pContentBody;
+	| H5pContentBody
+	| PollContentBody;
 
 export class UpdateElementContentBodyParams {
 	@ValidateNested()
@@ -188,6 +256,7 @@ export class UpdateElementContentBodyParams {
 				{ value: VideoConferenceElementContentBody, name: ContentElementType.VIDEO_CONFERENCE },
 				{ value: FileFolderElementContentBody, name: ContentElementType.FILE_FOLDER },
 				{ value: H5pElementContentBody, name: ContentElementType.H5P },
+				{ value: PollElementContentBody, name: ContentElementType.POLL },
 			],
 		},
 		keepDiscriminatorProperty: true,
@@ -202,6 +271,7 @@ export class UpdateElementContentBodyParams {
 			{ $ref: getSchemaPath(VideoConferenceElementContentBody) },
 			{ $ref: getSchemaPath(FileFolderElementContentBody) },
 			{ $ref: getSchemaPath(H5pElementContentBody) },
+			{ $ref: getSchemaPath(PollElementContentBody) },
 		],
 	})
 	data!:
@@ -212,5 +282,6 @@ export class UpdateElementContentBodyParams {
 		| DrawingElementContentBody
 		| VideoConferenceElementContentBody
 		| FileFolderElementContentBody
-		| H5pElementContentBody;
+		| H5pElementContentBody
+		| PollElementContentBody;
 }

@@ -19,6 +19,7 @@ import {
 	CardResponseMapper,
 	ColumnResponseMapper,
 	ContentElementResponseFactory,
+	PollElementResponseMapper,
 } from '../controller/mapper';
 import { MoveCardResponseMapper } from '../controller/mapper/move-card-response.mapper';
 import { AnyBoardNode, ColumnBoard } from '../domain';
@@ -49,6 +50,7 @@ import {
 	UpdateCardTitleMessageParams,
 	UpdateColumnTitleMessageParams,
 	UpdateContentElementMessageParams,
+	VoteInPollMessageParams,
 } from './dto';
 import { UpdateReadersCanEditMessageParams } from './dto/update-users-can-edit.message.param';
 
@@ -452,7 +454,7 @@ export class BoardCollaborationGateway implements OnGatewayConnection, OnGateway
 		const { userId } = this.getCurrentUser(socket);
 		try {
 			const cards = await this.cardUc.findCards(userId, data.cardIds);
-			const cardResponses = cards.map((card) => CardResponseMapper.mapToResponse(card));
+			const cardResponses = cards.map(({ card, viewContext }) => CardResponseMapper.mapToResponse(card, viewContext));
 
 			emitter.emitSuccess({ cards: cardResponses });
 		} catch {
@@ -497,6 +499,39 @@ export class BoardCollaborationGateway implements OnGatewayConnection, OnGateway
 		try {
 			const element = await this.elementUc.updateElement(userId, data.elementId, data.data.content);
 			emitter.emitToClientAndRoom(data, element);
+		} catch {
+			emitter.emitFailure(data);
+		}
+	}
+
+	/**
+	 * A vote produces two different payloads on purpose: the room only learns the new tally,
+	 * while the voter alone gets their own ballot back. Broadcasting one shared payload would
+	 * hand every other participant the voter's choice — which is exactly what an anonymous
+	 * poll must not do.
+	 */
+	@SubscribeMessage('vote-in-poll-request')
+	@TrackExecutionTime()
+	@EnsureRequestContext()
+	public async voteInPoll(socket: Socket, data: VoteInPollMessageParams): Promise<void> {
+		const emitter = this.buildBoardSocketEmitter({ socket, action: 'vote-in-poll' });
+		const { userId } = this.getCurrentUser(socket);
+		try {
+			const { element, viewContext } = await this.elementUc.voteInPoll(userId, data.elementId, data.optionIds);
+			const mapper = PollElementResponseMapper.getInstance();
+
+			emitter.emitToClient({
+				...data,
+				pollElement: mapper.mapToResponse(element, viewContext),
+			});
+			emitter.emitToRoom(
+				{
+					elementId: data.elementId,
+					optionIds: [],
+					pollElement: mapper.mapToResponse(element, { canEdit: viewContext.canEdit }),
+				},
+				element
+			);
 		} catch {
 			emitter.emitFailure(data);
 		}

@@ -56,6 +56,9 @@ export const BoardOperationValues = [
 	// element / fileElement
 	'createFileElement',
 
+	// element / pollElement
+	'voteInPoll',
+
 	// element / videoConferenceElement
 	'manageVideoConference',
 
@@ -192,6 +195,9 @@ export class BoardNodeRule implements Rule<BoardNodeAuthorizable> {
 
 			// element / fileElement
 			createFileElement: _canEditBoard,
+
+			// element / pollElement
+			voteInPoll: _canViewBoard,
 
 			// element / videoConferenceElement
 			manageVideoConference: canManageVideoConference,

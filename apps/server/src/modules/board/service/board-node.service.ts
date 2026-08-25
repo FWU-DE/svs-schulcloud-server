@@ -11,6 +11,7 @@ import {
 	isAnyMediaElement,
 	isContentElement,
 	MediaBoard,
+	PollElement,
 } from '../domain';
 import { RoomBoardCreatedEvent } from '../domain/events/room-board-created.event';
 import { RoomBoardDeletedEvent } from '../domain/events/room-board-deleted.event';
@@ -80,6 +81,12 @@ export class BoardNodeService {
 
 	public async updateContent(element: AnyContentElement, content: AnyElementContentBody): Promise<void> {
 		await this.contentElementUpdateService.updateContent(element, content);
+	}
+
+	public async voteInPoll(element: PollElement, userId: EntityId, optionIds: string[]): Promise<void> {
+		element.vote(userId, optionIds);
+
+		await this.boardNodeRepo.save(element);
 	}
 
 	public async replace(oldNode: AnyBoardNode, newNode: AnyBoardNode): Promise<void> {

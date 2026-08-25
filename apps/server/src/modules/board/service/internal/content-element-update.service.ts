@@ -1,3 +1,4 @@
+import { ObjectId } from '@mikro-orm/mongodb';
 import { Injectable } from '@nestjs/common';
 import { sanitizeRichText } from '@shared/controller/transformer';
 import { InputFormat } from '@shared/domain/types';
@@ -9,11 +10,13 @@ import {
 	FileFolderContentBody,
 	H5pContentBody,
 	LinkContentBody,
+	PollContentBody,
 	RichTextContentBody,
 	VideoConferenceContentBody,
 } from '../../controller/dto';
 import type {
 	AnyContentElement,
+	PollElement,
 	DrawingElement,
 	ExternalToolElement,
 	FileElement,
@@ -30,6 +33,7 @@ import {
 	isFileFolderElement,
 	isH5pElement,
 	isLinkElement,
+	isPollElement,
 	isRichTextElement,
 	isVideoConferenceElement,
 } from '../../domain';
@@ -57,6 +61,8 @@ export class ContentElementUpdateService {
 			this.updateFileFolderElement(element, content);
 		} else if (isH5pElement(element) && content instanceof H5pContentBody) {
 			this.updateH5pElement(element, content);
+		} else if (isPollElement(element) && content instanceof PollContentBody) {
+			this.updatePollElement(element, content);
 		} else {
 			throw new Error(`Cannot update element of type: '${element.constructor.name}'`);
 		}
@@ -110,6 +116,23 @@ export class ContentElementUpdateService {
 
 	public updateFileFolderElement(element: FileFolderElement, content: FileFolderContentBody): void {
 		element.title = content.title;
+	}
+
+	public updatePollElement(element: PollElement, content: PollContentBody): void {
+		const pollOptions = content.options.map((option) => ({
+			id: option.id ?? new ObjectId().toHexString(),
+			text: sanitizeRichText(option.text, InputFormat.PLAIN_TEXT),
+		}));
+
+		element.configure({
+			question: sanitizeRichText(content.question, InputFormat.PLAIN_TEXT),
+			pollOptions,
+			anonymous: content.anonymous,
+			multipleChoice: content.multipleChoice,
+			showResults: content.showResults,
+			resultsReleased: content.resultsReleased,
+			closed: content.closed,
+		});
 	}
 
 	public updateH5pElement(element: H5pElement, content: H5pContentBody): void {

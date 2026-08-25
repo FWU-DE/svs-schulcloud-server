@@ -1,6 +1,7 @@
 import type { CopyFileDto } from '@infra/files-storage-amqp-client/dto';
 import { CopyContentParams, CopyContentParentType, H5pEditorProducer } from '@infra/h5p-editor-client';
 import { ObjectId } from '@mikro-orm/mongodb';
+import { randomBytes } from 'crypto';
 import { BOARD_CONFIG_TOKEN, BoardConfig } from '@modules/board/board.config';
 import { CopyElementType, CopyHelperService, CopyMapper, type CopyStatus, CopyStatusEnum } from '@modules/copy-helper';
 import { ContextExternalToolService } from '@modules/tool/context-external-tool';
@@ -27,6 +28,7 @@ import {
 	FileFolderElementFactory,
 	getBoardNodeType,
 	H5pElement,
+	PollElement,
 	handleNonExhaustiveSwitch,
 	LinkElement,
 	type MediaBoard,
@@ -102,6 +104,9 @@ export class BoardNodeCopyService {
 				break;
 			case BoardNodeType.FILE_FOLDER_ELEMENT:
 				result = await this.copyFileFolderElement(boardNode as FileFolderElement, context);
+				break;
+			case BoardNodeType.POLL_ELEMENT:
+				result = await this.copyPollElement(boardNode as PollElement);
 				break;
 			case BoardNodeType.H5P_ELEMENT:
 				result = await this.copyH5pElement(boardNode as H5pElement, context);
@@ -434,6 +439,30 @@ export class BoardNodeCopyService {
 			copyEntity: copy,
 			type: CopyElementType.DELETED_ELEMENT,
 			status: CopyStatusEnum.SUCCESS,
+		};
+
+		return Promise.resolve(result);
+	}
+
+	/**
+	 * A copied poll is a fresh poll: it keeps the question and the options but starts without
+	 * ballots, and gets its own salt so the copy cannot be lined up against the original.
+	 */
+	public copyPollElement(original: PollElement): Promise<CopyStatus> {
+		const copy = new PollElement({
+			...original.getProps(),
+			...this.buildSpecificProps([]),
+			votes: [],
+			voterSalt: randomBytes(16).toString('hex'),
+			closed: false,
+			resultsReleased: false,
+		});
+
+		const result: CopyStatus = {
+			copyEntity: copy,
+			type: CopyElementType.POLL_ELEMENT,
+			status: CopyStatusEnum.SUCCESS,
+			elements: [],
 		};
 
 		return Promise.resolve(result);

@@ -3,6 +3,7 @@ export * from './card-response.mapper';
 export * from './collaborative-text-editor-element-response.mapper';
 export * from './column-response.mapper';
 export * from './content-element-response.factory';
+export * from './poll-element-response.mapper';
 export * from './create-board-response.mapper';
 export * from './deleted-element-response.mapper';
 export * from './external-tool-element-response.mapper';

@@ -1,12 +1,19 @@
 import { Logger } from '@infra/logger';
 import { AuthorizationService } from '@modules/authorization';
 import { BoardContextApiHelperService } from '@modules/board-context';
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnprocessableEntityException } from '@nestjs/common';
 import { throwForbiddenIfFalse } from '@shared/common/utils';
 import { EntityId } from '@shared/domain/types';
 import { BoardNodeRule } from '../authorisation/board-node.rule';
 import { AnyElementContentBody } from '../controller/dto';
-import { AnyContentElement, BoardNodeFactory, ContentElementWithParentHierarchy } from '../domain';
+import {
+	AnyContentElement,
+	BoardNodeFactory,
+	ContentElementWithParentHierarchy,
+	type ElementViewContext,
+	isPollElement,
+	PollElement,
+} from '../domain';
 import { BoardNodeAuthorizableService, BoardNodeService } from '../service';
 
 @Injectable()
@@ -35,8 +42,43 @@ export class ElementUc {
 		throwForbiddenIfFalse(this.boardNodeRule.can('viewElement', user, boardNodeAuthorizable));
 
 		const parentHierarchy = await this.boardContextApiHelperService.getParentsOfElement(element.rootId);
+		const viewContext: ElementViewContext = {
+			userId,
+			canEdit: this.boardNodeRule.can('updateElement', user, boardNodeAuthorizable),
+		};
 
-		return { element, parentHierarchy };
+		return { element, parentHierarchy, viewContext };
+	}
+
+	/**
+	 * Voting is deliberately not an element update: it needs read access to the board, not write
+	 * access, so that readers can answer a poll they are not allowed to edit.
+	 */
+	public async voteInPoll(
+		userId: EntityId,
+		elementId: EntityId,
+		optionIds: string[]
+	): Promise<{ element: PollElement; viewContext: ElementViewContext }> {
+		const user = await this.authorizationService.getUserWithPermissions(userId);
+		const element = await this.boardNodeService.findContentElementById(elementId);
+
+		if (!isPollElement(element)) {
+			throw new UnprocessableEntityException(`Element '${elementId}' is not a poll`);
+		}
+
+		const boardNode = await this.boardNodeService.findRoot(element);
+		const boardNodeAuthorizable = await this.boardNodeAuthorizableService.getBoardAuthorizable(boardNode);
+
+		throwForbiddenIfFalse(this.boardNodeRule.can('voteInPoll', user, boardNodeAuthorizable));
+
+		await this.boardNodeService.voteInPoll(element, userId, optionIds);
+
+		const viewContext: ElementViewContext = {
+			userId,
+			canEdit: this.boardNodeRule.can('updateElement', user, boardNodeAuthorizable),
+		};
+
+		return { element, viewContext };
 	}
 
 	public async updateElement(

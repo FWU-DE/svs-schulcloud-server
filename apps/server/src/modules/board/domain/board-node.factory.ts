@@ -1,4 +1,5 @@
 import { ObjectId } from '@mikro-orm/mongodb';
+import { randomBytes } from 'crypto';
 import { Injectable, NotImplementedException, UnprocessableEntityException } from '@nestjs/common';
 import { InputFormat } from '@shared/domain/types';
 import { Card } from './card.do';
@@ -12,6 +13,7 @@ import { FileFolderElement } from './file-folder-element.do';
 import { H5pElement } from './h5p-element.do';
 import { LinkElement } from './link-element.do';
 import { ROOT_PATH } from './path-utils';
+import { PollElement } from './poll-element.do';
 import { RichTextElement } from './rich-text-element.do';
 import { handleNonExhaustiveSwitch } from './type-mapping';
 import {
@@ -21,6 +23,7 @@ import {
 	BoardNodeProps,
 	Colors,
 	ContentElementType,
+	PollResultVisibility,
 } from './types';
 import { VideoConferenceElement } from './video-conference-element.do';
 
@@ -98,6 +101,23 @@ export class BoardNodeFactory {
 				element = new VideoConferenceElement({
 					...this.getBaseProps(),
 					title: '',
+				});
+				break;
+			case ContentElementType.POLL:
+				element = new PollElement({
+					...this.getBaseProps(),
+					question: '',
+					pollOptions: [
+						{ id: new ObjectId().toHexString(), text: '' },
+						{ id: new ObjectId().toHexString(), text: '' },
+					],
+					anonymous: false,
+					multipleChoice: false,
+					closed: false,
+					showResults: PollResultVisibility.ALWAYS,
+					resultsReleased: false,
+					votes: [],
+					voterSalt: randomBytes(16).toString('hex'),
 				});
 				break;
 			case ContentElementType.H5P:

@@ -2,7 +2,17 @@ import { Embedded, Entity, Enum, Index, Property } from '@mikro-orm/core';
 import { BaseEntityWithTimestamps } from '@shared/domain/entity/base.entity';
 import { EntityId, InputFormat } from '@shared/domain/types';
 import { ObjectIdType } from '@shared/repo/types/object-id.type';
-import { AnyBoardNode, BoardLayout, BoardNodeType, ContentElementType, Colors, ROOT_PATH } from '../../domain';
+import {
+	AnyBoardNode,
+	BoardLayout,
+	BoardNodeType,
+	ContentElementType,
+	Colors,
+	PollOption,
+	PollResultVisibility,
+	PollVote,
+	ROOT_PATH,
+} from '../../domain';
 import type { BoardNodeEntityProps } from '../types';
 import { Context } from './embeddables';
 
@@ -111,4 +121,33 @@ export class BoardNodeEntity extends BaseEntityWithTimestamps implements BoardNo
 	// --------------------------------------------------------------------------
 	@Enum({ type: 'ContentElementType', nullable: true })
 	deletedElementType: ContentElementType | undefined;
+
+	// PollElement
+	// --------------------------------------------------------------------------
+	@Property({ type: 'string', nullable: true })
+	question: string | undefined;
+
+	@Property({ type: 'json', nullable: true })
+	pollOptions: PollOption[] | undefined;
+
+	@Property({ type: 'boolean', nullable: true })
+	anonymous: boolean | undefined;
+
+	@Property({ type: 'boolean', nullable: true })
+	multipleChoice: boolean | undefined;
+
+	@Property({ type: 'boolean', nullable: true })
+	closed: boolean | undefined;
+
+	@Enum({ type: 'PollResultVisibility', nullable: true })
+	showResults: PollResultVisibility | undefined;
+
+	@Property({ type: 'boolean', nullable: true })
+	resultsReleased: boolean | undefined;
+
+	@Property({ type: 'json', nullable: true })
+	votes: PollVote[] | undefined;
+
+	@Property({ type: 'string', nullable: true })
+	voterSalt: string | undefined;
 }

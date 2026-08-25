@@ -63,7 +63,7 @@ export class CardController {
 	): Promise<CardListResponse> {
 		const cardIds = Array.isArray(cardIdParams.ids) ? cardIdParams.ids : [cardIdParams.ids];
 		const cards = await this.cardUc.findCards(currentUser.userId, cardIds);
-		const cardResponses = cards.map((card) => CardResponseMapper.mapToResponse(card));
+		const cardResponses = cards.map(({ card, viewContext }) => CardResponseMapper.mapToResponse(card, viewContext));
 
 		const result = new CardListResponse({
 			data: cardResponses,
