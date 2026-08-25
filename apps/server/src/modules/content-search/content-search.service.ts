@@ -2,6 +2,12 @@ import { Inject, Injectable, InternalServerErrorException } from '@nestjs/common
 import { CONTENT_SEARCH_CONFIG_TOKEN, ContentSearchConfig } from './content-search.config';
 import { McpClientService } from './mcp-client.service';
 
+export interface ContentSearchAnswer {
+	/** what was actually sent to the relays, which is rarely the whole sentence a teacher typed */
+	query: string;
+	results: ContentSearchResult[];
+}
+
 export interface ContentSearchResult {
 	title: string;
 	description: string;
@@ -64,6 +70,59 @@ const RESOURCE_TYPES: Record<string, string> = {
 	other: 'Sonstiges',
 };
 const MAX_LIMIT = 10;
+const MIN_TERM_LENGTH = 4;
+
+/**
+ * Words that say nothing about the topic. Besides the usual articles and prepositions these are
+ * the ones a card title carries out of habit - a class or a school level narrows nothing in a
+ * full text search, it only drags the results towards whatever else mentions "Klasse".
+ */
+const STOPWORDS = new Set([
+	'aber',
+	'aus',
+	'bei',
+	'das',
+	'dem',
+	'den',
+	'der',
+	'des',
+	'die',
+	'ein',
+	'eine',
+	'einer',
+	'fuer',
+	'für',
+	'ihre',
+	'mit',
+	'nach',
+	'oder',
+	'sich',
+	'und',
+	'vom',
+	'von',
+	'zum',
+	'zur',
+	'über',
+	'einheit',
+	'einstieg',
+	'jahrgang',
+	'klasse',
+	'kurs',
+	'lernziele',
+	'material',
+	'primarstufe',
+	'schuljahr',
+	'sekundarbereich',
+	'sekundarstufe',
+	'stunde',
+	'stufe',
+	'thema',
+	'themen',
+	'unterricht',
+	'unterrichtsreihe',
+	'ziel',
+	'ziele',
+]);
 
 /** the licence is a url in the metadata, teachers want to read the short name */
 const LICENSES: { pattern: string; label: string }[] = [
@@ -94,24 +153,71 @@ export class ContentSearchService {
 		private readonly mcpClientService: McpClientService
 	) {}
 
-	public async search(query: string, limit = 6, language = 'de'): Promise<ContentSearchResult[]> {
+	public async search(query: string, limit = 6, language = 'de'): Promise<ContentSearchAnswer> {
 		const wanted = Math.min(limit, MAX_LIMIT);
 		const relays = this.relays();
+
+		// the full text search of the relays falls apart on a sentence: "Fotosynthese Sekundarstufe I"
+		// answers with maths exams. Asking for the topic alone and sorting the answers here against
+		// the whole question lifts the share of fitting results from roughly a tenth to about half.
+		const terms = this.terms(query);
+		const searched = terms[0]?.original ?? query;
 
 		// one call per relay: the remote merges relay after relay, so a single call would bury the
 		// results of the second relay below a full page of the first. Asking separately also keeps
 		// one unreachable relay from taking down the whole search.
-		const answers = await Promise.allSettled(relays.map((relay) => this.searchRelay(query, wanted, language, relay)));
+		const answers = await Promise.allSettled(
+			relays.map((relay) => this.searchRelay(searched, wanted, language, relay))
+		);
 
 		const reachable = answers.filter((answer) => answer.status === 'fulfilled');
 		if (reachable.length === 0) {
 			throw new InternalServerErrorException('The content search could not reach any relay');
 		}
 
-		return this.merge(
-			reachable.map((answer) => answer.value),
-			wanted
-		);
+		const merged = this.merge(reachable.map((answer) => answer.value));
+
+		return { query: searched, results: this.rank(merged, terms).slice(0, wanted) };
+	}
+
+	/** the words of the question that carry a topic, in the order they were written */
+	private terms(query: string): { original: string; normalized: string }[] {
+		return query
+			.split(/[^\p{L}\p{N}]+/u)
+			.filter((word) => word.length >= MIN_TERM_LENGTH && !/^\d+$/.test(word))
+			.map((word) => {
+				return { original: word, normalized: this.fold(word) };
+			})
+			.filter((term) => !STOPWORDS.has(term.normalized) && !STOPWORDS.has(term.original.toLowerCase()));
+	}
+
+	/** lower case and without accents, so a result spelled "Wuerfel" still answers to "Würfel" */
+	private fold(word: string): string {
+		return word
+			.toLowerCase()
+			.normalize('NFD')
+			.replace(/[\u0300-\u036f]/gu, '');
+	}
+
+	/**
+	 * Sorts by how much of the original question a result covers. The sort is stable, so results
+	 * that cover the same amount keep the order the relays were taken in and no relay loses its
+	 * share to the ranking.
+	 */
+	private rank(
+		results: ContentSearchResult[],
+		terms: { original: string; normalized: string }[]
+	): ContentSearchResult[] {
+		if (terms.length < 2) return results;
+
+		const covered = (result: ContentSearchResult): number => {
+			const haystack = this.fold(`${result.title} ${result.description} ${result.subjects.join(' ')}`);
+
+			// a prefix is enough: the plural, the compound and the inflected form all start the same
+			return terms.filter((term) => haystack.includes(term.normalized.slice(0, MIN_TERM_LENGTH + 1))).length;
+		};
+
+		return [...results].sort((left, right) => covered(right) - covered(left));
 	}
 
 	/**
@@ -142,15 +248,13 @@ export class ContentSearchService {
 	}
 
 	/** takes the best hit of every relay in turn, so each corpus reaches the teacher */
-	private merge(perRelay: AmbResource[][], wanted: number): ContentSearchResult[] {
+	private merge(perRelay: AmbResource[][]): ContentSearchResult[] {
 		const results: ContentSearchResult[] = [];
 		const seen = new Set<string>();
 		const deepest = perRelay.reduce((depth, resources) => Math.max(depth, resources.length), 0);
 
-		for (let rank = 0; rank < deepest && results.length < wanted; rank += 1) {
+		for (let rank = 0; rank < deepest; rank += 1) {
 			for (const resources of perRelay) {
-				if (results.length >= wanted) break;
-
 				const resource = resources[rank];
 				const result = resource === undefined ? undefined : this.toResult(resource);
 				if (resource === undefined || result === undefined) continue;

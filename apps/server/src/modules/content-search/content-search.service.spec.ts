@@ -81,7 +81,7 @@ describe('ContentSearchService', () => {
 		it('should map a result to what a teacher needs to judge it', async () => {
 			const { service } = setup([resource()], []);
 
-			const results = await service.search('Fotosynthese');
+			const { results } = await service.search('Fotosynthese');
 
 			expect(results).toEqual([
 				{
@@ -101,7 +101,7 @@ describe('ContentSearchService', () => {
 		it('should fall back to the relay url when there is no source page', async () => {
 			const { service } = setup([resource({ sourcePage: undefined })], []);
 
-			const [result] = await service.search('Fotosynthese');
+			const [result] = (await service.search('Fotosynthese')).results;
 
 			expect(result.url).toBe('https://dev.edufeed.org/naddr1abc');
 		});
@@ -115,7 +115,7 @@ describe('ContentSearchService', () => {
 		])('should name the licence $label', async ({ id, label }) => {
 			const { service } = setup([resource({ license: { id } })], []);
 
-			const [result] = await service.search('Fotosynthese');
+			const [result] = (await service.search('Fotosynthese')).results;
 
 			expect(result.license).toBe(label);
 		});
@@ -129,7 +129,7 @@ describe('ContentSearchService', () => {
 		])('should name the kind of material $label', async ({ value, label }) => {
 			const { service } = setup([resource({ learningResourceType: [value] })], []);
 
-			const [result] = await service.search('Fotosynthese');
+			const [result] = (await service.search('Fotosynthese')).results;
 
 			expect(result.resourceType).toBe(label);
 		});
@@ -140,7 +140,7 @@ describe('ContentSearchService', () => {
 				[]
 			);
 
-			const results = await service.search('Fotosynthese');
+			const { results } = await service.search('Fotosynthese');
 
 			expect(results).toEqual([]);
 		});
@@ -153,7 +153,7 @@ describe('ContentSearchService', () => {
 					[named('sodix 1'), named('sodix 2'), named('sodix 3'), named('sodix 4')]
 				);
 
-				const results = await service.search('Mathematik', 6);
+				const { results } = await service.search('Mathematik', 6);
 
 				expect(results.map((result) => result.title)).toEqual([
 					'amb 1',
@@ -168,7 +168,7 @@ describe('ContentSearchService', () => {
 			it('should fill up from the other relay when one has little to offer', async () => {
 				const { service } = setup([named('amb 1')], [named('oersi 1'), named('oersi 2'), named('oersi 3')]);
 
-				const results = await service.search('Fotosynthese', 4);
+				const { results } = await service.search('Fotosynthese', 4);
 
 				expect(results.map((result) => result.title)).toEqual(['amb 1', 'oersi 1', 'oersi 2', 'oersi 3']);
 			});
@@ -176,7 +176,7 @@ describe('ContentSearchService', () => {
 			it('should show material that sits on both relays only once', async () => {
 				const { service } = setup([named('geteiltes material')], [named('geteiltes material'), named('nur oersi')]);
 
-				const results = await service.search('Fotosynthese', 4);
+				const { results } = await service.search('Fotosynthese', 4);
 
 				expect(results.map((result) => result.title)).toEqual(['geteiltes material', 'nur oersi']);
 			});
@@ -187,9 +187,73 @@ describe('ContentSearchService', () => {
 					Array.from({ length: 6 }, (_, index) => named(`oersi ${index}`))
 				);
 
-				const results = await service.search('Fotosynthese', 4);
+				const { results } = await service.search('Fotosynthese', 4);
 
 				expect(results).toHaveLength(4);
+			});
+		});
+
+		describe('when the question is a sentence', () => {
+			it('should ask the relays for the topic instead of the whole sentence', async () => {
+				const { service, mcpClientService } = setup([], [], []);
+
+				const { query } = await service.search('Fotosynthese Sekundarstufe I');
+
+				expect(query).toBe('Fotosynthese');
+				expect(mcpClientService.callTool).toHaveBeenCalledWith(
+					'search_resources',
+					expect.objectContaining({ query: 'Fotosynthese' })
+				);
+			});
+
+			it('should keep the spelling of the word it picked', async () => {
+				const { service } = setup([], [], []);
+
+				const { query } = await service.search('Würfel Wahrscheinlichkeit Klasse 8');
+
+				expect(query).toBe('Würfel');
+			});
+
+			it('should fall back to the question when no word carries a topic', async () => {
+				const { service } = setup([], [], []);
+
+				const { query } = await service.search('Ziele der Stunde');
+
+				expect(query).toBe('Ziele der Stunde');
+			});
+
+			it('should put the results that cover more of the question first', async () => {
+				const { service } = setup(
+					[
+						resource({ id: 'a', name: 'Zellteilung im Überblick', description: 'Ein Video' }),
+						resource({ id: 'b', name: 'Zellteilung: Mitose als Arbeitsblatt', description: 'Zum Ausdrucken' }),
+					],
+					[],
+					[]
+				);
+
+				const { results } = await service.search('Zellteilung Mitose Arbeitsblatt');
+
+				expect(results.map((result) => result.title)).toEqual([
+					'Zellteilung: Mitose als Arbeitsblatt',
+					'Zellteilung im Überblick',
+				]);
+			});
+
+			it('should leave the order of equally fitting results to the relays', async () => {
+				const { service } = setup(
+					[resource({ id: 'a', name: 'Zellteilung eins' })],
+					[resource({ id: 'b', name: 'Zellteilung zwei' })],
+					[resource({ id: 'c', name: 'Zellteilung drei' })]
+				);
+
+				const { results } = await service.search('Zellteilung Mitose');
+
+				expect(results.map((result) => result.title)).toEqual([
+					'Zellteilung eins',
+					'Zellteilung zwei',
+					'Zellteilung drei',
+				]);
 			});
 		});
 
@@ -197,7 +261,7 @@ describe('ContentSearchService', () => {
 			it('should still return what the other relay found', async () => {
 				const { service } = setup(new Error('relay is down'), [named('oersi 1')]);
 
-				const results = await service.search('Fotosynthese');
+				const { results } = await service.search('Fotosynthese');
 
 				expect(results.map((result) => result.title)).toEqual(['oersi 1']);
 			});
@@ -212,7 +276,7 @@ describe('ContentSearchService', () => {
 		it('should survive an answer that carries no resources', async () => {
 			const { service } = setup(undefined as unknown as unknown[], undefined as unknown as unknown[]);
 
-			await expect(service.search('Fotosynthese')).resolves.toEqual([]);
+			await expect(service.search('Fotosynthese')).resolves.toEqual({ query: 'Fotosynthese', results: [] });
 		});
 	});
 });

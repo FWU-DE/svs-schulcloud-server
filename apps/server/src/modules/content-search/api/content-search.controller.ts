@@ -66,9 +66,13 @@ export class ContentSearchListResponse {
 	@ApiProperty({ type: [String], description: 'The relays that were searched, oersi and sodix among them' })
 	public relays: string[];
 
-	constructor(data: ContentSearchResultResponse[], relays: string[]) {
+	@ApiProperty({ description: 'The term the relays were asked for, which is the topic of the question' })
+	public query: string;
+
+	constructor(data: ContentSearchResultResponse[], relays: string[], query: string) {
 		this.data = data;
 		this.relays = relays;
+		this.query = query;
 	}
 }
 
@@ -81,18 +85,19 @@ export class ContentSearchController {
 	@ApiOperation({
 		summary: 'Search open educational resources',
 		description:
-			'Asks the public amb relay through its mcp server. The amb, oersi and sodix relays are all searched, because oersi and sodix are extra corpora the remote server would otherwise leave out.',
+			'Asks the public amb relay through its mcp server. The amb, oersi and sodix relays are all searched, because oersi and sodix are extra corpora the remote server would otherwise leave out. A question of several words is reduced to its topic before it is sent and the answers are sorted against the whole question, because the remote full text search does not cope with a sentence.',
 	})
 	@ApiResponse({ status: 200, type: ContentSearchListResponse })
 	@ApiResponse({ status: 400, type: ErrorResponse })
 	@ApiResponse({ status: 500, type: ErrorResponse })
 	@Get()
 	public async search(@Query() params: ContentSearchParams): Promise<ContentSearchListResponse> {
-		const results = await this.contentSearchService.search(params.query, params.limit);
+		const answer = await this.contentSearchService.search(params.query, params.limit);
 
 		return new ContentSearchListResponse(
-			results.map((result) => new ContentSearchResultResponse(result)),
-			this.contentSearchService.relays()
+			answer.results.map((result) => new ContentSearchResultResponse(result)),
+			this.contentSearchService.relays(),
+			answer.query
 		);
 	}
 }
