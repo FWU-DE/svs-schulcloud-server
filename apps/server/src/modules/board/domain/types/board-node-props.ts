@@ -7,6 +7,7 @@ import type { CardComment } from './card-comment';
 import type { CardReaction, CardReactionType } from './card-reaction';
 import type { ChecklistItem } from './checklist';
 import type { ContentElementType } from './content-element-type.enum';
+import type { RecordingMediaType } from './recording';
 import type { PollOption, PollResultVisibility, PollVote } from './poll';
 
 export interface BoardNodeProps {
@@ -117,6 +118,11 @@ export interface ChecklistElementProps extends BoardNodeProps {
 	items: ChecklistItem[];
 }
 
+export interface RecordingElementProps extends BoardNodeProps {
+	mediaType: RecordingMediaType;
+	caption: string;
+}
+
 export interface MediaBoardProps extends BoardNodeProps {
 	context: BoardExternalReference;
 	backgroundColor: Colors;
@@ -156,4 +162,5 @@ export type AnyBoardNodeProps =
 	| CodeElementProps
 	| FormulaElementProps
 	| ChecklistElementProps
+	| RecordingElementProps
 	| MediaBoardNodeProps;

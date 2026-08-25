@@ -9,6 +9,7 @@ export * from './code-element-response.mapper';
 export * from './deadline-element-response.mapper';
 export * from './formula-element-response.mapper';
 export * from './poll-element-response.mapper';
+export * from './recording-element-response.mapper';
 export * from './create-board-response.mapper';
 export * from './deleted-element-response.mapper';
 export * from './external-tool-element-response.mapper';

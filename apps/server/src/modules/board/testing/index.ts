@@ -24,3 +24,4 @@ export * from './code-element.factory';
 export * from './deadline-element.factory';
 export * from './formula-element.factory';
 export * from './poll-element.factory';
+export * from './recording-element.factory';

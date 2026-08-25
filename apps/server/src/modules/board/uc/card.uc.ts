@@ -60,6 +60,7 @@ const INTERACTIVE_ELEMENT_TYPES: ContentElementType[] = [
 	ContentElementType.CODE,
 	ContentElementType.FORMULA,
 	ContentElementType.CHECKLIST,
+	ContentElementType.RECORDING,
 ];
 
 /**

@@ -41,6 +41,8 @@ import {
 	H5pElementResponse,
 	PollElementContentBody,
 	PollElementResponse,
+	RecordingElementContentBody,
+	RecordingElementResponse,
 	PollVoteBodyParams,
 	LinkElementContentBody,
 	LinkElementResponse,
@@ -127,7 +129,8 @@ export class ElementController {
 		DeadlineElementContentBody,
 		CodeElementContentBody,
 		FormulaElementContentBody,
-		ChecklistElementContentBody
+		ChecklistElementContentBody,
+		RecordingElementContentBody
 	)
 	@ApiResponse({
 		status: 200,
@@ -146,6 +149,7 @@ export class ElementController {
 				{ $ref: getSchemaPath(CodeElementResponse) },
 				{ $ref: getSchemaPath(FormulaElementResponse) },
 				{ $ref: getSchemaPath(ChecklistElementResponse) },
+				{ $ref: getSchemaPath(RecordingElementResponse) },
 			],
 		},
 	})

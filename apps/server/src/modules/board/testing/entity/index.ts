@@ -15,5 +15,6 @@ export * from './code-element-entity.factory';
 export * from './deadline-element-entity.factory';
 export * from './formula-element-entity.factory';
 export * from './poll-element-entity.factory';
+export * from './recording-element-entity.factory';
 export * from './rich-text-element-entity.factory';
 export * from './video-conference-element-entity.factory';

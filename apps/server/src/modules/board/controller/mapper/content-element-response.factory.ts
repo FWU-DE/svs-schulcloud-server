@@ -16,6 +16,7 @@ import { CodeElementResponseMapper } from './code-element-response.mapper';
 import { DeadlineElementResponseMapper } from './deadline-element-response.mapper';
 import { FormulaElementResponseMapper } from './formula-element-response.mapper';
 import { PollElementResponseMapper } from './poll-element-response.mapper';
+import { RecordingElementResponseMapper } from './recording-element-response.mapper';
 import { RichTextElementResponseMapper } from './rich-text-element-response.mapper';
 import { VideoConferenceElementResponseMapper } from './video-conference-element-response.mapper';
 
@@ -36,6 +37,7 @@ export class ContentElementResponseFactory {
 		CodeElementResponseMapper.getInstance(),
 		FormulaElementResponseMapper.getInstance(),
 		ChecklistElementResponseMapper.getInstance(),
+		RecordingElementResponseMapper.getInstance(),
 	];
 
 	public static mapToResponse(element: AnyBoardNode, context?: BoardViewContext): AnyContentElementResponse {

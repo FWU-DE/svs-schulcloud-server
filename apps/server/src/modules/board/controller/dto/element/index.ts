@@ -19,3 +19,4 @@ export * from './deadline-element.response';
 export * from './formula-element.response';
 export * from './poll-element.response';
 export * from './poll-vote.body.params';
+export * from './recording-element.response';

@@ -15,6 +15,7 @@ import {
 	PollOption,
 	PollResultVisibility,
 	PollVote,
+	RecordingMediaType,
 	ROOT_PATH,
 } from '../../domain';
 import type { BoardNodeEntityProps } from '../types';
@@ -191,4 +192,9 @@ export class BoardNodeEntity extends BaseEntityWithTimestamps implements BoardNo
 	// --------------------------------------------------------------------------
 	@Property({ type: 'json', nullable: true })
 	items: ChecklistItem[] | undefined;
+
+	// RecordingElement
+	// --------------------------------------------------------------------------
+	@Enum({ type: 'RecordingMediaType', nullable: true })
+	mediaType: RecordingMediaType | undefined;
 }

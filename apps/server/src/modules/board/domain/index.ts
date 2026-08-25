@@ -20,6 +20,7 @@ export * from './code-element.do';
 export * from './deadline-element.do';
 export * from './formula-element.do';
 export * from './poll-element.do';
+export * from './recording-element.do';
 export * from './rich-text-element.do';
 export * from './type-mapping';
 export * from './types';

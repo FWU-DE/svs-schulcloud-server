@@ -33,6 +33,7 @@ import {
 	DeadlineElement,
 	FormulaElement,
 	PollElement,
+	RecordingElement,
 	handleNonExhaustiveSwitch,
 	LinkElement,
 	type MediaBoard,
@@ -120,6 +121,9 @@ export class BoardNodeCopyService {
 				break;
 			case BoardNodeType.CHECKLIST_ELEMENT:
 				result = await this.copyChecklistElement(boardNode as ChecklistElement);
+				break;
+			case BoardNodeType.RECORDING_ELEMENT:
+				result = await this.copyRecordingElement(boardNode as RecordingElement, context);
 				break;
 			case BoardNodeType.POLL_ELEMENT:
 				result = await this.copyPollElement(boardNode as PollElement);
@@ -232,9 +236,9 @@ export class BoardNodeCopyService {
 	}
 
 	private async copyFilesOfParent(
-		original: FileElement | LinkElement | FileFolderElement,
+		original: FileElement | LinkElement | FileFolderElement | RecordingElement,
 		context: CopyContext,
-		copy: FileFolderElement | FileElement
+		copy: FileFolderElement | FileElement | RecordingElement
 	): Promise<CopyStatus[]> {
 		const fileCopies = await context.copyFilesOfParent(original.id, copy.id);
 		const copyStatus = CopyMapper.mapFileDtosToCopyStatus(fileCopies);
@@ -458,6 +462,23 @@ export class BoardNodeCopyService {
 		};
 
 		return Promise.resolve(result);
+	}
+
+	/** The recording travels with the element, the same way a file element's attachment does. */
+	public async copyRecordingElement(original: RecordingElement, context: CopyContext): Promise<CopyStatus> {
+		const copy = new RecordingElement({
+			...original.getProps(),
+			...this.buildSpecificProps([]),
+		});
+
+		const fileCopyStatus = await this.copyFilesOfParent(original, context, copy);
+
+		return {
+			copyEntity: copy,
+			type: CopyElementType.RECORDING_ELEMENT,
+			status: CopyStatusEnum.SUCCESS,
+			elements: fileCopyStatus,
+		};
 	}
 
 	/** These elements carry no state that a copy would have to reset. */

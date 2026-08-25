@@ -17,6 +17,7 @@ import { CodeElement } from './code-element.do';
 import { DeadlineElement } from './deadline-element.do';
 import { FormulaElement } from './formula-element.do';
 import { ROOT_PATH } from './path-utils';
+import { RecordingElement } from './recording-element.do';
 import { PollElement } from './poll-element.do';
 import { RichTextElement } from './rich-text-element.do';
 import { handleNonExhaustiveSwitch } from './type-mapping';
@@ -29,6 +30,7 @@ import {
 	Colors,
 	ContentElementType,
 	PollResultVisibility,
+	RecordingMediaType,
 } from './types';
 import { VideoConferenceElement } from './video-conference-element.do';
 
@@ -163,6 +165,13 @@ export class BoardNodeFactory {
 					...this.getBaseProps(),
 					title: '',
 					items: [],
+				});
+				break;
+			case ContentElementType.RECORDING:
+				element = new RecordingElement({
+					...this.getBaseProps(),
+					mediaType: RecordingMediaType.AUDIO,
+					caption: '',
 				});
 				break;
 			case ContentElementType.H5P:

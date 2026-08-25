@@ -15,6 +15,7 @@ import {
 	H5pContentBody,
 	LinkContentBody,
 	PollContentBody,
+	RecordingContentBody,
 	RichTextContentBody,
 	VideoConferenceContentBody,
 } from '../../controller/dto';
@@ -25,6 +26,7 @@ import type {
 	DeadlineElement,
 	FormulaElement,
 	PollElement,
+	RecordingElement,
 	DrawingElement,
 	ExternalToolElement,
 	FileElement,
@@ -46,6 +48,7 @@ import {
 	isFormulaElement,
 	isLinkElement,
 	isPollElement,
+	isRecordingElement,
 	isRichTextElement,
 	isVideoConferenceElement,
 } from '../../domain';
@@ -83,6 +86,8 @@ export class ContentElementUpdateService {
 			this.updateFormulaElement(element, content);
 		} else if (isChecklistElement(element) && content instanceof ChecklistContentBody) {
 			this.updateChecklistElement(element, content);
+		} else if (isRecordingElement(element) && content instanceof RecordingContentBody) {
+			this.updateRecordingElement(element, content);
 		} else {
 			throw new Error(`Cannot update element of type: '${element.constructor.name}'`);
 		}
@@ -163,6 +168,11 @@ export class ContentElementUpdateService {
 			content.items.map((item) => ({ id: item.id, text: sanitizeRichText(item.text, InputFormat.PLAIN_TEXT) })),
 			() => new ObjectId().toHexString()
 		);
+	}
+
+	public updateRecordingElement(element: RecordingElement, content: RecordingContentBody): void {
+		element.mediaType = content.mediaType;
+		element.caption = sanitizeRichText(content.caption, InputFormat.PLAIN_TEXT);
 	}
 
 	public updatePollElement(element: PollElement, content: PollContentBody): void {

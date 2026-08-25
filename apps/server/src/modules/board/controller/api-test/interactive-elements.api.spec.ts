@@ -6,7 +6,7 @@ import { Test, type TestingModule } from '@nestjs/testing';
 import { cleanupCollections } from '@testing/cleanup-collections';
 import { UserAndAccountTestFactory } from '@testing/factory/user-and-account.test.factory';
 import { TestApiClient } from '@testing/test-api-client';
-import { BoardExternalReferenceType, ContentElementType } from '../../domain';
+import { BoardExternalReferenceType, ContentElementType, RecordingMediaType } from '../../domain';
 import { BoardNodeEntity } from '../../repo';
 import {
 	cardEntityFactory,
@@ -16,6 +16,7 @@ import {
 	columnEntityFactory,
 	deadlineElementEntityFactory,
 	formulaElementEntityFactory,
+	recordingElementEntityFactory,
 } from '../../testing';
 import { ChecklistElementResponse } from '../dto';
 
@@ -78,8 +79,9 @@ describe('interactive board elements (api)', () => {
 		const code = codeElementEntityFactory.withParent(card).build();
 		const formula = formulaElementEntityFactory.withParent(card).build();
 		const checklist = checklistElementEntityFactory.withParent(card).build();
+		const recording = recordingElementEntityFactory.withParent(card).build();
 
-		await em.persist([columnBoardNode, column, card, deadline, code, formula, checklist]).flush();
+		await em.persist([columnBoardNode, column, card, deadline, code, formula, checklist, recording]).flush();
 		em.clear();
 
 		return {
@@ -92,6 +94,7 @@ describe('interactive board elements (api)', () => {
 			code,
 			formula,
 			checklist,
+			recording,
 		};
 	};
 
@@ -158,6 +161,46 @@ describe('interactive board elements (api)', () => {
 			const stored = await em.findOneOrFail(BoardNodeEntity, formula.id);
 
 			expect(stored.latex).toEqual(latex);
+		});
+	});
+
+	describe('the recording element', () => {
+		it('should store the media type and the caption', async () => {
+			const { teacherElements, recording } = await setup();
+
+			await teacherElements.patch(`${recording.id}/content`, {
+				data: {
+					type: ContentElementType.RECORDING,
+					content: { mediaType: RecordingMediaType.VIDEO, caption: 'Mein Vortrag' },
+				},
+			});
+			const stored = await em.findOneOrFail(BoardNodeEntity, recording.id);
+
+			expect(stored.mediaType).toEqual(RecordingMediaType.VIDEO);
+			expect(stored.caption).toEqual('Mein Vortrag');
+		});
+
+		it('should refuse an unknown media type', async () => {
+			const { teacherElements, recording } = await setup();
+
+			const response = await teacherElements.patch(`${recording.id}/content`, {
+				data: { type: ContentElementType.RECORDING, content: { mediaType: 'hologram', caption: '' } },
+			});
+
+			expect(response.statusCode).toEqual(400);
+		});
+
+		it('should refuse an edit by a student', async () => {
+			const { studentElements, recording } = await setup();
+
+			const response = await studentElements.patch(`${recording.id}/content`, {
+				data: {
+					type: ContentElementType.RECORDING,
+					content: { mediaType: RecordingMediaType.AUDIO, caption: 'Meins' },
+				},
+			});
+
+			expect(response.statusCode).toEqual(403);
 		});
 	});
 

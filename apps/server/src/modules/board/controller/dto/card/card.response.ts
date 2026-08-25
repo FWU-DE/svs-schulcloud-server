@@ -16,6 +16,7 @@ import {
 	DeadlineElementResponse,
 	FormulaElementResponse,
 	PollElementResponse,
+	RecordingElementResponse,
 	RichTextElementResponse,
 	VideoConferenceElementResponse,
 } from '../element';
@@ -40,7 +41,8 @@ import { Colors } from '../../../domain';
 	DeadlineElementResponse,
 	CodeElementResponse,
 	FormulaElementResponse,
-	ChecklistElementResponse
+	ChecklistElementResponse,
+	RecordingElementResponse
 )
 export class CardResponse {
 	constructor({
@@ -99,6 +101,7 @@ export class CardResponse {
 				{ $ref: getSchemaPath(CodeElementResponse) },
 				{ $ref: getSchemaPath(FormulaElementResponse) },
 				{ $ref: getSchemaPath(ChecklistElementResponse) },
+				{ $ref: getSchemaPath(RecordingElementResponse) },
 			],
 		},
 	})

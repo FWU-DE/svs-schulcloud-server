@@ -14,4 +14,5 @@ export enum ContentElementType {
 	CODE = 'code',
 	FORMULA = 'formula',
 	CHECKLIST = 'checklist',
+	RECORDING = 'recording',
 }

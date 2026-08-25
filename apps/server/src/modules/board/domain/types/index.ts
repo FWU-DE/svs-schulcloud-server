@@ -12,3 +12,4 @@ export * from './checklist';
 export * from './card-reaction';
 export * from './board-view-context';
 export * from './poll';
+export * from './recording';

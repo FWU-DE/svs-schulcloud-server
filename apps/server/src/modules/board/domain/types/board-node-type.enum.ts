@@ -17,6 +17,7 @@ export enum BoardNodeType {
 	CODE_ELEMENT = 'code-element',
 	FORMULA_ELEMENT = 'formula-element',
 	CHECKLIST_ELEMENT = 'checklist-element',
+	RECORDING_ELEMENT = 'recording-element',
 
 	MEDIA_BOARD = 'media-board',
 	MEDIA_LINE = 'media-line',

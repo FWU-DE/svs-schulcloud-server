@@ -14,7 +14,12 @@ import {
 	MaxLength,
 	ValidateNested,
 } from 'class-validator';
-import { ContentElementType, MAX_CHECKLIST_ITEMS, PollResultVisibility } from '../../../domain/types';
+import {
+	ContentElementType,
+	MAX_CHECKLIST_ITEMS,
+	PollResultVisibility,
+	RecordingMediaType,
+} from '../../../domain/types';
 
 abstract class ElementContentBody {
 	@IsEnum(ContentElementType)
@@ -325,6 +330,26 @@ export class ChecklistElementContentBody extends ElementContentBody {
 	content!: ChecklistContentBody;
 }
 
+export class RecordingContentBody {
+	@IsEnum(RecordingMediaType)
+	@ApiProperty({ enum: RecordingMediaType, enumName: 'RecordingMediaType' })
+	mediaType!: RecordingMediaType;
+
+	@IsString()
+	@MaxLength(500)
+	@ApiProperty()
+	caption!: string;
+}
+
+export class RecordingElementContentBody extends ElementContentBody {
+	@ApiProperty({ type: () => ContentElementType.RECORDING })
+	type!: ContentElementType.RECORDING;
+
+	@ValidateNested()
+	@ApiProperty()
+	content!: RecordingContentBody;
+}
+
 export type AnyElementContentBody =
 	| FileContentBody
 	| DrawingContentBody
@@ -338,7 +363,8 @@ export type AnyElementContentBody =
 	| DeadlineContentBody
 	| CodeContentBody
 	| FormulaContentBody
-	| ChecklistContentBody;
+	| ChecklistContentBody
+	| RecordingContentBody;
 
 export class UpdateElementContentBodyParams {
 	@ValidateNested()
@@ -359,6 +385,7 @@ export class UpdateElementContentBodyParams {
 				{ value: CodeElementContentBody, name: ContentElementType.CODE },
 				{ value: FormulaElementContentBody, name: ContentElementType.FORMULA },
 				{ value: ChecklistElementContentBody, name: ContentElementType.CHECKLIST },
+				{ value: RecordingElementContentBody, name: ContentElementType.RECORDING },
 			],
 		},
 		keepDiscriminatorProperty: true,
@@ -378,6 +405,7 @@ export class UpdateElementContentBodyParams {
 			{ $ref: getSchemaPath(CodeElementContentBody) },
 			{ $ref: getSchemaPath(FormulaElementContentBody) },
 			{ $ref: getSchemaPath(ChecklistElementContentBody) },
+			{ $ref: getSchemaPath(RecordingElementContentBody) },
 		],
 	})
 	data!:
@@ -393,5 +421,6 @@ export class UpdateElementContentBodyParams {
 		| DeadlineElementContentBody
 		| CodeElementContentBody
 		| FormulaElementContentBody
-		| ChecklistElementContentBody;
+		| ChecklistElementContentBody
+		| RecordingElementContentBody;
 }
