@@ -1,4 +1,5 @@
 export * from './board.response';
+export * from './comments-enabled.body.params';
 export * from './reaction-type.body.params';
 export * from './board.url.params';
 export * from './card-skeleton.response';

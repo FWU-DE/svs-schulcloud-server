@@ -44,6 +44,7 @@ export const columnBoardEntityFactory = ColumnBoardEntityFactory.define(({ seque
 		readersCanEdit: params.readersCanEdit ?? false,
 		layout: BoardLayout.COLUMNS,
 		reactionType: CardReactionType.NONE,
+		commentsEnabled: false,
 		type: BoardNodeType.COLUMN_BOARD,
 	};
 

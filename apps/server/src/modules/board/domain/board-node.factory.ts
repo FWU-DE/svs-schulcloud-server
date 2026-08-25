@@ -36,6 +36,7 @@ export class BoardNodeFactory {
 			isVisible: false,
 			readersCanEdit: false,
 			reactionType: CardReactionType.NONE,
+			commentsEnabled: false,
 			...props,
 		});
 
@@ -55,6 +56,7 @@ export class BoardNodeFactory {
 			backgroundColor: Colors.TRANSPARENT,
 			height: 150,
 			reactions: [],
+			comments: [],
 			children,
 		});
 

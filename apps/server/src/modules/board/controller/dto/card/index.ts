@@ -1,5 +1,7 @@
 export * from './card-ids.params';
 export * from './card-list.response';
+export * from './card-comment.body.params';
+export * from './card-comment.response';
 export * from './card-reaction.body.params';
 export * from './card-reactions.response';
 export * from './card.response';

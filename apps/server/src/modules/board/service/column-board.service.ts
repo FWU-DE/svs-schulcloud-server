@@ -54,6 +54,12 @@ export class ColumnBoardService {
 		await this.boardNodeRepo.save(board);
 	}
 
+	public async updateCommentsEnabled(board: ColumnBoard, commentsEnabled: boolean): Promise<void> {
+		board.commentsEnabled = commentsEnabled;
+
+		await this.boardNodeRepo.save(board);
+	}
+
 	public async updateReadersCanEdit(columnBoard: ColumnBoard, readersCanEdit: boolean): Promise<void> {
 		columnBoard.readersCanEdit = readersCanEdit;
 		await this.boardNodeRepo.save(columnBoard);

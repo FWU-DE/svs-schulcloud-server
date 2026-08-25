@@ -29,6 +29,7 @@ import {
 } from './dto';
 import { BoardContextResponse } from './dto/board/board-context.reponse';
 import { ReadersCanEditBodyParams } from './dto/board/readers-can-edit.body.params';
+import { CommentsEnabledBodyParams } from './dto/board/comments-enabled.body.params';
 import { ReactionTypeBodyParams } from './dto/board/reaction-type.body.params';
 import { BoardResponseMapper, ColumnResponseMapper, CreateBoardResponseMapper } from './mapper';
 
@@ -194,6 +195,21 @@ export class BoardController {
 		@CurrentUser() currentUser: ICurrentUser
 	): Promise<void> {
 		await this.boardUc.updateReactionType(currentUser.userId, urlParams.boardId, bodyParams.reactionType);
+	}
+
+	@ApiOperation({ summary: 'Turn comments on the cards of a board on or off.' })
+	@ApiResponse({ status: 204 })
+	@ApiResponse({ status: 400, type: ApiValidationError })
+	@ApiResponse({ status: 403, type: ForbiddenException })
+	@ApiResponse({ status: 404, type: NotFoundException })
+	@HttpCode(204)
+	@Patch(':boardId/comments-enabled')
+	public async updateCommentsEnabled(
+		@Param() urlParams: BoardUrlParams,
+		@Body() bodyParams: CommentsEnabledBodyParams,
+		@CurrentUser() currentUser: ICurrentUser
+	): Promise<void> {
+		await this.boardUc.updateCommentsEnabled(currentUser.userId, urlParams.boardId, bodyParams.commentsEnabled);
 	}
 
 	@ApiOperation({ summary: 'Update the layout of a board.' })

@@ -746,6 +746,7 @@ describe(BoardNodeRule.name, () => {
 					copyBoard: true,
 					deleteBoard: true,
 					updateBoardReactionType: true,
+					updateBoardCommentsEnabled: true,
 					findBoard: true,
 					relocateContent: true,
 					shareBoard: true,
@@ -771,7 +772,9 @@ describe(BoardNodeRule.name, () => {
 					updateCardHeight: true,
 					updateCardTitle: true,
 					updateCardColor: true,
+					moderateCardComments: true,
 					reactToCard: true,
+					commentOnCard: true,
 
 					// element
 					createElement: true,
@@ -836,6 +839,7 @@ describe(BoardNodeRule.name, () => {
 					copyBoard: true,
 					deleteBoard: true,
 					updateBoardReactionType: true,
+					updateBoardCommentsEnabled: true,
 					findBoard: true,
 					relocateContent: false,
 					shareBoard: false,
@@ -861,7 +865,9 @@ describe(BoardNodeRule.name, () => {
 					updateCardHeight: true,
 					updateCardTitle: true,
 					updateCardColor: true,
+					moderateCardComments: true,
 					reactToCard: true,
+					commentOnCard: true,
 
 					// element
 					createElement: true,
@@ -927,6 +933,7 @@ describe(BoardNodeRule.name, () => {
 					copyBoard: false,
 					deleteBoard: false,
 					updateBoardReactionType: false,
+					updateBoardCommentsEnabled: false,
 					findBoard: true,
 					relocateContent: false,
 					shareBoard: false,
@@ -952,7 +959,9 @@ describe(BoardNodeRule.name, () => {
 					updateCardHeight: false,
 					updateCardTitle: false,
 					updateCardColor: false,
+					moderateCardComments: false,
 					reactToCard: true,
+					commentOnCard: true,
 
 					// element
 					createElement: false,
@@ -1031,6 +1040,7 @@ describe(BoardNodeRule.name, () => {
 					copyBoard: false,
 					deleteBoard: false,
 					updateBoardReactionType: false,
+					updateBoardCommentsEnabled: false,
 					findBoard: false,
 					relocateContent: false,
 					shareBoard: false,
@@ -1056,7 +1066,9 @@ describe(BoardNodeRule.name, () => {
 					updateCardHeight: false,
 					updateCardTitle: false,
 					updateCardColor: false,
+					moderateCardComments: false,
 					reactToCard: false,
+					commentOnCard: false,
 
 					// element
 					createElement: false,

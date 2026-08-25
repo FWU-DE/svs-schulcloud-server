@@ -15,6 +15,7 @@ export class BoardResponse {
 		isVisible,
 		readersCanEdit,
 		reactionType,
+		commentsEnabled,
 		layout,
 		features,
 		allowedOperations,
@@ -26,6 +27,7 @@ export class BoardResponse {
 		this.isVisible = isVisible;
 		this.readersCanEdit = readersCanEdit;
 		this.reactionType = reactionType;
+		this.commentsEnabled = commentsEnabled;
 		this.layout = layout;
 		this.features = features;
 		this.allowedOperations = allowedOperations;
@@ -56,6 +58,9 @@ export class BoardResponse {
 
 	@ApiProperty({ enum: CardReactionType, enumName: 'CardReactionType' })
 	reactionType: CardReactionType;
+
+	@ApiProperty()
+	commentsEnabled: boolean;
 
 	@ApiProperty({ enum: BoardLayout, enumName: 'BoardLayout' })
 	layout: BoardLayout;

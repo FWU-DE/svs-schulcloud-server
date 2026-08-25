@@ -1,4 +1,5 @@
 export * from './board-response.mapper';
+export * from './card-comment-response.mapper';
 export * from './card-response.mapper';
 export * from './collaborative-text-editor-element-response.mapper';
 export * from './column-response.mapper';

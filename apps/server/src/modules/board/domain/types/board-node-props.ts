@@ -3,6 +3,7 @@ import type { Colors } from '../media-board';
 import type { AnyBoardNode } from './any-board-node';
 import type { BoardExternalReference } from './board-external-reference';
 import type { BoardLayout } from './board-layout.enum';
+import type { CardComment } from './card-comment';
 import type { CardReaction, CardReactionType } from './card-reaction';
 import type { ContentElementType } from './content-element-type.enum';
 import type { PollOption, PollResultVisibility, PollVote } from './poll';
@@ -24,6 +25,7 @@ export interface ColumnBoardProps extends BoardNodeProps {
 	layout: BoardLayout;
 	readersCanEdit: boolean;
 	reactionType: CardReactionType;
+	commentsEnabled: boolean;
 }
 
 export interface ColumnProps extends BoardNodeProps {
@@ -35,6 +37,7 @@ export interface CardProps extends BoardNodeProps {
 	backgroundColor?: Colors;
 	height: number;
 	reactions: CardReaction[];
+	comments: CardComment[];
 }
 
 export type CollaborativeTextEditorElementProps = BoardNodeProps;

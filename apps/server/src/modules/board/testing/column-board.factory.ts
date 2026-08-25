@@ -35,6 +35,7 @@ export const columnBoardFactory = ColumnBoardFactory.define(ColumnBoard, ({ sequ
 		layout: BoardLayout.COLUMNS,
 		readersCanEdit: false,
 		reactionType: CardReactionType.NONE,
+		commentsEnabled: false,
 	};
 
 	return props;

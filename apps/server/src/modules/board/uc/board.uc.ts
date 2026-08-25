@@ -231,6 +231,24 @@ export class BoardUc {
 		return board;
 	}
 
+	public async updateCommentsEnabled(
+		userId: EntityId,
+		boardId: EntityId,
+		commentsEnabled: boolean
+	): Promise<ColumnBoard> {
+		this.checkInteractiveElementsEnabled();
+
+		const board = await this.boardNodeService.findByClassAndId(ColumnBoard, boardId);
+		const user = await this.authorizationService.getUserWithPermissions(userId);
+		const boardNodeAuthorizable = await this.boardNodeAuthorizableService.getBoardAuthorizable(board);
+
+		throwForbiddenIfFalse(this.boardNodeRule.can('updateBoardCommentsEnabled', user, boardNodeAuthorizable));
+
+		await this.columnBoardService.updateCommentsEnabled(board, commentsEnabled);
+
+		return board;
+	}
+
 	private checkInteractiveElementsEnabled(): void {
 		if (!this.config.featureColumnBoardInteractiveElementsEnabled) {
 			throw new FeatureDisabledLoggableException('FEATURE_COLUMN_BOARD_INTERACTIVE_ELEMENTS_ENABLED');

@@ -21,6 +21,10 @@ import { BOARD_INCOMING_REQUEST_TIMEOUT_COPY_API_KEY } from '../timeout.config';
 import { CardUc, ColumnUc } from '../uc';
 import {
 	AnyContentElementResponse,
+	CardCommentBodyParams,
+	CardCommentReportBodyParams,
+	CardCommentResponse,
+	CardCommentUrlParams,
 	CardIdsParams,
 	CardListResponse,
 	CardReactionBodyParams,
@@ -42,7 +46,7 @@ import {
 } from './dto';
 import { MoveCardResponse } from './dto/board/move-card.response';
 import { SetHeightBodyParams } from './dto/board/set-height.body.params';
-import { CardResponseMapper, ContentElementResponseFactory } from './mapper';
+import { CardCommentResponseMapper, CardResponseMapper, ContentElementResponseFactory } from './mapper';
 import { MoveCardResponseMapper } from './mapper/move-card-response.mapper';
 
 @ApiTags('Board Card')
@@ -89,6 +93,92 @@ export class CardController {
 		const { card, viewContext } = await this.cardUc.reactToCard(currentUser.userId, urlParams.cardId, bodyParams.value);
 
 		return CardResponseMapper.mapToResponse(card, viewContext);
+	}
+
+	@ApiOperation({ summary: 'Write a comment on a card.' })
+	@ApiResponse({ status: 201, type: CardCommentResponse })
+	@ApiResponse({ status: 400, type: ApiValidationError })
+	@ApiResponse({ status: 403, type: ForbiddenException })
+	@ApiResponse({ status: 404, type: NotFoundException })
+	@ApiResponse({ status: 422, type: UnprocessableEntityException })
+	@Post(':cardId/comments')
+	public async addComment(
+		@Param() urlParams: CardUrlParams,
+		@Body() bodyParams: CardCommentBodyParams,
+		@CurrentUser() currentUser: ICurrentUser
+	): Promise<CardCommentResponse> {
+		const { comment, viewContext } = await this.cardUc.addComment(
+			currentUser.userId,
+			urlParams.cardId,
+			bodyParams.text
+		);
+
+		return CardCommentResponseMapper.mapToResponse(comment, viewContext);
+	}
+
+	@ApiOperation({ summary: 'Edit an own comment on a card.' })
+	@ApiResponse({ status: 200, type: CardCommentResponse })
+	@ApiResponse({ status: 400, type: ApiValidationError })
+	@ApiResponse({ status: 403, type: ForbiddenException })
+	@ApiResponse({ status: 404, type: NotFoundException })
+	@HttpCode(200)
+	@Patch(':cardId/comments/:commentId')
+	public async editComment(
+		@Param() urlParams: CardCommentUrlParams,
+		@Body() bodyParams: CardCommentBodyParams,
+		@CurrentUser() currentUser: ICurrentUser
+	): Promise<CardCommentResponse> {
+		const { comment, viewContext } = await this.cardUc.editComment(
+			currentUser.userId,
+			urlParams.cardId,
+			urlParams.commentId,
+			bodyParams.text
+		);
+
+		return CardCommentResponseMapper.mapToResponse(comment, viewContext);
+	}
+
+	@ApiOperation({ summary: 'Remove a comment: an own one, or any as a moderator.' })
+	@ApiResponse({ status: 200, type: CardCommentResponse })
+	@ApiResponse({ status: 400, type: ApiValidationError })
+	@ApiResponse({ status: 403, type: ForbiddenException })
+	@ApiResponse({ status: 404, type: NotFoundException })
+	@HttpCode(200)
+	@Delete(':cardId/comments/:commentId')
+	public async removeComment(
+		@Param() urlParams: CardCommentUrlParams,
+		@CurrentUser() currentUser: ICurrentUser
+	): Promise<CardCommentResponse> {
+		const { comment, viewContext } = await this.cardUc.removeComment(
+			currentUser.userId,
+			urlParams.cardId,
+			urlParams.commentId
+		);
+
+		return CardCommentResponseMapper.mapToResponse(comment, viewContext);
+	}
+
+	@ApiOperation({ summary: 'Report a comment to the people who may moderate this board.' })
+	@ApiResponse({ status: 200, type: CardCommentResponse })
+	@ApiResponse({ status: 400, type: ApiValidationError })
+	@ApiResponse({ status: 403, type: ForbiddenException })
+	@ApiResponse({ status: 404, type: NotFoundException })
+	@ApiResponse({ status: 422, type: UnprocessableEntityException })
+	@HttpCode(200)
+	@Post(':cardId/comments/:commentId/report')
+	public async reportComment(
+		@Param() urlParams: CardCommentUrlParams,
+		@Body() bodyParams: CardCommentReportBodyParams,
+		@CurrentUser() currentUser: ICurrentUser
+	): Promise<CardCommentResponse> {
+		const { comment, viewContext } = await this.cardUc.reportComment(
+			currentUser.userId,
+			urlParams.cardId,
+			urlParams.commentId,
+			bodyParams.reason
+		);
+
+		return CardCommentResponseMapper.mapToResponse(comment, viewContext);
 	}
 
 	@ApiOperation({ summary: 'Move a single card.' })

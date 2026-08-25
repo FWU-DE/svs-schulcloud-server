@@ -18,11 +18,12 @@ import {
 	BoardResponseMapper,
 	CardResponseMapper,
 	ColumnResponseMapper,
+	CardCommentResponseMapper,
 	ContentElementResponseFactory,
 	PollElementResponseMapper,
 } from '../controller/mapper';
 import { MoveCardResponseMapper } from '../controller/mapper/move-card-response.mapper';
-import { AnyBoardNode, ColumnBoard } from '../domain';
+import { AnyBoardNode, type BoardViewContext, type CardComment, ColumnBoard } from '../domain';
 import { MetricsService } from '../metrics/metrics.service';
 import { TrackExecutionTime } from '../metrics/track-execution-time.decorator';
 import { BoardUc, CardUc, ColumnUc, ElementUc } from '../uc';
@@ -49,7 +50,12 @@ import {
 	UpdateCardHeightMessageParams,
 	UpdateCardTitleMessageParams,
 	UpdateColumnTitleMessageParams,
+	AddCardCommentMessageParams,
+	EditCardCommentMessageParams,
 	ReactToCardMessageParams,
+	RemoveCardCommentMessageParams,
+	ReportCardCommentMessageParams,
+	UpdateBoardCommentsEnabledMessageParams,
 	UpdateBoardReactionTypeMessageParams,
 	UpdateContentElementMessageParams,
 	VoteInPollMessageParams,
@@ -237,6 +243,82 @@ export class BoardCollaborationGateway implements OnGatewayConnection, OnGateway
 		try {
 			const board = await this.boardUc.updateReactionType(userId, data.boardId, data.reactionType);
 			emitter.emitToClientAndRoom(data, board);
+		} catch {
+			emitter.emitFailure(data);
+		}
+	}
+
+	/**
+	 * Comment traffic is broadcast to the whole room, but each recipient needs their own view of
+	 * it: only the author sees `isOwn`, only a moderator sees the report count, only a reporter
+	 * sees their own report. The room therefore gets the neutral rendering and refetches the
+	 * card, while the acting client gets the version built for them.
+	 */
+	@SubscribeMessage('add-card-comment-request')
+	@TrackExecutionTime()
+	@EnsureRequestContext()
+	public async addCardComment(socket: Socket, data: AddCardCommentMessageParams): Promise<void> {
+		await this.handleCommentAction(socket, 'add-card-comment', data, () =>
+			this.cardUc.addComment(this.getCurrentUser(socket).userId, data.cardId, data.text)
+		);
+	}
+
+	@SubscribeMessage('edit-card-comment-request')
+	@TrackExecutionTime()
+	@EnsureRequestContext()
+	public async editCardComment(socket: Socket, data: EditCardCommentMessageParams): Promise<void> {
+		await this.handleCommentAction(socket, 'edit-card-comment', data, () =>
+			this.cardUc.editComment(this.getCurrentUser(socket).userId, data.cardId, data.commentId, data.text)
+		);
+	}
+
+	@SubscribeMessage('remove-card-comment-request')
+	@TrackExecutionTime()
+	@EnsureRequestContext()
+	public async removeCardComment(socket: Socket, data: RemoveCardCommentMessageParams): Promise<void> {
+		await this.handleCommentAction(socket, 'remove-card-comment', data, () =>
+			this.cardUc.removeComment(this.getCurrentUser(socket).userId, data.cardId, data.commentId)
+		);
+	}
+
+	@SubscribeMessage('report-card-comment-request')
+	@TrackExecutionTime()
+	@EnsureRequestContext()
+	public async reportCardComment(socket: Socket, data: ReportCardCommentMessageParams): Promise<void> {
+		await this.handleCommentAction(socket, 'report-card-comment', data, () =>
+			this.cardUc.reportComment(this.getCurrentUser(socket).userId, data.cardId, data.commentId, data.reason)
+		);
+	}
+
+	@SubscribeMessage('update-board-comments-enabled-request')
+	@TrackExecutionTime()
+	@EnsureRequestContext()
+	public async updateBoardCommentsEnabled(
+		socket: Socket,
+		data: UpdateBoardCommentsEnabledMessageParams
+	): Promise<void> {
+		const emitter = this.buildBoardSocketEmitter({ socket, action: 'update-board-comments-enabled' });
+		const { userId } = this.getCurrentUser(socket);
+		try {
+			const board = await this.boardUc.updateCommentsEnabled(userId, data.boardId, data.commentsEnabled);
+			emitter.emitToClientAndRoom(data, board);
+		} catch {
+			emitter.emitFailure(data);
+		}
+	}
+
+	private async handleCommentAction(
+		socket: Socket,
+		action: string,
+		data: { cardId: string },
+		perform: () => Promise<{ card: AnyBoardNode; comment: CardComment; viewContext: BoardViewContext }>
+	): Promise<void> {
+		const emitter = this.buildBoardSocketEmitter({ socket, action });
+		try {
+			const { card, comment, viewContext } = await perform();
+
+			emitter.emitToClient({ ...data, comment: CardCommentResponseMapper.mapToResponse(comment, viewContext) });
+			emitter.emitToRoom({ cardId: data.cardId }, card);
 		} catch {
 			emitter.emitFailure(data);
 		}

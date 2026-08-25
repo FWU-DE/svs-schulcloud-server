@@ -16,6 +16,7 @@ import {
 	VideoConferenceElementResponse,
 } from '../element';
 import { TimestampsResponse } from '../timestamps.response';
+import { CardCommentResponse } from './card-comment.response';
 import { CardReactionsResponse } from './card-reactions.response';
 import { VisibilitySettingsResponse } from './visibility-settings.response';
 import { Colors } from '../../../domain';
@@ -34,7 +35,17 @@ import { Colors } from '../../../domain';
 	PollElementResponse
 )
 export class CardResponse {
-	constructor({ id, title, backgroundColor, height, elements, visibilitySettings, timestamps, reactions }: CardResponse) {
+	constructor({
+		id,
+		title,
+		backgroundColor,
+		height,
+		elements,
+		visibilitySettings,
+		timestamps,
+		reactions,
+		comments,
+	}: CardResponse) {
 		this.id = id;
 		this.title = title;
 		this.backgroundColor = backgroundColor;
@@ -43,6 +54,7 @@ export class CardResponse {
 		this.visibilitySettings = visibilitySettings;
 		this.timestamps = timestamps;
 		this.reactions = reactions;
+		this.comments = comments;
 	}
 
 	@ApiProperty({
@@ -91,4 +103,10 @@ export class CardResponse {
 		description: 'Absent while the board has reactions turned off.',
 	})
 	reactions?: CardReactionsResponse;
+
+	@ApiPropertyOptional({
+		type: [CardCommentResponse],
+		description: 'Absent while the board has comments turned off.',
+	})
+	comments?: CardCommentResponse[];
 }

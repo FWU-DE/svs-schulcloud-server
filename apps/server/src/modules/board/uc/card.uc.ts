@@ -1,24 +1,50 @@
-import { LegacyLogger } from '@infra/logger';
+import { ObjectId } from '@mikro-orm/mongodb';
 import { AuthorizationService } from '@modules/authorization';
+import { UserService } from '@modules/user';
+import { type User } from '@modules/user/repo';
+import { LegacyLogger } from '@infra/logger';
 import { forwardRef, Inject, Injectable, UnprocessableEntityException } from '@nestjs/common';
 import { FeatureDisabledLoggableException } from '@shared/common/loggable-exception';
-import { EntityId } from '@shared/domain/types';
-
 import { throwForbiddenIfFalse } from '@shared/common/utils';
+import { sanitizeRichText } from '@shared/controller/transformer';
+import { EntityId, InputFormat } from '@shared/domain/types';
 import { BoardNodeRule } from '../authorisation/board-node.rule';
+import { BOARD_CONFIG_TOKEN, BoardConfig } from '../board.config';
 import {
 	AnyContentElement,
 	type BoardNodeAuthorizable,
 	BoardNodeFactory,
 	type BoardViewContext,
 	Card,
+	type CardComment,
 	CardReactionType,
 	Colors,
 	ContentElementType,
 	isColumnBoard,
 } from '../domain';
-import { BOARD_CONFIG_TOKEN, BoardConfig } from '../board.config';
 import { BoardNodeAuthorizableService, BoardNodeService } from '../service';
+
+/**
+ * A card plus one of its comments and the context to render them in.
+ */
+export interface CardCommentWithContext {
+	card: Card;
+	comment: CardComment;
+	viewContext: BoardViewContext;
+}
+
+/** Comments are a board-wide setting, so the flag is read off the card's root board. */
+const commentsEnabledOn = (authorizable: BoardNodeAuthorizable): boolean => {
+	const root = authorizable.rootNode;
+
+	return isColumnBoard(root) ? root.commentsEnabled : false;
+};
+
+/**
+ * Comments are plain text. Allowing markup would turn every card into a place where a link or
+ * an image can be smuggled past the people who may not edit the board.
+ */
+const sanitizeComment = (text: string): string => sanitizeRichText(text, InputFormat.PLAIN_TEXT);
 
 /** The reaction kind is a board-wide setting, so it is read off the card's root board. */
 const reactionTypeOf = (authorizable: BoardNodeAuthorizable): CardReactionType => {
@@ -48,6 +74,7 @@ export class CardUc {
 		private readonly boardNodeFactory: BoardNodeFactory,
 		private readonly logger: LegacyLogger,
 		private readonly boardNodeRule: BoardNodeRule,
+		private readonly userService: UserService,
 		@Inject(BOARD_CONFIG_TOKEN) private readonly boardConfig: BoardConfig
 	) {
 		this.logger.setContext(CardUc.name);
@@ -69,12 +96,21 @@ export class CardUc {
 					viewContext: {
 						userId,
 						canEdit: this.boardNodeRule.can('updateElement', user, boardNodeAuthorizable),
+						canModerate: this.boardNodeRule.can('moderateCardComments', user, boardNodeAuthorizable),
 						reactionType: reactionTypeOf(boardNodeAuthorizable),
+						commentsEnabled: commentsEnabledOn(boardNodeAuthorizable),
 					},
 				});
 			}
 			return allowed;
 		}, []);
+
+		const authorNames = await this.resolveAuthorNames(
+			allowedCards.filter(({ viewContext }) => viewContext.commentsEnabled).map(({ card }) => card)
+		);
+		allowedCards.forEach(({ viewContext }) => {
+			viewContext.authorNames = authorNames;
+		});
 
 		return allowedCards;
 	}
@@ -109,6 +145,112 @@ export class CardUc {
 				reactionType,
 			},
 		};
+	}
+
+	public async addComment(userId: EntityId, cardId: EntityId, text: string): Promise<CardCommentWithContext> {
+		const { card, user, authorizable } = await this.loadCardForCommenting(userId, cardId, 'commentOnCard');
+
+		const comment = card.addComment({ id: new ObjectId().toHexString(), userId, text: sanitizeComment(text) });
+		await this.boardNodeService.saveCard(card);
+
+		return { card, comment, viewContext: await this.buildCommentViewContext(userId, user, authorizable, card) };
+	}
+
+	public async editComment(
+		userId: EntityId,
+		cardId: EntityId,
+		commentId: string,
+		text: string
+	): Promise<CardCommentWithContext> {
+		const { card, user, authorizable } = await this.loadCardForCommenting(userId, cardId, 'commentOnCard');
+
+		const comment = card.editComment(commentId, userId, sanitizeComment(text));
+		await this.boardNodeService.saveCard(card);
+
+		return { card, comment, viewContext: await this.buildCommentViewContext(userId, user, authorizable, card) };
+	}
+
+	public async removeComment(userId: EntityId, cardId: EntityId, commentId: string): Promise<CardCommentWithContext> {
+		const { card, user, authorizable } = await this.loadCardForCommenting(userId, cardId, 'commentOnCard');
+
+		const canModerate = this.boardNodeRule.can('moderateCardComments', user, authorizable);
+		const comment = card.removeComment(commentId, userId, canModerate);
+		await this.boardNodeService.saveCard(card);
+
+		return { card, comment, viewContext: await this.buildCommentViewContext(userId, user, authorizable, card) };
+	}
+
+	public async reportComment(
+		userId: EntityId,
+		cardId: EntityId,
+		commentId: string,
+		reason?: string
+	): Promise<CardCommentWithContext> {
+		const { card, user, authorizable } = await this.loadCardForCommenting(userId, cardId, 'commentOnCard');
+
+		const comment = card.reportComment(commentId, userId, reason);
+		await this.boardNodeService.saveCard(card);
+
+		return { card, comment, viewContext: await this.buildCommentViewContext(userId, user, authorizable, card) };
+	}
+
+	private async loadCardForCommenting(
+		userId: EntityId,
+		cardId: EntityId,
+		operation: 'commentOnCard'
+	): Promise<{ card: Card; user: User; authorizable: BoardNodeAuthorizable }> {
+		if (!this.boardConfig.featureColumnBoardInteractiveElementsEnabled) {
+			throw new FeatureDisabledLoggableException('FEATURE_COLUMN_BOARD_INTERACTIVE_ELEMENTS_ENABLED');
+		}
+
+		const card = await this.boardNodeService.findByClassAndId(Card, cardId);
+		const user = await this.authorizationService.getUserWithPermissions(userId);
+		const authorizable = await this.boardNodeAuthorizableService.getBoardAuthorizable(card);
+
+		throwForbiddenIfFalse(this.boardNodeRule.can(operation, user, authorizable));
+
+		if (!commentsEnabledOn(authorizable)) {
+			throw new UnprocessableEntityException('Comments are turned off for this board');
+		}
+
+		return { card, user, authorizable };
+	}
+
+	private async buildCommentViewContext(
+		userId: EntityId,
+		user: User,
+		authorizable: BoardNodeAuthorizable,
+		card: Card
+	): Promise<BoardViewContext> {
+		return {
+			userId,
+			canEdit: this.boardNodeRule.can('updateElement', user, authorizable),
+			canModerate: this.boardNodeRule.can('moderateCardComments', user, authorizable),
+			reactionType: reactionTypeOf(authorizable),
+			commentsEnabled: true,
+			authorNames: await this.resolveAuthorNames([card]),
+		};
+	}
+
+	/**
+	 * One lookup for all comment authors across the cards being mapped: a class board tends to
+	 * have many comments from few people, so deduplicating by author keeps this cheap.
+	 */
+	private async resolveAuthorNames(cards: Card[]): Promise<Map<EntityId, string>> {
+		const authorIds = [...new Set(cards.flatMap((card) => card.comments.map((comment) => comment.userId)))];
+		if (authorIds.length === 0) {
+			return new Map();
+		}
+
+		const authors = await this.userService.findByIds(authorIds);
+		const entries = await Promise.all(
+			authors.map(async (author): Promise<[EntityId, string]> => [
+				author.id ?? '',
+				await this.userService.getDisplayName(author),
+			])
+		);
+
+		return new Map(entries);
 	}
 
 	public async updateCardHeight(userId: EntityId, cardId: EntityId, height: number): Promise<Card> {

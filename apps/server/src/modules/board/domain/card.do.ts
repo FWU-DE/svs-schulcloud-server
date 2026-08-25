@@ -1,7 +1,14 @@
-import { UnprocessableEntityException } from '@nestjs/common';
+import { ForbiddenException, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
 import { EntityId } from '@shared/domain/types';
 import { BoardNode } from './board-node.do';
-import { type AnyBoardNode, type CardProps, type CardReaction, CardReactionType, isContentElement } from './types';
+import {
+	type AnyBoardNode,
+	type CardComment,
+	type CardProps,
+	type CardReaction,
+	CardReactionType,
+	isContentElement,
+} from './types';
 import { reactionRange } from './types/card-reaction';
 import { Colors } from './types/colors.enum';
 
@@ -59,6 +66,93 @@ export class Card extends BoardNode<CardProps> {
 
 	public getReactionOf(userId: EntityId): number | undefined {
 		return this.reactions.find((reaction) => reaction.userId === userId)?.value;
+	}
+
+	get comments(): CardComment[] {
+		// Cards created before comments existed have no such field.
+		return this.props.comments ?? [];
+	}
+
+	public addComment(props: { id: string; userId: EntityId; text: string }): CardComment {
+		const now = new Date();
+		const comment: CardComment = {
+			id: props.id,
+			userId: props.userId,
+			text: props.text,
+			createdAt: now,
+			updatedAt: now,
+			reports: [],
+		};
+
+		this.props.comments = [...this.comments, comment];
+
+		return comment;
+	}
+
+	public getComment(commentId: string): CardComment {
+		const comment = this.comments.find((c) => c.id === commentId);
+		if (!comment) {
+			throw new NotFoundException(`Comment '${commentId}' does not exist on this card`);
+		}
+
+		return comment;
+	}
+
+	/**
+	 * Only the author edits their own text. A moderator can remove a comment but not rewrite it
+	 * — putting words in someone's mouth under their name is worse than deleting.
+	 */
+	public editComment(commentId: string, userId: EntityId, text: string): CardComment {
+		const comment = this.getComment(commentId);
+
+		if (comment.userId !== userId) {
+			throw new ForbiddenException('Only the author may edit a comment');
+		}
+		if (comment.deletedAt) {
+			throw new UnprocessableEntityException('A removed comment cannot be edited');
+		}
+
+		comment.text = text;
+		comment.updatedAt = new Date();
+		this.props.comments = [...this.comments];
+
+		return comment;
+	}
+
+	public removeComment(commentId: string, userId: EntityId, asModerator: boolean): CardComment {
+		const comment = this.getComment(commentId);
+
+		if (comment.userId !== userId && !asModerator) {
+			throw new ForbiddenException('Only the author or a moderator may remove a comment');
+		}
+
+		comment.deletedAt = new Date();
+		comment.deletedByModerator = comment.userId !== userId;
+		comment.text = '';
+		comment.reports = [];
+		this.props.comments = [...this.comments];
+
+		return comment;
+	}
+
+	public reportComment(commentId: string, userId: EntityId, reason?: string): CardComment {
+		const comment = this.getComment(commentId);
+
+		if (comment.deletedAt) {
+			throw new UnprocessableEntityException('A removed comment cannot be reported');
+		}
+		if (comment.userId === userId) {
+			throw new UnprocessableEntityException('A comment cannot be reported by its own author');
+		}
+
+		// Reporting twice is a no-op rather than an error: from the reporter's side nothing
+		// about the situation has changed, and a second report should not inflate the count.
+		if (!comment.reports.some((report) => report.userId === userId)) {
+			comment.reports = [...comment.reports, { userId, reason, createdAt: new Date() }];
+			this.props.comments = [...this.comments];
+		}
+
+		return comment;
 	}
 
 	public canHaveChild(childNode: AnyBoardNode): boolean {

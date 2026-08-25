@@ -24,6 +24,7 @@ export class BoardResponseMapper {
 			isVisible: board.isVisible,
 			readersCanEdit: board.readersCanEdit,
 			reactionType: board.reactionType,
+			commentsEnabled: board.commentsEnabled,
 			layout: board.layout,
 			features,
 			allowedOperations,

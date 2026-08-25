@@ -6,6 +6,7 @@ import {
 	AnyBoardNode,
 	BoardLayout,
 	BoardNodeType,
+	CardComment,
 	CardReaction,
 	CardReactionType,
 	ContentElementType,
@@ -75,10 +76,16 @@ export class BoardNodeEntity extends BaseEntityWithTimestamps implements BoardNo
 	@Property({ type: 'json', nullable: true })
 	reactions: CardReaction[] | undefined;
 
+	@Property({ type: 'json', nullable: true })
+	comments: CardComment[] | undefined;
+
 	// ColumnBoard
 	// --------------------------------------------------------------------------
 	@Enum({ type: 'CardReactionType', nullable: true })
 	reactionType: CardReactionType | undefined;
+
+	@Property({ type: 'boolean', nullable: true })
+	commentsEnabled: boolean | undefined;
 
 	// RichTextElement
 	// --------------------------------------------------------------------------

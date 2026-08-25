@@ -56,6 +56,15 @@ export class ColumnBoard extends BoardNode<ColumnBoardProps> {
 		this.props.reactionType = reactionType;
 	}
 
+	get commentsEnabled(): boolean {
+		// Boards created before comments existed have no such field.
+		return this.props.commentsEnabled ?? false;
+	}
+
+	set commentsEnabled(commentsEnabled: boolean) {
+		this.props.commentsEnabled = commentsEnabled;
+	}
+
 	public canHaveChild(childNode: AnyBoardNode): boolean {
 		const allowed = childNode instanceof Column;
 		return allowed;

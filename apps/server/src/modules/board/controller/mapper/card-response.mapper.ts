@@ -1,5 +1,6 @@
 import { type BoardViewContext, type Card, CardReactionType } from '../../domain';
 import { CardReactionsResponse, CardResponse, TimestampsResponse, VisibilitySettingsResponse } from '../dto';
+import { CardCommentResponseMapper } from './card-comment-response.mapper';
 import { ContentElementResponseFactory } from './content-element-response.factory';
 
 export class CardResponseMapper {
@@ -13,6 +14,9 @@ export class CardResponseMapper {
 			visibilitySettings: new VisibilitySettingsResponse({}),
 			timestamps: new TimestampsResponse({ lastUpdatedAt: card.updatedAt, createdAt: card.createdAt }),
 			reactions: this.mapReactions(card, context),
+			comments: context?.commentsEnabled
+				? CardCommentResponseMapper.mapListToResponse(card.comments, context)
+				: undefined,
 		});
 		return result;
 	}

@@ -95,6 +95,10 @@ export class BoardNodeService {
 		await this.boardNodeRepo.save(card);
 	}
 
+	public async saveCard(card: Card): Promise<void> {
+		await this.boardNodeRepo.save(card);
+	}
+
 	public async voteInPoll(element: PollElement, userId: EntityId, optionIds: string[]): Promise<void> {
 		element.vote(userId, optionIds);
 

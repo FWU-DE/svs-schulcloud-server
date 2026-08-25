@@ -10,6 +10,7 @@ import { SagaModule } from '@modules/saga';
 import { forwardRef, Module } from '@nestjs/common';
 import { BoardContextApiHelperModule } from '../board-context';
 import { RoomModule } from '../room';
+import { UserModule } from '@modules/user';
 import { BOARD_CONFIG_TOKEN, BoardConfig } from './board.config';
 import { BoardModule } from './board.module';
 import {
@@ -37,6 +38,8 @@ import { BoardErrorReportUc, BoardUc, CardUc, ColumnUc, ElementUc } from './uc';
 		LoggerModule,
 		RoomMembershipModule,
 		RoomModule,
+		// Comment authors are shown by name, which UserService resolves (protected roles included).
+		UserModule,
 		forwardRef(() => AuthorizationModule),
 		BoardContextApiHelperModule,
 		SagaModule,

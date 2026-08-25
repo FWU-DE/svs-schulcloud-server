@@ -13,4 +13,9 @@ export interface BoardViewContext {
 	canEdit?: boolean;
 	/** The reaction kind the board is configured for; absent means reactions are off. */
 	reactionType?: CardReactionType;
+	commentsEnabled?: boolean;
+	/** Whether this user may remove other people's comments. */
+	canModerate?: boolean;
+	/** Display names for the comment authors on the cards being mapped. */
+	authorNames?: Map<EntityId, string>;
 }
