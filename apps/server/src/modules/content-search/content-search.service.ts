@@ -121,6 +121,14 @@ export class ContentSearchService {
 	 * seven broad queries turned up a single wiki entry, and that one a test record - and its
 	 * results carry no licence, which would cost one get_resource call per hit to fetch. So this
 	 * stays on search_resources.
+	 *
+	 * Its metadata filters (subjectLabel, educationalLevelLabel, resourceTypeLabel) are left alone
+	 * for the same reason. They match the label as an exact string, so "Sekundarstufe I" silently
+	 * finds nothing where "Sekundarbereich I" finds something, and what they do return often
+	 * carries a different value than the one asked for - 9 of 24 for "Sekundarbereich I", 1 of 9
+	 * for the subject "Deutsch", with master level material among the school results. Added to a
+	 * query that already works they change nothing, and where the metadata is thin they empty the
+	 * list: "Balladen" plus the subject "Deutsch" returns zero.
 	 */
 	private async searchRelay(query: string, limit: number, language: string, relay: string): Promise<AmbResource[]> {
 		const answer = (await this.mcpClientService.callTool('search_resources', {
