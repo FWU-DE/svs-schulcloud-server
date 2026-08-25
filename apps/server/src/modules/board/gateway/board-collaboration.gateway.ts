@@ -19,6 +19,7 @@ import {
 	CardResponseMapper,
 	ColumnResponseMapper,
 	CardCommentResponseMapper,
+	ChecklistElementResponseMapper,
 	ContentElementResponseFactory,
 	PollElementResponseMapper,
 } from '../controller/mapper';
@@ -57,6 +58,7 @@ import {
 	ReportCardCommentMessageParams,
 	UpdateBoardCommentsEnabledMessageParams,
 	UpdateBoardReactionTypeMessageParams,
+	SetChecklistItemCheckedMessageParams,
 	UpdateContentElementMessageParams,
 	VoteInPollMessageParams,
 } from './dto';
@@ -654,6 +656,27 @@ export class BoardCollaborationGateway implements OnGatewayConnection, OnGateway
 					optionIds: [],
 					pollElement: mapper.mapToResponse(element, { canEdit: viewContext.canEdit }),
 				},
+				element
+			);
+		} catch {
+			emitter.emitFailure(data);
+		}
+	}
+
+	/**
+	 * A checklist is shared state, so unlike a poll vote everyone gets the same payload.
+	 */
+	@SubscribeMessage('set-checklist-item-checked-request')
+	@TrackExecutionTime()
+	@EnsureRequestContext()
+	public async setChecklistItemChecked(socket: Socket, data: SetChecklistItemCheckedMessageParams): Promise<void> {
+		const emitter = this.buildBoardSocketEmitter({ socket, action: 'set-checklist-item-checked' });
+		const { userId } = this.getCurrentUser(socket);
+		try {
+			const element = await this.elementUc.setChecklistItemChecked(userId, data.elementId, data.itemId, data.checked);
+
+			emitter.emitToClientAndRoom(
+				{ ...data, element: ChecklistElementResponseMapper.getInstance().mapToResponse(element) },
 				element
 			);
 		} catch {

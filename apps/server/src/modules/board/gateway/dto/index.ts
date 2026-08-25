@@ -30,4 +30,5 @@ export {
 export { ReactToCardMessageParams } from './react-to-card.message.param';
 export { UpdateBoardCommentsEnabledMessageParams } from './update-board-comments-enabled.message.param';
 export { UpdateBoardReactionTypeMessageParams } from './update-board-reaction-type.message.param';
+export { SetChecklistItemCheckedMessageParams } from './set-checklist-item-checked.message.param';
 export { VoteInPollMessageParams } from './vote-in-poll.message.param';
