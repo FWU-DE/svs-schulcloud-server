@@ -109,6 +109,11 @@ jobs:
           fi
 
   deploy:
+    # Deploys into the upstream's dev clusters (brb, nbc, thr, dbc) with vault and kubeconfig
+    # secrets that exist only there. In this mirror all four fail on the first step, and they
+    # only became visible at all once the image build stopped failing ahead of them — a fork
+    # has no business deploying into someone else's cluster.
+    if: github.repository == 'hpi-schul-cloud/schulcloud-server'
     needs:
       - build_and_push
       - branch_meta
