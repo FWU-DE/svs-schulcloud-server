@@ -19,6 +19,7 @@ import { CollaborativeStorageModule } from '@modules/collaborative-storage';
 import { CollaborativeTextEditorApiModule } from '@modules/collaborative-text-editor/collaborative-text-editor-api.module';
 import { COMMON_CARTRIDGE_PUBLIC_API_CONFIG_TOKEN, CommonCartridgePublicApiConfig } from '@modules/common-cartridge';
 import { CourseApiModule } from '@modules/course/course-api.module';
+import { McpApiModule } from '@modules/mcp-server/mcp-api.module';
 import { DeletionPublicApiModule } from '@modules/deletion/deletion-public-api.module';
 import { FWU_PUBLIC_API_CONFIG_TOKEN, FwuPublicApiConfig } from '@modules/fwu-learning-contents';
 import { GroupApiModule } from '@modules/group/group-api.module';
@@ -43,6 +44,7 @@ import {
 	RegistrationPublicApiConfig,
 } from '@modules/registration';
 import { ROOM_PUBLIC_API_CONFIG_TOKEN, RoomPublicApiConfig } from '@modules/room';
+import { ContentSearchApiModule } from '@modules/content-search';
 import { RoomApiModule } from '@modules/room/room-api.module';
 import { ROSTER_PUBLIC_API_CONFIG_TOKEN, RosterPublicApiConfig } from '@modules/roster';
 import { RosterModule } from '@modules/roster/roster.module';
@@ -106,6 +108,7 @@ const serverModules = [
 	RuntimeConfigApiModule,
 	CoreModule,
 	CourseApiModule,
+	McpApiModule,
 	AuthenticationApiModule,
 	AuthGuardModule.register([
 		{
@@ -151,6 +154,7 @@ const serverModules = [
 	SchoolLicenseApiModule,
 	RegistrationModule,
 	RegistrationApiModule,
+	ContentSearchApiModule,
 	RoomApiModule,
 	RosterModule,
 	OAuthApiModule,

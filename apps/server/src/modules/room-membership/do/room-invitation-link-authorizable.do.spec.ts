@@ -24,6 +24,7 @@ describe('RoomInvitationLinkAuthorizable', () => {
 			featureRoomAddExternalPersonsEnabled: false,
 			featureRoomRegisterExternalPersonsEnabled: false,
 			featureAdministrateRoomsEnabled: true,
+			featureRoomAiTemplateEnabled: false,
 			roomMemberInfoUrl: 'http://example.com/room-member-info',
 		};
 

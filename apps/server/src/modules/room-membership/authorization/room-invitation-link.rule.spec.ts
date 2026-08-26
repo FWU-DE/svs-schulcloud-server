@@ -32,6 +32,7 @@ describe(RoomInvitationLinkRule.name, () => {
 		featureRoomAddExternalPersonsEnabled: false,
 		featureRoomRegisterExternalPersonsEnabled: false,
 		featureAdministrateRoomsEnabled: true,
+		featureRoomAiTemplateEnabled: false,
 		roomMemberInfoUrl: 'http://example.com/room-member-info',
 	};
 
@@ -489,6 +490,7 @@ describe(RoomInvitationLinkRule.name, () => {
 				featureRoomAddExternalPersonsEnabled: false,
 				featureRoomRegisterExternalPersonsEnabled: false,
 				featureAdministrateRoomsEnabled: true,
+				featureRoomAiTemplateEnabled: false,
 				roomMemberInfoUrl: 'http://example.com/room-member-info',
 			};
 			const authorizable = new RoomInvitationLinkAuthorizable(

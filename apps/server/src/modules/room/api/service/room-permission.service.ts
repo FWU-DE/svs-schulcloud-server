@@ -66,6 +66,12 @@ export class RoomPermissionService {
 		}
 	}
 
+	public checkFeatureRoomAiTemplateEnabled(): void {
+		if (!this.config.featureRoomAiTemplateEnabled) {
+			throw new FeatureDisabledLoggableException('FEATURE_ROOM_AI_TEMPLATE_ENABLED');
+		}
+	}
+
 	public checkFeatureRoomCopyEnabled(): void {
 		if (!this.config.featureRoomCopyEnabled) {
 			throw new FeatureDisabledLoggableException('FEATURE_ROOM_COPY_ENABLED');

@@ -163,6 +163,7 @@
 		"@mikro-orm/migrations-mongodb": "^6.6.11",
 		"@mikro-orm/mongodb": "^6.6.11",
 		"@mikro-orm/nestjs": "^6.1.1",
+		"@modelcontextprotocol/sdk": "^1.29.0",
 		"@nestjs/axios": "^4.0.1",
 		"@nestjs/cache-manager": "^3.1.0",
 		"@nestjs/common": "^11.1.27",
@@ -246,7 +247,8 @@
 		"urlsafe-base64": "^1.0.0",
 		"uuid": "^11.1.0",
 		"winston": "^3.17.0",
-		"xml2js": "^0.6.2"
+		"xml2js": "^0.6.2",
+		"zod": "^4.4.3"
 	},
 	"devDependencies": {
 		"@faker-js/faker": "^9.6.0",

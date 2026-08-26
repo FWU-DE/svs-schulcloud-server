@@ -1,3 +1,4 @@
+export * from './board-ai.controller';
 export * from './board-error-report.controller';
 export * from './board.controller';
 export * from './card.controller';

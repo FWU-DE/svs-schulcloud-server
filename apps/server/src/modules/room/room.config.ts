@@ -37,6 +37,11 @@ export class RoomPublicApiConfig {
 	@StringToBoolean()
 	public featureRoomRegisterExternalPersonsEnabled = false;
 
+	@ConfigProperty('FEATURE_ROOM_AI_TEMPLATE_ENABLED')
+	@IsBoolean()
+	@StringToBoolean()
+	public featureRoomAiTemplateEnabled = false;
+
 	@ConfigProperty('ROOM_MEMBER_INFO_URL')
 	@IsUrl({ require_tld: false })
 	public roomMemberInfoUrl!: string;
