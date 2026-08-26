@@ -14,5 +14,6 @@ export const deadlineElementFactory = BaseFactory.define<DeadlineElement, Deadli
 		updatedAt: new Date(),
 		title: `deadline #${sequence}`,
 		dueDate: undefined,
+		showInCalendar: false,
 	};
 });

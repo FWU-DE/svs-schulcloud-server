@@ -1,3 +1,4 @@
+export * from './board-deadline.response';
 export * from './board.response';
 export * from './comments-enabled.body.params';
 export * from './reaction-type.body.params';

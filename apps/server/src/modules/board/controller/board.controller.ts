@@ -18,6 +18,8 @@ import { ApiValidationError } from '@shared/common/error';
 import { BOARD_INCOMING_REQUEST_TIMEOUT_COPY_API_KEY } from '../timeout.config';
 import { BoardUc } from '../uc';
 import {
+	BoardDeadlineListResponse,
+	BoardDeadlineResponse,
 	BoardResponse,
 	BoardUrlParams,
 	ColumnResponse,
@@ -54,6 +56,31 @@ export class BoardController {
 		const response = CreateBoardResponseMapper.mapToResponse(board);
 
 		return response;
+	}
+
+	@ApiOperation({ summary: 'List the board deadlines that are marked for the calendar.' })
+	@ApiResponse({ status: 200, type: BoardDeadlineListResponse })
+	@ApiResponse({ status: 403, type: ForbiddenException })
+	@Get('deadlines')
+	public async getDeadlines(@CurrentUser() currentUser: ICurrentUser): Promise<BoardDeadlineListResponse> {
+		const deadlines = await this.boardUc.findDeadlinesForUser(currentUser.userId);
+
+		return new BoardDeadlineListResponse({
+			data: deadlines.map(
+				(deadline) =>
+					new BoardDeadlineResponse({
+						elementId: deadline.elementId,
+						cardId: deadline.cardId,
+						boardId: deadline.boardId,
+						boardTitle: deadline.boardTitle,
+						title: deadline.title,
+						dueDate: deadline.dueDate.toISOString(),
+						contextType: deadline.context.reference.type,
+						contextId: deadline.context.reference.id,
+						contextName: deadline.context.name,
+					})
+			),
+		});
 	}
 
 	@ApiOperation({ summary: 'Get the skeleton of a a board.' })

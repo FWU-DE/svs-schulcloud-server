@@ -28,6 +28,7 @@ import {
 	CardIdsParams,
 	CardListResponse,
 	CardReactionBodyParams,
+	CardSettingsBodyParams,
 	CardResponse,
 	CardUrlParams,
 	ColorBodyParams,
@@ -75,6 +76,26 @@ export class CardController {
 			data: cardResponses,
 		});
 		return result;
+	}
+
+	@ApiOperation({ summary: "Override the board's comment and editing settings for a single card." })
+	@ApiResponse({ status: 200, type: CardResponse })
+	@ApiResponse({ status: 400, type: ApiValidationError })
+	@ApiResponse({ status: 403, type: ForbiddenException })
+	@ApiResponse({ status: 404, type: NotFoundException })
+	@HttpCode(200)
+	@Patch(':cardId/settings')
+	public async updateCardSettings(
+		@Param() urlParams: CardUrlParams,
+		@Body() bodyParams: CardSettingsBodyParams,
+		@CurrentUser() currentUser: ICurrentUser
+	): Promise<CardResponse> {
+		const { card, viewContext } = await this.cardUc.updateCardSettings(currentUser.userId, urlParams.cardId, {
+			commentsEnabled: bodyParams.commentsEnabled,
+			readersCanEdit: bodyParams.readersCanEdit,
+		});
+
+		return CardResponseMapper.mapToResponse(card, viewContext);
 	}
 
 	@ApiOperation({ summary: 'React to a card, change or withdraw the reaction.' })

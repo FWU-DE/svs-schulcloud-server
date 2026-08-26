@@ -68,6 +68,24 @@ export class Card extends BoardNode<CardProps> {
 		return this.reactions.find((reaction) => reaction.userId === userId)?.value;
 	}
 
+	/** `undefined` means the card follows the board. */
+	get commentsEnabled(): boolean | undefined {
+		return this.props.commentsEnabled;
+	}
+
+	set commentsEnabled(value: boolean | undefined) {
+		this.props.commentsEnabled = value;
+	}
+
+	/** `undefined` means the card follows the board. */
+	get readersCanEdit(): boolean | undefined {
+		return this.props.readersCanEdit;
+	}
+
+	set readersCanEdit(value: boolean | undefined) {
+		this.props.readersCanEdit = value;
+	}
+
 	get comments(): CardComment[] {
 		// Cards created before comments existed have no such field.
 		return this.props.comments ?? [];

@@ -18,6 +18,23 @@ export class CodeElement extends BoardNode<CodeElementProps> {
 		this.props.language = value;
 	}
 
+	get showLineNumbers(): boolean {
+		// Code blocks created before these options existed have neither field.
+		return this.props.showLineNumbers ?? false;
+	}
+
+	set showLineNumbers(value: boolean) {
+		this.props.showLineNumbers = value;
+	}
+
+	get syntaxHighlighting(): boolean {
+		return this.props.syntaxHighlighting ?? true;
+	}
+
+	set syntaxHighlighting(value: boolean) {
+		this.props.syntaxHighlighting = value;
+	}
+
 	public canHaveChild(): boolean {
 		return false;
 	}

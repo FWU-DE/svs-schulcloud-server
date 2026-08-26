@@ -14,5 +14,7 @@ export const codeElementEntityFactory = BoardNodeEntityFactory.define<PropsWithT
 		type: BoardNodeType.CODE_ELEMENT,
 		code: `const answer = ${sequence};`,
 		language: 'javascript',
+		showLineNumbers: false,
+		syntaxHighlighting: true,
 	};
 });

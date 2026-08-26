@@ -145,6 +145,7 @@ export class BoardNodeFactory {
 				element = new DeadlineElement({
 					...this.getBaseProps(),
 					title: '',
+					showInCalendar: false,
 				});
 				break;
 			case ContentElementType.CODE:
@@ -152,6 +153,8 @@ export class BoardNodeFactory {
 					...this.getBaseProps(),
 					code: '',
 					language: 'plaintext',
+					showLineNumbers: false,
+					syntaxHighlighting: true,
 				});
 				break;
 			case ContentElementType.FORMULA:

@@ -7,6 +7,7 @@ export class DeadlineElementContent {
 	constructor(props: DeadlineElementContent) {
 		this.title = props.title;
 		this.dueDate = props.dueDate;
+		this.showInCalendar = props.showInCalendar;
 	}
 
 	@ApiProperty()
@@ -14,6 +15,9 @@ export class DeadlineElementContent {
 
 	@ApiProperty({ type: String, format: 'date-time', required: true, nullable: true })
 	dueDate: string | null;
+
+	@ApiProperty({ description: 'Whether the deadline is listed in the calendar of everyone who sees the board.' })
+	showInCalendar: boolean;
 }
 
 export class DeadlineElementResponse {

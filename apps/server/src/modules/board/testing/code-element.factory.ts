@@ -14,5 +14,7 @@ export const codeElementFactory = BaseFactory.define<CodeElement, CodeElementPro
 		updatedAt: new Date(),
 		code: `const answer = ${sequence};`,
 		language: 'javascript',
+		showLineNumbers: false,
+		syntaxHighlighting: true,
 	};
 });

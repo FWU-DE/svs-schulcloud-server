@@ -67,6 +67,8 @@ export class BoardNodeEntity extends BaseEntityWithTimestamps implements BoardNo
 	@Property({ type: 'boolean', nullable: true })
 	isVisible: boolean | undefined;
 
+	// ColumnBoard sets it for the whole board, a Card may override it for itself.
+	// Absent on a card means "follow the board".
 	@Property({ type: 'boolean', nullable: true })
 	readersCanEdit: boolean | undefined;
 
@@ -86,6 +88,8 @@ export class BoardNodeEntity extends BaseEntityWithTimestamps implements BoardNo
 	@Enum({ type: 'CardReactionType', nullable: true })
 	reactionType: CardReactionType | undefined;
 
+	// ColumnBoard sets it for the whole board, a Card may override it for itself.
+	// Absent on a card means "follow the board".
 	@Property({ type: 'boolean', nullable: true })
 	commentsEnabled: boolean | undefined;
 
@@ -175,6 +179,9 @@ export class BoardNodeEntity extends BaseEntityWithTimestamps implements BoardNo
 	@Property({ type: 'Date', nullable: true })
 	dueDate: Date | undefined;
 
+	@Property({ type: 'boolean', nullable: true })
+	showInCalendar: boolean | undefined;
+
 	// CodeElement
 	// --------------------------------------------------------------------------
 	@Property({ type: 'string', nullable: true })
@@ -182,6 +189,12 @@ export class BoardNodeEntity extends BaseEntityWithTimestamps implements BoardNo
 
 	@Property({ type: 'string', nullable: true })
 	language: string | undefined;
+
+	@Property({ type: 'boolean', nullable: true })
+	showLineNumbers: boolean | undefined;
+
+	@Property({ type: 'boolean', nullable: true })
+	syntaxHighlighting: boolean | undefined;
 
 	// FormulaElement
 	// --------------------------------------------------------------------------

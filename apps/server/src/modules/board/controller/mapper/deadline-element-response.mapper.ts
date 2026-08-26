@@ -18,7 +18,11 @@ export class DeadlineElementResponseMapper implements BaseResponseMapper {
 			id: element.id,
 			type: ContentElementType.DEADLINE,
 			timestamps: new TimestampsResponse({ lastUpdatedAt: element.updatedAt, createdAt: element.createdAt }),
-			content: new DeadlineElementContent({ title: element.title, dueDate: element.dueDate?.toISOString() ?? null }),
+			content: new DeadlineElementContent({
+				title: element.title,
+				dueDate: element.dueDate?.toISOString() ?? null,
+				showInCalendar: element.showInCalendar,
+			}),
 		});
 	}
 

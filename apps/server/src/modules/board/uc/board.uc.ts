@@ -14,6 +14,7 @@ import { EntityId } from '@shared/domain/types';
 import { BoardNodeRule, BoardOperation } from '../authorisation/board-node.rule';
 import { BOARD_CONFIG_TOKEN, BoardConfig } from '../board.config';
 import { CreateBoardBodyParams } from '../controller/dto';
+import { type User } from '@modules/user/repo';
 import {
 	BoardExternalReference,
 	BoardExternalReferenceType,
@@ -21,12 +22,28 @@ import {
 	BoardLayout,
 	BoardNodeFactory,
 	CardReactionType,
+	isDeadlineElement,
 	Column,
 	ColumnBoard,
 	isColumn,
 } from '../domain';
 import { BoardNodeAuthorizableService, BoardNodeService, ColumnBoardService } from '../service';
 import { StorageLocationReference } from '../service/internal';
+
+export interface BoardContextInfo {
+	reference: BoardExternalReference;
+	name: string;
+}
+
+export interface BoardDeadline {
+	elementId: EntityId;
+	cardId: EntityId;
+	boardId: EntityId;
+	boardTitle: string;
+	title: string;
+	dueDate: Date;
+	context: BoardContextInfo;
+}
 
 @Injectable()
 export class BoardUc {
@@ -247,6 +264,92 @@ export class BoardUc {
 		await this.columnBoardService.updateCommentsEnabled(board, commentsEnabled);
 
 		return board;
+	}
+
+	/**
+	 * Every deadline the user may see and that is marked for the calendar.
+	 *
+	 * The dates are not pushed into the external calendar service. That service is optional,
+	 * lives outside this system and would have to be kept in sync in both directions — a board
+	 * deadline that someone deleted in their calendar app is a worse problem than one that is
+	 * simply read from the board. The board stays the one place the date lives; the calendar
+	 * view asks for it.
+	 */
+	public async findDeadlinesForUser(userId: EntityId): Promise<BoardDeadline[]> {
+		if (!this.config.featureColumnBoardInteractiveElementsEnabled) {
+			return [];
+		}
+
+		const user = await this.authorizationService.getUserWithPermissions(userId);
+		const contexts = await this.findBoardContextsOfUser(userId, user.school.id);
+
+		const boardsPerContext = await Promise.all(
+			contexts.map(async (context) => {
+				const boards = await this.columnBoardService.findByExternalReference(context.reference);
+
+				return boards.map((board) => ({ board, context }));
+			})
+		);
+
+		const deadlines = await Promise.all(
+			boardsPerContext.flat().map(({ board, context }) => this.collectDeadlines(user, board, context))
+		);
+
+		return deadlines.flat().sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime());
+	}
+
+	private async findBoardContextsOfUser(userId: EntityId, schoolId: EntityId): Promise<BoardContextInfo[]> {
+		const roomAuthorizables = await this.roomMembershipService.getRoomAuthorizablesByUserId(userId);
+		const rooms = await Promise.all(
+			roomAuthorizables.map(async (authorizable) => {
+				const room = await this.roomService.getSingleRoom(authorizable.roomId);
+
+				return {
+					reference: { type: BoardExternalReferenceType.Room, id: authorizable.roomId },
+					name: room.name,
+				};
+			})
+		);
+
+		const [courses] = await this.courseService.findAllByUserId(userId, schoolId);
+		const courseContexts = courses.map((course) => ({
+			reference: { type: BoardExternalReferenceType.Course, id: course.id },
+			name: course.name,
+		}));
+
+		return [...rooms, ...courseContexts];
+	}
+
+	private async collectDeadlines(
+		user: User,
+		board: ColumnBoard,
+		context: BoardContextInfo
+	): Promise<BoardDeadline[]> {
+		const authorizable = await this.boardNodeAuthorizableService.getBoardAuthorizable(board);
+		if (!this.boardNodeRule.can('findBoard', user, authorizable)) {
+			return [];
+		}
+
+		const deadlines: BoardDeadline[] = [];
+		for (const column of board.children) {
+			for (const card of column.children) {
+				for (const element of card.children) {
+					if (isDeadlineElement(element) && element.showInCalendar && element.dueDate) {
+						deadlines.push({
+							elementId: element.id,
+							cardId: card.id,
+							boardId: board.id,
+							boardTitle: board.title,
+							title: element.title,
+							dueDate: element.dueDate,
+							context,
+						});
+					}
+				}
+			}
+		}
+
+		return deadlines;
 	}
 
 	private checkInteractiveElementsEnabled(): void {

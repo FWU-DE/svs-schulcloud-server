@@ -19,6 +19,7 @@ import {
 	type CardComment,
 	CardReactionType,
 	Colors,
+	isCard,
 	ContentElementType,
 	isColumnBoard,
 } from '../domain';
@@ -35,6 +36,11 @@ export interface CardCommentWithContext {
 
 /** Comments are a board-wide setting, so the flag is read off the card's root board. */
 const commentsEnabledOn = (authorizable: BoardNodeAuthorizable): boolean => {
+	const card = isCard(authorizable.boardNode) ? authorizable.boardNode : undefined;
+	if (card?.commentsEnabled !== undefined) {
+		return card.commentsEnabled;
+	}
+
 	const root = authorizable.rootNode;
 
 	return isColumnBoard(root) ? root.commentsEnabled : false;
@@ -258,6 +264,49 @@ export class CardUc {
 		);
 
 		return new Map(entries);
+	}
+
+	/**
+	 * Puts a card's own settings above the board's, or back under them. Needs the same rights as
+	 * editing the card: it changes what other people may do on it.
+	 */
+	public async updateCardSettings(
+		userId: EntityId,
+		cardId: EntityId,
+		settings: { commentsEnabled?: boolean | null; readersCanEdit?: boolean | null }
+	): Promise<CardWithViewContext> {
+		if (!this.boardConfig.featureColumnBoardInteractiveElementsEnabled) {
+			throw new FeatureDisabledLoggableException('FEATURE_COLUMN_BOARD_INTERACTIVE_ELEMENTS_ENABLED');
+		}
+
+		const card = await this.boardNodeService.findByClassAndId(Card, cardId);
+		const user = await this.authorizationService.getUserWithPermissions(userId);
+		const authorizable = await this.boardNodeAuthorizableService.getBoardAuthorizable(card);
+
+		throwForbiddenIfFalse(this.boardNodeRule.can('updateCardSettings', user, authorizable));
+
+		if (settings.commentsEnabled !== undefined) {
+			card.commentsEnabled = settings.commentsEnabled ?? undefined;
+		}
+		if (settings.readersCanEdit !== undefined) {
+			card.readersCanEdit = settings.readersCanEdit ?? undefined;
+		}
+		await this.boardNodeService.saveCard(card);
+
+		// Re-read the authorizable: the card may just have changed what this user may do on it.
+		const updated = await this.boardNodeAuthorizableService.getBoardAuthorizable(card);
+
+		return {
+			card,
+			viewContext: {
+				userId,
+				canEdit: this.boardNodeRule.can('updateElement', user, updated),
+				canModerate: this.boardNodeRule.can('moderateCardComments', user, updated),
+				reactionType: reactionTypeOf(updated),
+				commentsEnabled: commentsEnabledOn(updated),
+				authorNames: await this.resolveAuthorNames([card]),
+			},
+		};
 	}
 
 	public async updateCardHeight(userId: EntityId, cardId: EntityId, height: number): Promise<Card> {

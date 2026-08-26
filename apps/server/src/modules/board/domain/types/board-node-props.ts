@@ -40,6 +40,12 @@ export interface CardProps extends BoardNodeProps {
 	height: number;
 	reactions: CardReaction[];
 	comments: CardComment[];
+	/**
+	 * Per-card overrides of the board-wide settings. `undefined` means "whatever the board
+	 * says" — a tri-state, because "off" and "not decided here" have to stay distinguishable.
+	 */
+	commentsEnabled?: boolean;
+	readersCanEdit?: boolean;
 }
 
 export type CollaborativeTextEditorElementProps = BoardNodeProps;
@@ -102,11 +108,19 @@ export interface PollElementProps extends BoardNodeProps {
 export interface DeadlineElementProps extends BoardNodeProps {
 	title: string;
 	dueDate?: Date;
+	/**
+	 * Whether this deadline is listed in the calendar of everyone who can see the board. It is
+	 * not written into the external calendar service; the board stays the one place the date
+	 * lives, and the calendar view reads it from here.
+	 */
+	showInCalendar: boolean;
 }
 
 export interface CodeElementProps extends BoardNodeProps {
 	code: string;
 	language: string;
+	showLineNumbers: boolean;
+	syntaxHighlighting: boolean;
 }
 
 export interface FormulaElementProps extends BoardNodeProps {

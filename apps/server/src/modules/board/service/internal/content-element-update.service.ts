@@ -146,6 +146,7 @@ export class ContentElementUpdateService {
 	public updateDeadlineElement(element: DeadlineElement, content: DeadlineContentBody): void {
 		element.title = sanitizeRichText(content.title, InputFormat.PLAIN_TEXT);
 		element.dueDate = content.dueDate ? new Date(content.dueDate) : undefined;
+		element.showInCalendar = content.showInCalendar;
 	}
 
 	/**
@@ -155,6 +156,8 @@ export class ContentElementUpdateService {
 	public updateCodeElement(element: CodeElement, content: CodeContentBody): void {
 		element.code = content.code;
 		element.language = sanitizeRichText(content.language, InputFormat.PLAIN_TEXT);
+		element.showLineNumbers = content.showLineNumbers;
+		element.syntaxHighlighting = content.syntaxHighlighting;
 	}
 
 	/** LaTeX source, likewise stored verbatim and rendered by the client's math renderer. */

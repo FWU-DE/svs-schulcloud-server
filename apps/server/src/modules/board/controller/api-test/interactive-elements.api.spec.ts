@@ -25,6 +25,7 @@ describe('interactive board elements (api)', () => {
 	let em: EntityManager;
 	let elementApiClient: TestApiClient;
 	let cardApiClient: TestApiClient;
+	let boardApiClient: TestApiClient;
 
 	beforeAll(async () => {
 		const module: TestingModule = await Test.createTestingModule({
@@ -36,6 +37,7 @@ describe('interactive board elements (api)', () => {
 		em = module.get(EntityManager);
 		elementApiClient = new TestApiClient(app, 'elements');
 		cardApiClient = new TestApiClient(app, 'cards');
+		boardApiClient = new TestApiClient(app, 'boards');
 	});
 
 	afterAll(async () => {
@@ -48,7 +50,9 @@ describe('interactive board elements (api)', () => {
 
 	const setup = async () => {
 		const { teacherAccount, teacherUser } = UserAndAccountTestFactory.buildTeacher();
-		const { studentAccount, studentUser } = UserAndAccountTestFactory.buildStudent();
+		// Same school as the course: that is what a course membership normally looks like, and
+		// the deadline lookup walks the user's courses, which are scoped by school.
+		const { studentAccount, studentUser } = UserAndAccountTestFactory.buildStudent({ school: teacherUser.school });
 		const outsider = UserAndAccountTestFactory.buildStudent({ school: teacherUser.school });
 
 		const course = courseEntityFactory.build({
@@ -89,6 +93,9 @@ describe('interactive board elements (api)', () => {
 			studentElements: await elementApiClient.login(studentAccount),
 			outsiderElements: await elementApiClient.login(outsider.studentAccount),
 			studentCards: await cardApiClient.login(studentAccount),
+			teacherBoards: await boardApiClient.login(teacherAccount),
+			studentBoards: await boardApiClient.login(studentAccount),
+			outsiderBoards: await boardApiClient.login(outsider.studentAccount),
 			card,
 			deadline,
 			code,
@@ -105,7 +112,7 @@ describe('interactive board elements (api)', () => {
 			await teacherElements.patch(`${deadline.id}/content`, {
 				data: {
 					type: ContentElementType.DEADLINE,
-					content: { title: 'Abgabe Übungsblatt 3', dueDate: '2026-09-01T12:00:00.000Z' },
+					content: { title: 'Abgabe Übungsblatt 3', dueDate: '2026-09-01T12:00:00.000Z', showInCalendar: false },
 				},
 			});
 			const stored = await em.findOneOrFail(BoardNodeEntity, deadline.id);
@@ -118,7 +125,7 @@ describe('interactive board elements (api)', () => {
 			const { teacherElements, deadline } = await setup();
 
 			await teacherElements.patch(`${deadline.id}/content`, {
-				data: { type: ContentElementType.DEADLINE, content: { title: 'Ohne Frist' } },
+				data: { type: ContentElementType.DEADLINE, content: { title: 'Ohne Frist', showInCalendar: false } },
 			});
 			const stored = await em.findOneOrFail(BoardNodeEntity, deadline.id);
 
@@ -129,7 +136,7 @@ describe('interactive board elements (api)', () => {
 			const { studentElements, deadline } = await setup();
 
 			const response = await studentElements.patch(`${deadline.id}/content`, {
-				data: { type: ContentElementType.DEADLINE, content: { title: 'Meine Frist' } },
+				data: { type: ContentElementType.DEADLINE, content: { title: 'Meine Frist', showInCalendar: false } },
 			});
 
 			expect(response.statusCode).toEqual(403);
@@ -142,7 +149,10 @@ describe('interactive board elements (api)', () => {
 			const snippet = 'if (a < b && c > d) {\n\treturn "<b>not markup</b>";\n}';
 
 			await teacherElements.patch(`${code.id}/content`, {
-				data: { type: ContentElementType.CODE, content: { code: snippet, language: 'javascript' } },
+				data: {
+					type: ContentElementType.CODE,
+					content: { code: snippet, language: 'javascript', showLineNumbers: true, syntaxHighlighting: true },
+				},
 			});
 			const stored = await em.findOneOrFail(BoardNodeEntity, code.id);
 
@@ -161,6 +171,66 @@ describe('interactive board elements (api)', () => {
 			const stored = await em.findOneOrFail(BoardNodeEntity, formula.id);
 
 			expect(stored.latex).toEqual(latex);
+		});
+	});
+
+	describe('the deadline calendar option', () => {
+		it('should keep the deadline out of the calendar list while the option is off', async () => {
+			const { teacherElements, teacherBoards, deadline } = await setup();
+
+			await teacherElements.patch(`${deadline.id}/content`, {
+				data: {
+					type: ContentElementType.DEADLINE,
+					content: { title: 'Nur auf dem Board', dueDate: '2026-09-01T12:00:00.000Z', showInCalendar: false },
+				},
+			});
+			const response = await teacherBoards.get('deadlines');
+
+			expect(response.body.data).toEqual([]);
+		});
+
+		it('should list it for everyone who may see the board once the option is on', async () => {
+			const { teacherElements, studentBoards, deadline, card } = await setup();
+
+			await teacherElements.patch(`${deadline.id}/content`, {
+				data: {
+					type: ContentElementType.DEADLINE,
+					content: { title: 'Auch im Kalender', dueDate: '2026-09-01T12:00:00.000Z', showInCalendar: true },
+				},
+			});
+			const response = await studentBoards.get('deadlines');
+
+			expect(response.body.data).toHaveLength(1);
+			expect(response.body.data[0]).toMatchObject({
+				elementId: deadline.id,
+				cardId: card.id,
+				title: 'Auch im Kalender',
+			});
+		});
+
+		it('should not list it for someone outside the course', async () => {
+			const { teacherElements, outsiderBoards, deadline } = await setup();
+
+			await teacherElements.patch(`${deadline.id}/content`, {
+				data: {
+					type: ContentElementType.DEADLINE,
+					content: { title: 'Fremd', dueDate: '2026-09-01T12:00:00.000Z', showInCalendar: true },
+				},
+			});
+			const response = await outsiderBoards.get('deadlines');
+
+			expect(response.body.data).toEqual([]);
+		});
+
+		it('should not list a deadline without a date', async () => {
+			const { teacherElements, teacherBoards, deadline } = await setup();
+
+			await teacherElements.patch(`${deadline.id}/content`, {
+				data: { type: ContentElementType.DEADLINE, content: { title: 'Ohne Datum', showInCalendar: true } },
+			});
+			const response = await teacherBoards.get('deadlines');
+
+			expect(response.body.data).toEqual([]);
 		});
 	});
 

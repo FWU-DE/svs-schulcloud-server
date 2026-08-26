@@ -7,6 +7,8 @@ export class CodeElementContent {
 	constructor(props: CodeElementContent) {
 		this.code = props.code;
 		this.language = props.language;
+		this.showLineNumbers = props.showLineNumbers;
+		this.syntaxHighlighting = props.syntaxHighlighting;
 	}
 
 	@ApiProperty()
@@ -14,6 +16,12 @@ export class CodeElementContent {
 
 	@ApiProperty({ description: 'A language label. It is shown next to the block, nothing is executed.' })
 	language: string;
+
+	@ApiProperty()
+	showLineNumbers: boolean;
+
+	@ApiProperty({ description: 'Highlighting happens in the client; the code is always stored verbatim.' })
+	syntaxHighlighting: boolean;
 }
 
 export class CodeElementResponse {

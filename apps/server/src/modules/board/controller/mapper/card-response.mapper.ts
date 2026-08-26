@@ -14,6 +14,8 @@ export class CardResponseMapper {
 			visibilitySettings: new VisibilitySettingsResponse({}),
 			timestamps: new TimestampsResponse({ lastUpdatedAt: card.updatedAt, createdAt: card.createdAt }),
 			reactions: this.mapReactions(card, context),
+			commentsEnabled: card.commentsEnabled ?? null,
+			readersCanEdit: card.readersCanEdit ?? null,
 			comments: context?.commentsEnabled
 				? CardCommentResponseMapper.mapListToResponse(card.comments, context)
 				: undefined,

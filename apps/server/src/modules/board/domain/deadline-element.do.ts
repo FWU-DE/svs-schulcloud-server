@@ -18,6 +18,15 @@ export class DeadlineElement extends BoardNode<DeadlineElementProps> {
 		this.props.dueDate = value;
 	}
 
+	get showInCalendar(): boolean {
+		// Deadlines created before the calendar option existed have no such field.
+		return this.props.showInCalendar ?? false;
+	}
+
+	set showInCalendar(value: boolean) {
+		this.props.showInCalendar = value;
+	}
+
 	public canHaveChild(): boolean {
 		return false;
 	}

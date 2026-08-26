@@ -311,6 +311,53 @@ describe('card comment (api)', () => {
 		});
 	});
 
+	describe('when a card overrides the board setting', () => {
+		it('should allow comments on that card although the board has them off', async () => {
+			const { teacherCards, studentCards, card } = await setup(false);
+
+			await teacherCards.patch(`${card.id}/settings`, { commentsEnabled: true });
+			const response = await studentCards.post(`${card.id}/comments`, { text: 'Doch erlaubt' });
+
+			expect(response.statusCode).toEqual(201);
+		});
+
+		it('should refuse comments on that card although the board has them on', async () => {
+			const { teacherCards, studentCards, card } = await setup(true);
+
+			await teacherCards.patch(`${card.id}/settings`, { commentsEnabled: false });
+			const response = await studentCards.post(`${card.id}/comments`, { text: 'Nicht hier' });
+
+			expect(response.statusCode).toEqual(422);
+		});
+
+		it('should follow the board again once the override is cleared', async () => {
+			const { teacherCards, studentCards, card } = await setup(true);
+
+			await teacherCards.patch(`${card.id}/settings`, { commentsEnabled: false });
+			await teacherCards.patch(`${card.id}/settings`, { commentsEnabled: null });
+			const response = await studentCards.post(`${card.id}/comments`, { text: 'Wieder erlaubt' });
+
+			expect(response.statusCode).toEqual(201);
+		});
+
+		it('should let a reader edit that card although the board does not', async () => {
+			const { teacherCards, studentCards, card } = await setup(true);
+
+			await teacherCards.patch(`${card.id}/settings`, { readersCanEdit: true });
+			const response = await studentCards.patch(`${card.id}/title`, { title: 'Von der Klasse benannt' });
+
+			expect(response.statusCode).toEqual(204);
+		});
+
+		it('should refuse the override for a student', async () => {
+			const { studentCards, card } = await setup(true);
+
+			const response = await studentCards.patch(`${card.id}/settings`, { commentsEnabled: true });
+
+			expect(response.statusCode).toEqual(403);
+		});
+	});
+
 	describe('when comments are turned on or off for the board', () => {
 		it('should be allowed for whoever may manage the board', async () => {
 			const { teacherBoards, columnBoardNode } = await setup(false);

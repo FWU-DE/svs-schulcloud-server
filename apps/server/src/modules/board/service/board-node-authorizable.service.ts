@@ -5,7 +5,14 @@ import {
 } from '@modules/authorization';
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { type EntityId } from '@shared/domain/types';
-import { AnyBoardNode, BoardConfiguration, BoardNodeAuthorizable, ColumnBoard, MediaBoard } from '../domain';
+import {
+	AnyBoardNode,
+	BoardConfiguration,
+	BoardNodeAuthorizable,
+	ColumnBoard,
+	isCard,
+	MediaBoard,
+} from '../domain';
 import { BoardNodeRepo } from '../repo';
 import { BoardNodeService } from './board-node.service';
 import { BoardContextResolverService } from './internal/board-context/board-context-resolver.service';
@@ -39,7 +46,11 @@ export class BoardNodeAuthorizableService implements AuthorizationLoaderService 
 
 		const preparedContext = await this.resolveContext(rootNode);
 		const users = preparedContext.getUsersWithBoardRoles();
-		const boardConfiguration = preparedContext.getBoardConfiguration(rootNode as MediaBoard | ColumnBoard);
+		const boardConfiguration = applyCardOverrides(
+			preparedContext.getBoardConfiguration(rootNode as MediaBoard | ColumnBoard),
+			boardNode,
+			parentNode
+		);
 
 		const boardNodeAuthorizable = new BoardNodeAuthorizable({
 			users,
@@ -75,7 +86,11 @@ export class BoardNodeAuthorizableService implements AuthorizationLoaderService 
 			const currentRootNode = boardNodeMap[boardNode.rootId];
 			const parentNode = boardNode.parentId ? boardNodeMap[boardNode.parentId] : undefined;
 
-			const boardConfiguration = preparedContext.getBoardConfiguration(currentRootNode as MediaBoard | ColumnBoard);
+			const boardConfiguration = applyCardOverrides(
+				preparedContext.getBoardConfiguration(currentRootNode as MediaBoard | ColumnBoard),
+				boardNode,
+				parentNode
+			);
 
 			return new BoardNodeAuthorizable({
 				users,
@@ -117,3 +132,21 @@ export class BoardNodeAuthorizableService implements AuthorizationLoaderService 
 		return nodesMap;
 	}
 }
+
+/**
+ * A card may overrule the board's "readers can edit" setting for itself and everything on it.
+ * The override is a tri-state: only an explicitly set value wins, so a card that has never been
+ * configured keeps following the board.
+ */
+const applyCardOverrides = (
+	boardConfiguration: BoardConfiguration,
+	boardNode: AnyBoardNode,
+	parentNode?: AnyBoardNode
+): BoardConfiguration => {
+	const card = isCard(boardNode) ? boardNode : isCard(parentNode) ? parentNode : undefined;
+	if (card?.readersCanEdit === undefined) {
+		return boardConfiguration;
+	}
+
+	return { ...boardConfiguration, canReadersEdit: card.readersCanEdit };
+};

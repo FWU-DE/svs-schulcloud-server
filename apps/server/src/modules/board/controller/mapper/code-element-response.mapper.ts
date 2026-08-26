@@ -18,7 +18,12 @@ export class CodeElementResponseMapper implements BaseResponseMapper {
 			id: element.id,
 			type: ContentElementType.CODE,
 			timestamps: new TimestampsResponse({ lastUpdatedAt: element.updatedAt, createdAt: element.createdAt }),
-			content: new CodeElementContent({ code: element.code, language: element.language }),
+			content: new CodeElementContent({
+				code: element.code,
+				language: element.language,
+				showLineNumbers: element.showLineNumbers,
+				syntaxHighlighting: element.syntaxHighlighting,
+			}),
 		});
 	}
 

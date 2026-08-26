@@ -247,6 +247,10 @@ export class DeadlineContentBody {
 	@IsOptional()
 	@ApiPropertyOptional({ type: String, format: 'date-time', description: 'Omit to clear the date.' })
 	dueDate?: string;
+
+	@IsBoolean()
+	@ApiProperty({ description: 'List this deadline in the calendar of everyone who can see the board.' })
+	showInCalendar!: boolean;
 }
 
 export class DeadlineElementContentBody extends ElementContentBody {
@@ -268,6 +272,14 @@ export class CodeContentBody {
 	@MaxLength(40)
 	@ApiProperty()
 	language!: string;
+
+	@IsBoolean()
+	@ApiProperty()
+	showLineNumbers!: boolean;
+
+	@IsBoolean()
+	@ApiProperty()
+	syntaxHighlighting!: boolean;
 }
 
 export class CodeElementContentBody extends ElementContentBody {

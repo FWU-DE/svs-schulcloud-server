@@ -55,6 +55,8 @@ export class CardResponse {
 		timestamps,
 		reactions,
 		comments,
+		commentsEnabled,
+		readersCanEdit,
 	}: CardResponse) {
 		this.id = id;
 		this.title = title;
@@ -65,6 +67,8 @@ export class CardResponse {
 		this.timestamps = timestamps;
 		this.reactions = reactions;
 		this.comments = comments;
+		this.commentsEnabled = commentsEnabled;
+		this.readersCanEdit = readersCanEdit;
 	}
 
 	@ApiProperty({
@@ -124,4 +128,18 @@ export class CardResponse {
 		description: 'Absent while the board has comments turned off.',
 	})
 	comments?: CardCommentResponse[];
+
+	@ApiPropertyOptional({
+		type: Boolean,
+		nullable: true,
+		description: "This card's own comment setting. null means it follows the board.",
+	})
+	commentsEnabled?: boolean | null;
+
+	@ApiPropertyOptional({
+		type: Boolean,
+		nullable: true,
+		description: "This card's own editing setting. null means it follows the board.",
+	})
+	readersCanEdit?: boolean | null;
 }

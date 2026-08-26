@@ -14,5 +14,6 @@ export const deadlineElementEntityFactory = BoardNodeEntityFactory.define<PropsW
 		type: BoardNodeType.DEADLINE_ELEMENT,
 		title: `deadline #${sequence}`,
 		dueDate: undefined,
+		showInCalendar: false,
 	};
 });
