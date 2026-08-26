@@ -14,6 +14,27 @@ export class SecondarySchoolReference {
 	}
 }
 
+export type FormerMembershipType = 'course' | 'room';
+
+// Snapshot of a course/room reference the user was removed from during a school change,
+// so it can be offered back to them as a self-service "reclaim" action later.
+export class FormerMembership {
+	public type: FormerMembershipType;
+
+	public refId: EntityId;
+
+	public schoolId: EntityId;
+
+	public removedAt: Date;
+
+	constructor(props: FormerMembership) {
+		this.type = props.type;
+		this.refId = props.refId;
+		this.schoolId = props.schoolId;
+		this.removedAt = props.removedAt;
+	}
+}
+
 export class UserDo extends BaseDO {
 	public createdAt?: Date;
 
@@ -36,6 +57,8 @@ export class UserDo extends BaseDO {
 	public schoolName?: string;
 
 	public secondarySchools: SecondarySchoolReference[];
+
+	public formerMemberships?: FormerMembership[];
 
 	public ldapDn?: string;
 
@@ -79,6 +102,7 @@ export class UserDo extends BaseDO {
 		this.schoolId = domainObject.schoolId;
 		this.schoolName = domainObject.schoolName;
 		this.secondarySchools = domainObject.secondarySchools || [];
+		this.formerMemberships = domainObject.formerMemberships || [];
 		this.ldapDn = domainObject.ldapDn;
 		this.externalId = domainObject.externalId;
 		this.importHash = domainObject.importHash;

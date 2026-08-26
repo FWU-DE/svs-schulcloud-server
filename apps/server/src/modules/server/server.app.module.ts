@@ -20,6 +20,7 @@ import { CollaborativeTextEditorApiModule } from '@modules/collaborative-text-ed
 import { COMMON_CARTRIDGE_PUBLIC_API_CONFIG_TOKEN, CommonCartridgePublicApiConfig } from '@modules/common-cartridge';
 import { CourseApiModule } from '@modules/course/course-api.module';
 import { DeletionPublicApiModule } from '@modules/deletion/deletion-public-api.module';
+import { FormerMembershipApiModule } from '@modules/former-membership/former-membership-api.module';
 import { FWU_PUBLIC_API_CONFIG_TOKEN, FwuPublicApiConfig } from '@modules/fwu-learning-contents';
 import { GroupApiModule } from '@modules/group/group-api.module';
 import { HelpdeskApiModule } from '@modules/helpdesk';
@@ -106,6 +107,7 @@ const serverModules = [
 	RuntimeConfigApiModule,
 	CoreModule,
 	CourseApiModule,
+	FormerMembershipApiModule,
 	AuthenticationApiModule,
 	AuthGuardModule.register([
 		{

@@ -7,6 +7,7 @@ import type { IFindOptions, LanguageType, Permission } from '@shared/domain/inte
 import type { Counted, EntityId } from '@shared/domain/types';
 import type { UserDto } from '../../api/dto';
 import type { UserDo } from '../../domain';
+import type { FormerMembership } from '../do/user.do';
 import type { User } from '../../repo/user.entity';
 import { UserMikroOrmRepo } from '../../repo/user.repo';
 import { USER_CONFIG_TOKEN, UserConfig } from '../../user.config';
@@ -91,6 +92,23 @@ export class UserService {
 
 	public async saveEntity(user: User): Promise<void> {
 		await this.userRepo.save(user);
+	}
+
+	// Snapshot content the user just lost access to (via a school change) so it can be offered
+	// back to them later as a self-service "reclaim" action. No-op if the user no longer exists.
+	public async appendFormerMemberships(userId: EntityId, entries: FormerMembership[]): Promise<void> {
+		if (entries.length === 0) {
+			return;
+		}
+
+		const user = await this.userDoRepo.findByIdOrNull(userId, false);
+		if (!user) {
+			return;
+		}
+
+		user.formerMemberships = [...(user.formerMemberships ?? []), ...entries];
+
+		await this.userDoRepo.save(user);
 	}
 
 	public async saveAll(users: UserDo[]): Promise<UserDo[]> {

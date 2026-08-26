@@ -2,6 +2,7 @@ import { LoggerModule } from '@infra/logger';
 import { AuthorizationModule } from '@modules/authorization';
 import { RoleModule } from '@modules/role';
 import { SagaModule } from '@modules/saga';
+import { UserModule } from '@modules/user';
 import { Module } from '@nestjs/common';
 import {
 	COURSE_REPO,
@@ -20,7 +21,7 @@ import { CourseMikroOrmRepo } from './repo/course-mikro-orm.repo';
 import { DeleteUserCourseDataStep, DeleteUserCourseGroupDataStep } from './saga';
 
 @Module({
-	imports: [RoleModule, LoggerModule, AuthorizationModule, SagaModule],
+	imports: [RoleModule, LoggerModule, AuthorizationModule, SagaModule, UserModule],
 	providers: [
 		CourseAuthorizableService,
 		CourseGroupAuthorizableService,

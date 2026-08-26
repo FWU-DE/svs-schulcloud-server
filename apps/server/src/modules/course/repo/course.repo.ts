@@ -105,12 +105,16 @@ export class CourseRepo extends BaseRepo<CourseEntity> {
 		return course;
 	}
 
-	public async removeUserFromCourses(userId: EntityId, schoolId: EntityId): Promise<void> {
+	// Returns the ids of the courses the user was actually removed from, so callers can snapshot
+	// the removed relationship (e.g. for a later self-service "reclaim" action) before it is lost.
+	public async removeUserFromCourses(userId: EntityId, schoolId: EntityId): Promise<EntityId[]> {
 		const [courses] = await this.findAllByUserId(userId, schoolId);
-		await this.removeUserReference(
+		const [courseIds] = await this.removeUserReference(
 			userId,
 			courses.map((c) => c.id)
 		);
+
+		return courseIds;
 	}
 
 	public async removeUserReference(userId: EntityId, courseIdsFilter?: EntityId[]): Promise<Counted<EntityId[]>> {
@@ -136,5 +140,18 @@ export class CourseRepo extends BaseRepo<CourseEntity> {
 
 		const courseIds = courses.map((c) => c.id);
 		return [courseIds, count];
+	}
+
+	// Inverse of removeUserReference, for the self-service "reclaim" flow: puts the user back into
+	// a single course as teacher or student. Returns false if the course no longer exists.
+	public async addUserReference(userId: EntityId, courseId: EntityId, asTeacher: boolean): Promise<boolean> {
+		const id = new ObjectId(userId);
+		const fieldName = getFieldName(this._em, asTeacher ? 'teachers' : 'students', CourseEntity.name);
+
+		const count = await this._em.nativeUpdate(CourseEntity, { _id: new ObjectId(courseId) }, {
+			$addToSet: { [fieldName]: id },
+		} as Partial<CourseEntity>);
+
+		return count === 1;
 	}
 }

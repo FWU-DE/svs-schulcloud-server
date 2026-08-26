@@ -22,8 +22,14 @@ import { ReferenceNotPopulatedLoggableException } from '@shared/common/loggable-
 import { BaseEntityWithTimestamps } from '@shared/domain/entity';
 import { LanguageType, Permission } from '@shared/domain/interface';
 import { EntityId } from '@shared/domain/types';
+import { ObjectIdType } from '@shared/repo/types/object-id.type';
 import { ConsentEntity } from './consent.entity';
 import { UserParentsEntity } from './user-parents.entity';
+
+export enum FormerMembershipType {
+	COURSE = 'course',
+	ROOM = 'room',
+}
 
 export interface UserProperties {
 	email: string;
@@ -33,6 +39,7 @@ export interface UserProperties {
 	school: SchoolEntity;
 	importHash?: string;
 	secondarySchools?: UserSchoolEmbeddable[];
+	formerMemberships?: FormerMembershipEmbeddable[];
 	roles: Role[];
 	ldapDn?: string;
 	externalId?: string;
@@ -75,6 +82,31 @@ export class UserSchoolEmbeddable {
 	}
 }
 
+// Snapshot of a course/room reference the user was removed from during a school change,
+// so it can be offered back to them as a self-service "reclaim" action later.
+// Plain data only (no entity relations) since the target may since have been deleted or changed owners.
+@Embeddable()
+export class FormerMembershipEmbeddable {
+	@Property()
+	type: FormerMembershipType;
+
+	@Property({ type: ObjectIdType })
+	refId: EntityId;
+
+	@Property({ type: ObjectIdType })
+	schoolId: EntityId;
+
+	@Property()
+	removedAt: Date;
+
+	constructor(props: FormerMembershipEmbeddable) {
+		this.type = props.type;
+		this.refId = props.refId;
+		this.schoolId = props.schoolId;
+		this.removedAt = props.removedAt;
+	}
+}
+
 @Entity({ tableName: 'users' })
 @Index({ properties: ['id', 'email'] })
 @Index({ properties: ['firstName', 'lastName'] })
@@ -110,6 +142,9 @@ export class User extends BaseEntityWithTimestamps {
 
 	@Embedded(() => UserSchoolEmbeddable, { array: true, nullable: true })
 	secondarySchools: UserSchoolEmbeddable[] = [];
+
+	@Embedded(() => FormerMembershipEmbeddable, { array: true, nullable: true })
+	formerMemberships: FormerMembershipEmbeddable[] = [];
 
 	@Property({ nullable: true })
 	@Index()

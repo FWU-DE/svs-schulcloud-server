@@ -11,13 +11,13 @@ import { BaseDORepo } from '@shared/repo/base.do.repo';
 import { Scope } from '@shared/repo/scope';
 import { chunk } from 'lodash';
 import { Consent, MultipleUsersFoundLoggableException, ParentConsent, UserConsent, type UserDoRepo } from '../domain';
-import { SecondarySchoolReference, UserDo } from '../domain/do/user.do';
+import { FormerMembership, SecondarySchoolReference, UserDo } from '../domain/do/user.do';
 import { UserQuery } from '../domain/query/user-query';
 import { ConsentEntity } from './consent.entity';
 import { ParentConsentEntity } from './parent-consent.entity';
 import { UserScope } from './scope/user.scope';
 import { UserConsentEntity } from './user-consent.entity';
-import { User, UserSchoolEmbeddable } from './user.entity';
+import { FormerMembershipEmbeddable, FormerMembershipType, User, UserSchoolEmbeddable } from './user.entity';
 
 @Injectable()
 export class UserDoMikroOrmRepo extends BaseDORepo<UserDo, User> implements UserDoRepo {
@@ -179,6 +179,7 @@ export class UserDoMikroOrmRepo extends BaseDORepo<UserDo, User> implements User
 			schoolId: entity.school.id,
 			schoolName: entity.school.name,
 			secondarySchools: [],
+			formerMemberships: [],
 			ldapDn: entity.ldapDn,
 			externalId: entity.externalId,
 			importHash: entity.importHash,
@@ -210,6 +211,18 @@ export class UserDoMikroOrmRepo extends BaseDORepo<UserDo, User> implements User
 			);
 		}
 
+		if (entity.formerMemberships) {
+			user.formerMemberships = entity.formerMemberships.map(
+				(formerMembership) =>
+					new FormerMembership({
+						type: formerMembership.type,
+						refId: formerMembership.refId,
+						schoolId: formerMembership.schoolId,
+						removedAt: formerMembership.removedAt,
+					})
+			);
+		}
+
 		return user;
 	}
 
@@ -226,6 +239,15 @@ export class UserDoMikroOrmRepo extends BaseDORepo<UserDo, User> implements User
 					new UserSchoolEmbeddable({
 						school: this._em.getReference(SchoolEntity, secondarySchool.schoolId),
 						role: this._em.getReference(Role, secondarySchool.role.id),
+					})
+			),
+			formerMemberships: (entityDO.formerMemberships || []).map(
+				(formerMembership) =>
+					new FormerMembershipEmbeddable({
+						type: formerMembership.type as FormerMembershipType,
+						refId: formerMembership.refId,
+						schoolId: formerMembership.schoolId,
+						removedAt: formerMembership.removedAt,
 					})
 			),
 			ldapDn: entityDO.ldapDn,

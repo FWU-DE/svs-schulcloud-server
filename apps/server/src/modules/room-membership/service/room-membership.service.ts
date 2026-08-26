@@ -169,6 +169,16 @@ export class RoomMembershipService {
 		return page;
 	}
 
+	// Resolves a room's id from its access-control group id. Used by the self-service "reclaim"
+	// flow, which only ever has a group id snapshotted (the group survives even after the user
+	// was removed from it; the room-memberships link is what ties it back to a room).
+	public async getRoomIdByUserGroupId(userGroupId: EntityId): Promise<EntityId | null> {
+		const roomMemberships = await this.roomMembershipRepo.findByGroupId(userGroupId);
+		const [roomMembership] = roomMemberships;
+
+		return roomMembership?.roomId ?? null;
+	}
+
 	public async getRoomAuthorizablesByUserId(userId: EntityId): Promise<RoomAuthorizable[]> {
 		const groups = await this.getAllRoomGroupsOfUser(userId);
 		const groupIds = groups.map((group) => group.id);

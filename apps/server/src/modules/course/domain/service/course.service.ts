@@ -51,4 +51,12 @@ export class CourseService {
 
 		return course;
 	}
+
+	// Self-service "reclaim" of a course the user was previously removed from (e.g. after a school
+	// change). Returns false if the course no longer exists.
+	public async addUserBackToCourse(courseId: EntityId, userId: EntityId, asTeacher: boolean): Promise<boolean> {
+		const added = await this.repo.addUserReference(userId, courseId, asTeacher);
+
+		return added;
+	}
 }

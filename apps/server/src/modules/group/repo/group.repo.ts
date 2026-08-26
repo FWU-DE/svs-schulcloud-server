@@ -9,7 +9,7 @@ import { BaseDomainObjectRepo } from '@shared/repo/base-domain-object.repo';
 import { MongoPatterns } from '@shared/repo/mongo.patterns';
 import { ScopeAggregateResult } from '@shared/repo/mongodb-scope';
 import { Group, GroupAggregateScope, GroupFilter, GroupTypes } from '../domain';
-import { GroupEntity } from '../entity';
+import { GroupEntity, GroupEntityTypes } from '../entity';
 import { GroupDomainMapper, GroupTypesToGroupEntityTypesMapping } from './group-domain.mapper';
 import { GroupScope } from './group.scope';
 
@@ -123,6 +123,19 @@ export class GroupRepo extends BaseDomainObjectRepo<Group, GroupEntity> {
 		const page: Page<Group> = new Page<Group>(domainObjects, total);
 
 		return page;
+	}
+
+	// Ids of the ROOM-type groups the user currently belongs to. Callers use this to snapshot
+	// a room reference before removeUserReference strips the user's membership, since a group's
+	// own room link is resolved separately (via room-memberships) and survives regardless.
+	public async findRoomGroupIdsForUser(userId: EntityId): Promise<EntityId[]> {
+		const scope: GroupScope = new GroupScope();
+		scope.byUserId(userId);
+		scope.byTypes([GroupEntityTypes.ROOM]);
+
+		const groups = await this.em.find(GroupEntity, scope.query, { fields: ['id'] });
+
+		return groups.map((group) => group.id);
 	}
 
 	public async removeUserReference(userId: EntityId): Promise<number> {
