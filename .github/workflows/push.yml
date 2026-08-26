@@ -90,6 +90,7 @@ jobs:
     outputs:
       branch: ${{ steps.extract_branch_meta.outputs.branch }}
       sha: ${{ steps.extract_branch_meta.outputs.sha }}
+      can_deploy: ${{ steps.deploy_target.outputs.can_deploy }}
     steps:
       - name: Extract branch meta
         shell: bash
@@ -108,10 +109,28 @@ jobs:
             echo "sha=$BRANCH_SHA" >> $GITHUB_OUTPUT
           fi
 
+      # A fork without the cluster credentials cannot deploy anywhere. Without this the deploy
+      # job still starts and every tenant fails on an empty kubeconfig, which buries the checks
+      # that do say something about the code. The secrets context is unavailable in a job level
+      # `if`, so the answer is carried out of here as an output.
+      - name: Is there anything to deploy to
+        id: deploy_target
+        shell: bash
+        env:
+          DEV_KUBE_CONFIG_BRB: ${{ secrets.DEV_KUBE_CONFIG_BRB }}
+        run: |
+          if [ -n "$DEV_KUBE_CONFIG_BRB" ]; then
+            echo "can_deploy=true" >> $GITHUB_OUTPUT
+          else
+            echo "can_deploy=false" >> $GITHUB_OUTPUT
+            echo "::notice::No cluster credentials in this repository - skipping the deployment."
+          fi
+
   deploy:
     needs:
       - build_and_push
       - branch_meta
+    if: needs.branch_meta.outputs.can_deploy == 'true'
     uses: hpi-schul-cloud/dof_app_deploy/.github/workflows/deploy.yml@main
     with:
       branch: ${{ needs.branch_meta.outputs.branch }}
