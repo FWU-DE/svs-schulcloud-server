@@ -185,6 +185,28 @@ wörtlich. Was highlight.js ausgibt, ist escaped; ist die Hervorhebung aus oder 
 Sprache unbekannt, wird stattdessen hier escaped — das hält eine unbekannte
 Sprachangabe harmlos.
 
+## Fallen, die zweimal Zeit gekostet haben
+
+**Kein `type: String` neben `enum` bei `nullable: true`.** Der OpenAPI-Generator
+baut daraus ein lokales Enum *ohne* `null` — aus `CardReactionType | null` wurde
+im Client ein Enum ohne Null, die davon abhängige Test-Factory war kaputt, und das
+schlug als rund 60 Folgefehler in unbeteiligten Dateien auf. Ohne `type: String`
+entsteht korrekt `CardReactionType | null`.
+
+**Keine Modul-Importe über die Raum-/Board-Grenze, auch nicht in Tests.** Ein
+`import` von `@modules/board` in einem *Spec* des Raum-Moduls hat einen Zyklus in
+den Typgraphen gelegt; `RoomItemResponse` löste danach zu `any` auf, und ein
+fremder, eigentlich kaputter Test compilierte plötzlich. Beide Enum-Kopien pinnen
+sich deshalb auf dieselbe Literal-Liste, statt sich gegenseitig zu importieren.
+
+**Präsentationskomponenten greifen nicht auf den Store zu.** `BoardColumnHeader`
+hat das Feature-Flag zunächst selbst aus `useEnvConfig()` gelesen und war damit
+ohne Pinia nicht mehr testbar — es kommt jetzt als Prop von `BoardColumn`.
+
+**Die Raum-Einstellungen sind in der API optional.** Sie verpflichtend zu machen
+hat auf Anhieb ein Dutzend bestehende Room-API-Tests gebrochen: ein Client, der
+die Felder nicht kennt, muss weiter Räume anlegen können. Weggelassen heißt aus.
+
 ## Was Upstream dazu gemacht hat
 
 - `hpi-schul-cloud/schulcloud-server` hat das **Abgabe-Element im März 2026
