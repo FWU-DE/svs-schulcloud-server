@@ -8,6 +8,10 @@ permissions:
 jobs:
   dependency-review:
     runs-on: ubuntu-latest
+    # The action needs the dependency graph, which is a repository setting and is only enabled
+    # upstream; in this mirror it can do nothing but fail. Named explicitly rather than made
+    # non-blocking, so upstream keeps the check exactly as strict as it is today.
+    if: github.repository == 'hpi-schul-cloud/schulcloud-server'
     steps:
       - name: 'Checkout Repository'
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2

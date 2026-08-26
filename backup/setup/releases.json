@@ -1,0 +1,50 @@
+[
+	{
+		"_id": {
+			"$oid": "6a8b0001000000000000d001"
+		},
+		"name": "Version 2026.8.0",
+		"body": "- R\u00e4ume zeigen ihr Board direkt beim \u00d6ffnen\n- Aufgaben lassen sich als erledigt markieren\n- Neue Gruppierung nach Fristen",
+		"url": "https://github.com/hpi-schul-cloud/schulcloud-client/releases/tag/v2026.8.0",
+		"author": "dBildungscloud",
+		"authorUrl": "https://github.com/hpi-schul-cloud",
+		"createdAt": {
+			"$date": "2026-08-01T09:00:00.000Z"
+		},
+		"publishedAt": {
+			"$date": "2026-08-01T09:00:00.000Z"
+		}
+	},
+	{
+		"_id": {
+			"$oid": "6a8b0001000000000000d002"
+		},
+		"name": "Version 2026.7.0",
+		"body": "- Medienregal mit verf\u00fcgbaren Medien\n- Schnellere Kurs\u00fcbersicht\n- Fehlerbehebungen in der Dateiablage",
+		"url": "https://github.com/hpi-schul-cloud/schulcloud-client/releases/tag/v2026.7.0",
+		"author": "dBildungscloud",
+		"authorUrl": "https://github.com/hpi-schul-cloud",
+		"createdAt": {
+			"$date": "2026-07-04T09:00:00.000Z"
+		},
+		"publishedAt": {
+			"$date": "2026-07-04T09:00:00.000Z"
+		}
+	},
+	{
+		"_id": {
+			"$oid": "6a8b0001000000000000d003"
+		},
+		"name": "Version 2026.6.0",
+		"body": "- Kalender mit Wochenansicht\n- Barrierefreiheit verbessert\n- Neue Rollenverwaltung",
+		"url": "https://github.com/hpi-schul-cloud/schulcloud-client/releases/tag/v2026.6.0",
+		"author": "dBildungscloud",
+		"authorUrl": "https://github.com/hpi-schul-cloud",
+		"createdAt": {
+			"$date": "2026-06-06T09:00:00.000Z"
+		},
+		"publishedAt": {
+			"$date": "2026-06-06T09:00:00.000Z"
+		}
+	}
+]
