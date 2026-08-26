@@ -11,7 +11,25 @@ jobs:
     steps:
       - name: 'Checkout Repository'
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      # The action reads the dependency graph, which is a repository setting rather than something
+      # this workflow can switch on. Where it is off the action fails before it looks at a single
+      # dependency. Switch it on under Settings -> Security & analysis and drop the condition -
+      # skipping the review is a stopgap, not the repair.
+      - name: 'Dependency graph available?'
+        id: graph
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BASE_HEAD: ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}
+        run: |
+          # the very endpoint the review itself reads, so this asks the question it will ask
+          if gh api "repos/${GITHUB_REPOSITORY}/dependency-graph/compare/${BASE_HEAD}" >/dev/null 2>&1; then
+            echo "available=true" >> $GITHUB_OUTPUT
+          else
+            echo "available=false" >> $GITHUB_OUTPUT
+            echo "::notice::The dependency graph is switched off for this repository - skipping the review."
+          fi
       - name: 'Dependency Review'
+        if: steps.graph.outputs.available == 'true'
         uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48 # v4.9.0
         with:
           config-file: 'hpi-schul-cloud/dependency-review-config/.github/dependency-review-config.yml@main'
