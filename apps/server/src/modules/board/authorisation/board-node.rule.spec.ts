@@ -761,6 +761,7 @@ describe(BoardNodeRule.name, () => {
 					moveColumn: true,
 					shareColumn: true,
 					updateColumnTitle: true,
+					updateColumnSettings: true,
 
 					// card
 					copyCard: true,
@@ -856,6 +857,7 @@ describe(BoardNodeRule.name, () => {
 					moveColumn: true,
 					shareColumn: false,
 					updateColumnTitle: true,
+					updateColumnSettings: true,
 
 					// card
 					copyCard: true,
@@ -952,6 +954,7 @@ describe(BoardNodeRule.name, () => {
 					moveColumn: false,
 					shareColumn: false,
 					updateColumnTitle: false,
+					updateColumnSettings: false,
 
 					// card
 					copyCard: false,
@@ -1061,6 +1064,7 @@ describe(BoardNodeRule.name, () => {
 					moveColumn: false,
 					shareColumn: false,
 					updateColumnTitle: false,
+					updateColumnSettings: false,
 
 					// card
 					copyCard: false,

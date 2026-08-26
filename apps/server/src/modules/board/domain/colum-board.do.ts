@@ -47,21 +47,21 @@ export class ColumnBoard extends BoardNode<ColumnBoardProps> {
 		this.props.readersCanEdit = readersCanEdit;
 	}
 
-	get reactionType(): CardReactionType {
-		// Boards created before reactions existed have no such field.
-		return this.props.reactionType ?? CardReactionType.NONE;
+	/** `undefined` follows the room. */
+	get reactionType(): CardReactionType | undefined {
+		return this.props.reactionType;
 	}
 
-	set reactionType(reactionType: CardReactionType) {
+	set reactionType(reactionType: CardReactionType | undefined) {
 		this.props.reactionType = reactionType;
 	}
 
-	get commentsEnabled(): boolean {
-		// Boards created before comments existed have no such field.
-		return this.props.commentsEnabled ?? false;
+	/** `undefined` follows the room. */
+	get commentsEnabled(): boolean | undefined {
+		return this.props.commentsEnabled;
 	}
 
-	set commentsEnabled(commentsEnabled: boolean) {
+	set commentsEnabled(commentsEnabled: boolean | undefined) {
 		this.props.commentsEnabled = commentsEnabled;
 	}
 

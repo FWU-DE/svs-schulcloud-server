@@ -9,7 +9,9 @@ import {
 	CardComment,
 	CardReaction,
 	CardReactionType,
+	ChecklistCheck,
 	ChecklistItem,
+	ChecklistProgressMode,
 	ContentElementType,
 	Colors,
 	PollOption,
@@ -205,6 +207,12 @@ export class BoardNodeEntity extends BaseEntityWithTimestamps implements BoardNo
 	// --------------------------------------------------------------------------
 	@Property({ type: 'json', nullable: true })
 	items: ChecklistItem[] | undefined;
+
+	@Enum({ type: 'ChecklistProgressMode', nullable: true })
+	progressMode: ChecklistProgressMode | undefined;
+
+	@Property({ type: 'json', nullable: true })
+	checks: ChecklistCheck[] | undefined;
 
 	// RecordingElement
 	// --------------------------------------------------------------------------

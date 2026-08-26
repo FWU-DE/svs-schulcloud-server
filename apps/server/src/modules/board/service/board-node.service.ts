@@ -10,6 +10,7 @@ import {
 	Card,
 	CardReactionType,
 	ChecklistElement,
+	Column,
 	ColumnBoard,
 	isAnyMediaElement,
 	isContentElement,
@@ -96,12 +97,21 @@ export class BoardNodeService {
 		await this.boardNodeRepo.save(card);
 	}
 
+	public async saveColumn(column: Column): Promise<void> {
+		await this.boardNodeRepo.save(column);
+	}
+
 	public async saveCard(card: Card): Promise<void> {
 		await this.boardNodeRepo.save(card);
 	}
 
-	public async setChecklistItemChecked(element: ChecklistElement, itemId: string, checked: boolean): Promise<void> {
-		element.setChecked(itemId, checked);
+	public async setChecklistItemChecked(
+		element: ChecklistElement,
+		itemId: string,
+		userId: EntityId,
+		checked: boolean
+	): Promise<void> {
+		element.setChecked(itemId, userId, checked);
 
 		await this.boardNodeRepo.save(element);
 	}

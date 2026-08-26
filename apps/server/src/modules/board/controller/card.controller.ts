@@ -93,6 +93,7 @@ export class CardController {
 		const { card, viewContext } = await this.cardUc.updateCardSettings(currentUser.userId, urlParams.cardId, {
 			commentsEnabled: bodyParams.commentsEnabled,
 			readersCanEdit: bodyParams.readersCanEdit,
+			reactionType: bodyParams.reactionType,
 		});
 
 		return CardResponseMapper.mapToResponse(card, viewContext);

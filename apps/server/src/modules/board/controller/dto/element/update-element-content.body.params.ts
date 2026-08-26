@@ -15,6 +15,7 @@ import {
 	ValidateNested,
 } from 'class-validator';
 import {
+	ChecklistProgressMode,
 	ContentElementType,
 	MAX_CHECKLIST_ITEMS,
 	PollResultVisibility,
@@ -331,6 +332,14 @@ export class ChecklistContentBody {
 	@Type(() => ChecklistItemBody)
 	@ApiProperty({ type: [ChecklistItemBody] })
 	items!: ChecklistItemBody[];
+
+	@IsEnum(ChecklistProgressMode)
+	@ApiProperty({
+		enum: ChecklistProgressMode,
+		enumName: 'ChecklistProgressMode',
+		description: 'Switching the mode starts the progress over: a shared tick is not a personal one.',
+	})
+	progressMode!: ChecklistProgressMode;
 }
 
 export class ChecklistElementContentBody extends ElementContentBody {

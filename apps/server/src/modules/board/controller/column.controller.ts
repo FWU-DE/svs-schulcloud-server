@@ -14,7 +14,14 @@ import {
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ApiValidationError } from '@shared/common/error';
 import { BoardUc, ColumnUc } from '../uc';
-import { CardResponse, ColumnFullResponse, ColumnUrlParams, MoveColumnBodyParams, RenameBodyParams } from './dto';
+import {
+	CardResponse,
+	ColumnFullResponse,
+	ColumnSettingsBodyParams,
+	ColumnUrlParams,
+	MoveColumnBodyParams,
+	RenameBodyParams,
+} from './dto';
 import { CreateCardBodyParams } from './dto/card/create-card.body.params';
 import { CardResponseMapper, ColumnResponseMapper } from './mapper';
 import { RequestTimeout } from '@shared/common/decorators';
@@ -42,6 +49,24 @@ export class ColumnController {
 		@CurrentUser() currentUser: ICurrentUser
 	): Promise<void> {
 		await this.boardUc.moveColumn(currentUser.userId, urlParams.columnId, bodyParams.toBoardId, bodyParams.toPosition);
+	}
+
+	@ApiOperation({ summary: "Override the board's comment and feedback settings for a single column." })
+	@ApiResponse({ status: 204 })
+	@ApiResponse({ status: 400, type: ApiValidationError })
+	@ApiResponse({ status: 403, type: ForbiddenException })
+	@ApiResponse({ status: 404, type: NotFoundException })
+	@HttpCode(204)
+	@Patch(':columnId/settings')
+	public async updateColumnSettings(
+		@Param() urlParams: ColumnUrlParams,
+		@Body() bodyParams: ColumnSettingsBodyParams,
+		@CurrentUser() currentUser: ICurrentUser
+	): Promise<void> {
+		await this.columnUc.updateColumnSettings(currentUser.userId, urlParams.columnId, {
+			commentsEnabled: bodyParams.commentsEnabled,
+			reactionType: bodyParams.reactionType,
+		});
 	}
 
 	@ApiOperation({ summary: 'Update the title of a single column.' })

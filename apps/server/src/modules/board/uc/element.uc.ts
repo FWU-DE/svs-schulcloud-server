@@ -101,15 +101,16 @@ export class ElementUc {
 	}
 
 	/**
-	 * Ticking a shared checklist item, like voting, needs read access rather than write access:
-	 * the point is that participants can record progress on a board they may not edit.
+	 * Ticking a checklist item, like voting, needs read access rather than write access: the point
+	 * is that participants can record progress on a board they may not edit. The returned view
+	 * context matters here — a personal list has to be rendered for one specific person.
 	 */
 	public async setChecklistItemChecked(
 		userId: EntityId,
 		elementId: EntityId,
 		itemId: string,
 		checked: boolean
-	): Promise<ChecklistElement> {
+	): Promise<{ element: ChecklistElement; viewContext: BoardViewContext }> {
 		const user = await this.authorizationService.getUserWithPermissions(userId);
 		const element = await this.boardNodeService.findContentElementById(elementId);
 
@@ -122,9 +123,15 @@ export class ElementUc {
 
 		throwForbiddenIfFalse(this.boardNodeRule.can('checkChecklistItem', user, boardNodeAuthorizable));
 
-		await this.boardNodeService.setChecklistItemChecked(element, itemId, checked);
+		await this.boardNodeService.setChecklistItemChecked(element, itemId, userId, checked);
 
-		return element;
+		return {
+			element,
+			viewContext: {
+				userId,
+				canEdit: this.boardNodeRule.can('updateElement', user, boardNodeAuthorizable),
+			},
+		};
 	}
 
 	public async deleteElement(userId: EntityId, elementId: EntityId): Promise<EntityId> {

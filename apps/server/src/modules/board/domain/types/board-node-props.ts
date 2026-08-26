@@ -5,7 +5,7 @@ import type { BoardExternalReference } from './board-external-reference';
 import type { BoardLayout } from './board-layout.enum';
 import type { CardComment } from './card-comment';
 import type { CardReaction, CardReactionType } from './card-reaction';
-import type { ChecklistItem } from './checklist';
+import type { ChecklistCheck, ChecklistItem, ChecklistProgressMode } from './checklist';
 import type { ContentElementType } from './content-element-type.enum';
 import type { RecordingMediaType } from './recording';
 import type { PollOption, PollResultVisibility, PollVote } from './poll';
@@ -26,12 +26,16 @@ export interface ColumnBoardProps extends BoardNodeProps {
 	isVisible: boolean;
 	layout: BoardLayout;
 	readersCanEdit: boolean;
-	reactionType: CardReactionType;
-	commentsEnabled: boolean;
+	/** Tri-state: `undefined` follows the room. See {@link BoardSettingsChain}. */
+	reactionType?: CardReactionType;
+	commentsEnabled?: boolean;
 }
 
 export interface ColumnProps extends BoardNodeProps {
 	title?: string;
+	/** Tri-state overrides of the board's settings. See {@link BoardSettingsChain}. */
+	commentsEnabled?: boolean;
+	reactionType?: CardReactionType;
 }
 
 export interface CardProps extends BoardNodeProps {
@@ -45,6 +49,7 @@ export interface CardProps extends BoardNodeProps {
 	 * says" — a tri-state, because "off" and "not decided here" have to stay distinguishable.
 	 */
 	commentsEnabled?: boolean;
+	reactionType?: CardReactionType;
 	readersCanEdit?: boolean;
 }
 
@@ -130,6 +135,9 @@ export interface FormulaElementProps extends BoardNodeProps {
 export interface ChecklistElementProps extends BoardNodeProps {
 	title: string;
 	items: ChecklistItem[];
+	progressMode: ChecklistProgressMode;
+	/** Personal ticks; empty in `SHARED` mode. */
+	checks: ChecklistCheck[];
 }
 
 export interface RecordingElementProps extends BoardNodeProps {

@@ -6,7 +6,12 @@ import { Test, type TestingModule } from '@nestjs/testing';
 import { cleanupCollections } from '@testing/cleanup-collections';
 import { UserAndAccountTestFactory } from '@testing/factory/user-and-account.test.factory';
 import { TestApiClient } from '@testing/test-api-client';
-import { BoardExternalReferenceType, ContentElementType, RecordingMediaType } from '../../domain';
+import {
+	BoardExternalReferenceType,
+	ChecklistProgressMode,
+	ContentElementType,
+	RecordingMediaType,
+} from '../../domain';
 import { BoardNodeEntity } from '../../repo';
 import {
 	cardEntityFactory,
@@ -53,12 +58,13 @@ describe('interactive board elements (api)', () => {
 		// Same school as the course: that is what a course membership normally looks like, and
 		// the deadline lookup walks the user's courses, which are scoped by school.
 		const { studentAccount, studentUser } = UserAndAccountTestFactory.buildStudent({ school: teacherUser.school });
+		const other = UserAndAccountTestFactory.buildStudent({ school: teacherUser.school });
 		const outsider = UserAndAccountTestFactory.buildStudent({ school: teacherUser.school });
 
 		const course = courseEntityFactory.build({
 			school: teacherUser.school,
 			teachers: [teacherUser],
-			students: [studentUser],
+			students: [studentUser, other.studentUser],
 		});
 
 		await em
@@ -67,6 +73,8 @@ describe('interactive board elements (api)', () => {
 				teacherUser,
 				studentAccount,
 				studentUser,
+				other.studentAccount,
+				other.studentUser,
 				outsider.studentAccount,
 				outsider.studentUser,
 				course,
@@ -91,6 +99,7 @@ describe('interactive board elements (api)', () => {
 		return {
 			teacherElements: await elementApiClient.login(teacherAccount),
 			studentElements: await elementApiClient.login(studentAccount),
+			otherStudentElements: await elementApiClient.login(other.studentAccount),
 			outsiderElements: await elementApiClient.login(outsider.studentAccount),
 			studentCards: await cardApiClient.login(studentAccount),
 			teacherBoards: await boardApiClient.login(teacherAccount),
@@ -234,6 +243,124 @@ describe('interactive board elements (api)', () => {
 		});
 	});
 
+	describe('the personal checklist', () => {
+		const switchToPerUser = async (teacherElements: TestApiClient, checklist: BoardNodeEntity) =>
+			teacherElements.patch(`${checklist.id}/content`, {
+				data: {
+					type: ContentElementType.CHECKLIST,
+					content: {
+						title: 'Mein Lernweg',
+						progressMode: ChecklistProgressMode.PER_USER,
+						items: [{ text: 'Schritt 1' }, { text: 'Schritt 2' }],
+					},
+				},
+			});
+
+		it('should let each person keep their own ticks', async () => {
+			const { teacherElements, studentElements, otherStudentElements, checklist } = await setup();
+
+			const configured = await switchToPerUser(teacherElements, checklist);
+			const itemId = (configured.body as ChecklistElementResponse).content.items[0].id;
+
+			await studentElements.put(`${checklist.id}/checklist/${itemId}`, { checked: true });
+			const otherView = await otherStudentElements.get(`${checklist.id}`);
+			const ownView = await studentElements.get(`${checklist.id}`);
+
+			const otherItems = (otherView.body.element as ChecklistElementResponse).content.items;
+			const ownItems = (ownView.body.element as ChecklistElementResponse).content.items;
+
+			expect(ownItems[0].checked).toBe(true);
+			expect(otherItems[0].checked).toBe(false);
+		});
+
+		it('should count how many ticked an item for whoever may edit', async () => {
+			const { teacherElements, studentElements, otherStudentElements, checklist } = await setup();
+
+			const configured = await switchToPerUser(teacherElements, checklist);
+			const itemId = (configured.body as ChecklistElementResponse).content.items[0].id;
+
+			await studentElements.put(`${checklist.id}/checklist/${itemId}`, { checked: true });
+			await otherStudentElements.put(`${checklist.id}/checklist/${itemId}`, { checked: true });
+			const teacherView = await teacherElements.get(`${checklist.id}`);
+			const content = (teacherView.body.element as ChecklistElementResponse).content;
+
+			expect(content.items[0].checkedCount).toBe(2);
+			expect(content.participantCount).toBe(2);
+		});
+
+		it('should not report the counts to a participant', async () => {
+			const { teacherElements, studentElements, checklist } = await setup();
+
+			const configured = await switchToPerUser(teacherElements, checklist);
+			const itemId = (configured.body as ChecklistElementResponse).content.items[0].id;
+
+			await studentElements.put(`${checklist.id}/checklist/${itemId}`, { checked: true });
+			const studentView = await studentElements.get(`${checklist.id}`);
+			const content = (studentView.body.element as ChecklistElementResponse).content;
+
+			expect(content.items[0].checkedCount).toBeUndefined();
+			expect(content.participantCount).toBeUndefined();
+		});
+
+		it('should never report who ticked what', async () => {
+			const { teacherElements, studentElements, checklist } = await setup();
+
+			const configured = await switchToPerUser(teacherElements, checklist);
+			const itemId = (configured.body as ChecklistElementResponse).content.items[0].id;
+
+			await studentElements.put(`${checklist.id}/checklist/${itemId}`, { checked: true });
+			const teacherView = await teacherElements.get(`${checklist.id}`);
+
+			expect(JSON.stringify(teacherView.body)).not.toContain('userId');
+		});
+
+		it('should report the own progress', async () => {
+			const { teacherElements, studentElements, checklist } = await setup();
+
+			const configured = await switchToPerUser(teacherElements, checklist);
+			const itemId = (configured.body as ChecklistElementResponse).content.items[0].id;
+
+			const response = await studentElements.put(`${checklist.id}/checklist/${itemId}`, { checked: true });
+			const content = (response.body as ChecklistElementResponse).content;
+
+			expect(content.completedCount).toBe(1);
+			expect(content.items).toHaveLength(2);
+		});
+
+		it('should start the progress over when the mode is switched', async () => {
+			const { teacherElements, studentElements, checklist } = await setup();
+
+			const configured = await switchToPerUser(teacherElements, checklist);
+			const itemId = (configured.body as ChecklistElementResponse).content.items[0].id;
+			await studentElements.put(`${checklist.id}/checklist/${itemId}`, { checked: true });
+
+			await teacherElements.patch(`${checklist.id}/content`, {
+				data: {
+					type: ContentElementType.CHECKLIST,
+					content: {
+						title: 'Mein Lernweg',
+						progressMode: ChecklistProgressMode.SHARED,
+						items: [{ id: itemId, text: 'Schritt 1' }],
+					},
+				},
+			});
+			const view = await studentElements.get(`${checklist.id}`);
+
+			expect((view.body.element as ChecklistElementResponse).content.items[0].checked).toBe(false);
+		});
+
+		it('should still let a student tick, although they may not edit the element', async () => {
+			const { teacherElements, studentElements, checklist } = await setup();
+
+			const configured = await switchToPerUser(teacherElements, checklist);
+			const itemId = (configured.body as ChecklistElementResponse).content.items[0].id;
+
+			const response = await studentElements.put(`${checklist.id}/checklist/${itemId}`, { checked: true });
+
+			expect(response.statusCode).toBe(200);
+		});
+	});
+
 	describe('the recording element', () => {
 		it('should store the media type and the caption', async () => {
 			const { teacherElements, recording } = await setup();
@@ -317,6 +444,7 @@ describe('interactive board elements (api)', () => {
 				data: {
 					type: ContentElementType.CHECKLIST,
 					content: {
+						progressMode: ChecklistProgressMode.SHARED,
 						title: 'Schritte',
 						items: [
 							{ id: first.id, text: first.text },

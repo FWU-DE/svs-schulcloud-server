@@ -37,6 +37,8 @@ export class RoomService {
 			endDate: props.endDate ?? undefined,
 			createdAt: new Date(),
 			updatedAt: new Date(),
+			commentsEnabled: props.commentsEnabled,
+			reactionType: props.reactionType,
 		};
 		this.validateTimeSpan(props, roomProps.id);
 		const room = new Room(roomProps);

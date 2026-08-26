@@ -14,6 +14,7 @@ import {
 	AnyContentElement,
 	type BoardNodeAuthorizable,
 	BoardNodeFactory,
+	type BoardSettingsChain,
 	type BoardViewContext,
 	Card,
 	type CardComment,
@@ -21,7 +22,10 @@ import {
 	Colors,
 	isCard,
 	ContentElementType,
+	isColumn,
 	isColumnBoard,
+	resolveCommentsEnabled,
+	resolveReactionType,
 } from '../domain';
 import { BoardNodeAuthorizableService, BoardNodeService } from '../service';
 
@@ -35,16 +39,24 @@ export interface CardCommentWithContext {
 }
 
 /** Comments are a board-wide setting, so the flag is read off the card's root board. */
-const commentsEnabledOn = (authorizable: BoardNodeAuthorizable): boolean => {
-	const card = isCard(authorizable.boardNode) ? authorizable.boardNode : undefined;
-	if (card?.commentsEnabled !== undefined) {
-		return card.commentsEnabled;
-	}
+/**
+ * The chain a card's settings are resolved along: the card itself, its column, its board and
+ * the room the board hangs in. Every level may overrule the one above; the bottom is off.
+ */
+const settingsChainOf = (authorizable: BoardNodeAuthorizable): BoardSettingsChain => {
+	const { boardNode, parentNode, rootNode, boardConfiguration } = authorizable;
 
-	const root = authorizable.rootNode;
-
-	return isColumnBoard(root) ? root.commentsEnabled : false;
+	return {
+		card: isCard(boardNode) ? boardNode : undefined,
+		column: isColumn(parentNode) ? parentNode : undefined,
+		board: isColumnBoard(rootNode) ? rootNode : undefined,
+		roomCommentsEnabled: boardConfiguration.roomCommentsEnabled,
+		roomReactionType: boardConfiguration.roomReactionType,
+	};
 };
+
+const commentsEnabledOn = (authorizable: BoardNodeAuthorizable): boolean =>
+	resolveCommentsEnabled(settingsChainOf(authorizable));
 
 /**
  * Comments are plain text. Allowing markup would turn every card into a place where a link or
@@ -52,12 +64,8 @@ const commentsEnabledOn = (authorizable: BoardNodeAuthorizable): boolean => {
  */
 const sanitizeComment = (text: string): string => sanitizeRichText(text, InputFormat.PLAIN_TEXT);
 
-/** The reaction kind is a board-wide setting, so it is read off the card's root board. */
-const reactionTypeOf = (authorizable: BoardNodeAuthorizable): CardReactionType => {
-	const root = authorizable.rootNode;
-
-	return isColumnBoard(root) ? root.reactionType : CardReactionType.NONE;
-};
+const reactionTypeOf = (authorizable: BoardNodeAuthorizable): CardReactionType =>
+	resolveReactionType(settingsChainOf(authorizable));
 
 /** The element types behind FEATURE_COLUMN_BOARD_INTERACTIVE_ELEMENTS_ENABLED. */
 const INTERACTIVE_ELEMENT_TYPES: ContentElementType[] = [
@@ -273,7 +281,11 @@ export class CardUc {
 	public async updateCardSettings(
 		userId: EntityId,
 		cardId: EntityId,
-		settings: { commentsEnabled?: boolean | null; readersCanEdit?: boolean | null }
+		settings: {
+			commentsEnabled?: boolean | null;
+			readersCanEdit?: boolean | null;
+			reactionType?: CardReactionType | null;
+		}
 	): Promise<CardWithViewContext> {
 		if (!this.boardConfig.featureColumnBoardInteractiveElementsEnabled) {
 			throw new FeatureDisabledLoggableException('FEATURE_COLUMN_BOARD_INTERACTIVE_ELEMENTS_ENABLED');
@@ -290,6 +302,9 @@ export class CardUc {
 		}
 		if (settings.readersCanEdit !== undefined) {
 			card.readersCanEdit = settings.readersCanEdit ?? undefined;
+		}
+		if (settings.reactionType !== undefined) {
+			card.reactionType = settings.reactionType ?? undefined;
 		}
 		await this.boardNodeService.saveCard(card);
 

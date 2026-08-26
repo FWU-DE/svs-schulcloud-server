@@ -54,6 +54,8 @@ import {
 	AddCardCommentMessageParams,
 	EditCardCommentMessageParams,
 	ReactToCardMessageParams,
+	UpdateCardSettingsMessageParams,
+	UpdateColumnSettingsMessageParams,
 	RemoveCardCommentMessageParams,
 	ReportCardCommentMessageParams,
 	UpdateBoardCommentsEnabledMessageParams,
@@ -326,6 +328,29 @@ export class BoardCollaborationGateway implements OnGatewayConnection, OnGateway
 		}
 	}
 
+	/**
+	 * How a card reads depends on the reader once its settings change, so the room is told only
+	 * which card to refetch.
+	 */
+	@SubscribeMessage('update-card-settings-request')
+	@TrackExecutionTime()
+	@EnsureRequestContext()
+	public async updateCardSettings(socket: Socket, data: UpdateCardSettingsMessageParams): Promise<void> {
+		const emitter = this.buildBoardSocketEmitter({ socket, action: 'update-card-settings' });
+		const { userId } = this.getCurrentUser(socket);
+		try {
+			const { card, viewContext } = await this.cardUc.updateCardSettings(userId, data.cardId, {
+				commentsEnabled: data.commentsEnabled,
+				readersCanEdit: data.readersCanEdit,
+			});
+
+			emitter.emitToClient({ ...data, card: CardResponseMapper.mapToResponse(card, viewContext) });
+			emitter.emitToRoom({ cardId: data.cardId }, card);
+		} catch {
+			emitter.emitFailure(data);
+		}
+	}
+
 	@SubscribeMessage('delete-card-request')
 	@TrackExecutionTime()
 	@EnsureRequestContext()
@@ -394,8 +419,8 @@ export class BoardCollaborationGateway implements OnGatewayConnection, OnGateway
 		const emitter = this.buildBoardSocketEmitter({ socket, action: 'fetch-board' });
 		const { userId } = this.getCurrentUser(socket);
 		try {
-			const { board, features, allowedOperations } = await this.boardUc.findBoard(userId, data.boardId);
-			const responsePayload = BoardResponseMapper.mapToResponse(board, features, allowedOperations);
+			const { board, features, allowedOperations, roomDefaults } = await this.boardUc.findBoard(userId, data.boardId);
+			const responsePayload = BoardResponseMapper.mapToResponse(board, features, allowedOperations, roomDefaults);
 			await emitter.joinRoom(board);
 			emitter.emitSuccess(responsePayload);
 		} catch {
@@ -558,6 +583,27 @@ export class BoardCollaborationGateway implements OnGatewayConnection, OnGateway
 		}
 	}
 
+	/**
+	 * Which cards a column change affects depends on what each of them overrides itself, so the
+	 * room is told to refetch the board rather than handed a resolved answer.
+	 */
+	@SubscribeMessage('update-column-settings-request')
+	@TrackExecutionTime()
+	@EnsureRequestContext()
+	public async updateColumnSettings(socket: Socket, data: UpdateColumnSettingsMessageParams): Promise<void> {
+		const emitter = this.buildBoardSocketEmitter({ socket, action: 'update-column-settings' });
+		const { userId } = this.getCurrentUser(socket);
+		try {
+			const column = await this.columnUc.updateColumnSettings(userId, data.columnId, {
+				commentsEnabled: data.commentsEnabled,
+				reactionType: data.reactionType,
+			});
+			emitter.emitToClientAndRoom(data, column);
+		} catch {
+			emitter.emitFailure(data);
+		}
+	}
+
 	@SubscribeMessage('delete-column-request')
 	@TrackExecutionTime()
 	@EnsureRequestContext()
@@ -664,7 +710,9 @@ export class BoardCollaborationGateway implements OnGatewayConnection, OnGateway
 	}
 
 	/**
-	 * A checklist is shared state, so unlike a poll vote everyone gets the same payload.
+	 * A shared checklist is shared state, so everyone gets the same payload. A personal one is
+	 * not: its ticks belong to one person, so only that client gets the element back, and the
+	 * room is told nothing at all — there is nothing about a personal tick that concerns it.
 	 */
 	@SubscribeMessage('set-checklist-item-checked-request')
 	@TrackExecutionTime()
@@ -673,12 +721,18 @@ export class BoardCollaborationGateway implements OnGatewayConnection, OnGateway
 		const emitter = this.buildBoardSocketEmitter({ socket, action: 'set-checklist-item-checked' });
 		const { userId } = this.getCurrentUser(socket);
 		try {
-			const element = await this.elementUc.setChecklistItemChecked(userId, data.elementId, data.itemId, data.checked);
-
-			emitter.emitToClientAndRoom(
-				{ ...data, element: ChecklistElementResponseMapper.getInstance().mapToResponse(element) },
-				element
+			const { element, viewContext } = await this.elementUc.setChecklistItemChecked(
+				userId,
+				data.elementId,
+				data.itemId,
+				data.checked
 			);
+			const mapper = ChecklistElementResponseMapper.getInstance();
+
+			emitter.emitToClient({ ...data, element: mapper.mapToResponse(element, viewContext) });
+			if (!element.isPerUser) {
+				emitter.emitToRoom({ ...data, element: mapper.mapToResponse(element) }, element);
+			}
 		} catch {
 			emitter.emitFailure(data);
 		}

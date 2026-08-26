@@ -24,7 +24,7 @@ import { TimestampsResponse } from '../timestamps.response';
 import { CardCommentResponse } from './card-comment.response';
 import { CardReactionsResponse } from './card-reactions.response';
 import { VisibilitySettingsResponse } from './visibility-settings.response';
-import { Colors } from '../../../domain';
+import { CardReactionType, Colors } from '../../../domain';
 
 @ApiExtraModels(
 	ExternalToolElementResponse,
@@ -57,6 +57,7 @@ export class CardResponse {
 		comments,
 		commentsEnabled,
 		readersCanEdit,
+		cardReactionType,
 	}: CardResponse) {
 		this.id = id;
 		this.title = title;
@@ -69,6 +70,7 @@ export class CardResponse {
 		this.comments = comments;
 		this.commentsEnabled = commentsEnabled;
 		this.readersCanEdit = readersCanEdit;
+		this.cardReactionType = cardReactionType;
 	}
 
 	@ApiProperty({
@@ -142,4 +144,13 @@ export class CardResponse {
 		description: "This card's own editing setting. null means it follows the board.",
 	})
 	readersCanEdit?: boolean | null;
+
+	@ApiPropertyOptional({
+		type: String,
+		enum: CardReactionType,
+		enumName: 'CardReactionType',
+		nullable: true,
+		description: "This card's own feedback setting. null means it follows the column.",
+	})
+	cardReactionType?: CardReactionType | null;
 }

@@ -5,6 +5,7 @@ import { AuthorizationContextBuilder, AuthorizationService } from '@modules/auth
 import { Permission } from '@shared/domain/interface';
 import { TEAM_PUBLIC_API_CONFIG_TOKEN, TeamPublicApiConfig } from '../team.config';
 import { FeatureDisabledLoggableException } from '@shared/common/loggable-exception/feature-disabled.loggable-exception';
+import { CardReactionType } from '@modules/room/domain/type';
 import { RoomService } from '@modules/room';
 import { RoomMembershipService } from '@modules/room-membership';
 import { mapTeamColorToRoomColor } from './helper/colormapper';
@@ -42,6 +43,8 @@ export class TeamUc {
 			color: mapTeamColorToRoomColor(team.color),
 			schoolId: user.school.id,
 			features: [],
+			commentsEnabled: false,
+			reactionType: CardReactionType.NONE,
 		});
 
 		try {

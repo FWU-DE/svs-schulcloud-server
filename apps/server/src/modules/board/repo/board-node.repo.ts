@@ -2,8 +2,16 @@ import { FilterQuery, Utils } from '@mikro-orm/core';
 import { EntityManager, ObjectId } from '@mikro-orm/mongodb';
 import { Injectable } from '@nestjs/common';
 import { EntityId } from '@shared/domain/types';
-import { AnyBoardNode, BoardExternalReference, getBoardNodeType } from '../domain';
-import { pathOfChildren } from '../domain/path-utils';
+import {
+	AnyBoardNode,
+	BOARD_PREVIEW_DEPTH,
+	BoardCounts,
+	BoardExternalReference,
+	BoardNodeType,
+	BoardPreviewNode,
+	getBoardNodeType,
+} from '../domain';
+import { joinPath, pathOfChildren, ROOT_PATH } from '../domain/path-utils';
 import { BoardNodeEntity } from './entity/board-node.entity';
 import { TreeBuilder } from './tree-builder';
 
@@ -80,6 +88,89 @@ export class BoardNodeRepo {
 		});
 
 		return boardNodes;
+	}
+
+	/**
+	 * The fields a board preview is drawn from, for every descendant of the given boards.
+	 *
+	 * Loaded as a projection instead of a board tree on purpose: a room list asks for the
+	 * previews of all its boards at once, and the content of the elements — rich text, poll
+	 * options, comments — is exactly what a preview does not show.
+	 */
+	public async findPreviewNodes(
+		boardIds: EntityId[],
+		depth: number = BOARD_PREVIEW_DEPTH
+	): Promise<BoardPreviewNode[]> {
+		if (boardIds.length === 0) {
+			return [];
+		}
+
+		// Column boards are root nodes, so the path of their descendants is known from the id alone.
+		const pathQueries = boardIds.map((boardId) => {
+			return {
+				path: { $re: `^${joinPath(ROOT_PATH, boardId)}` },
+				level: { $gte: 1, $lte: depth },
+			};
+		});
+
+		const entities = await this.em.find(
+			BoardNodeEntity,
+			{ $or: pathQueries },
+			{ fields: ['path', 'level', 'position', 'type', 'title', 'backgroundColor'] }
+		);
+
+		const previewNodes = entities.map((entity) => {
+			return {
+				id: entity.id,
+				path: entity.path,
+				level: entity.level,
+				position: entity.position,
+				type: entity.type,
+				title: entity.title,
+				backgroundColor: entity.backgroundColor,
+			};
+		});
+
+		return previewNodes;
+	}
+
+	/**
+	 * How many boards each context (a room, say) holds, split by whether they are published.
+	 * Drafts are counted separately because only members who may edit them are allowed to know.
+	 */
+	public async countBoardsByContexts(references: BoardExternalReference[]): Promise<Map<EntityId, BoardCounts>> {
+		const countsByContextId = new Map<EntityId, BoardCounts>();
+		if (references.length === 0) {
+			return countsByContextId;
+		}
+
+		const entities = await this.em.find(BoardNodeEntity, {
+			type: BoardNodeType.COLUMN_BOARD,
+			$or: references.map((reference) => {
+				return {
+					context: {
+						_contextId: new ObjectId(reference.id),
+						_contextType: reference.type,
+					} as FilterQuery<BoardExternalReference>,
+				};
+			}),
+		});
+
+		for (const entity of entities) {
+			const contextId = entity.context?.id;
+			if (!contextId) {
+				continue;
+			}
+
+			const counts = countsByContextId.get(contextId) ?? { total: 0, visible: 0 };
+			counts.total += 1;
+			if (entity.isVisible) {
+				counts.visible += 1;
+			}
+			countsByContextId.set(contextId, counts);
+		}
+
+		return countsByContextId;
 	}
 
 	public async save(boardNode: AnyBoardNode | AnyBoardNode[]): Promise<void> {

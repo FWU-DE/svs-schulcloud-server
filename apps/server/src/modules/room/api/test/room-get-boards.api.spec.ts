@@ -1,6 +1,12 @@
 import { EntityManager, ObjectId } from '@mikro-orm/mongodb';
-import { BoardExternalReferenceType, BoardNodeAuthorizableService } from '@modules/board';
-import { columnBoardEntityFactory } from '@modules/board/testing';
+import { BoardExternalReferenceType, BoardNodeAuthorizableService, Colors, ContentElementType } from '@modules/board';
+import {
+	cardEntityFactory,
+	columnBoardEntityFactory,
+	columnEntityFactory,
+	pollElementEntityFactory,
+	richTextElementEntityFactory,
+} from '@modules/board/testing';
 import { GroupEntityTypes } from '@modules/group/entity';
 import { groupEntityFactory } from '@modules/group/testing';
 import { RoleName } from '@modules/role';
@@ -143,6 +149,7 @@ describe('Room Controller (API)', () => {
 									allowedOperations: expect.objectContaining({
 										findBoard: true,
 									}) as Record<string, boolean>,
+									preview: { columns: [], columnCount: 0 },
 								};
 							})
 						);
@@ -385,6 +392,106 @@ describe('Room Controller (API)', () => {
 						deleteBoard: true,
 						updateBoardVisibility: true,
 					}) as Record<string, boolean>,
+					preview: { columns: [], columnCount: 0 },
+				});
+			});
+		});
+
+		describe('when the boards have content', () => {
+			const setupWithContent = async () => {
+				const school = schoolEntityFactory.buildWithId();
+				const room = roomEntityFactory.build({ schoolId: school.id });
+				const board = columnBoardEntityFactory.build({
+					context: { type: BoardExternalReferenceType.Room, id: room.id },
+				});
+
+				const firstColumn = columnEntityFactory.withParent(board).build({ title: 'To do', position: 0 });
+				const secondColumn = columnEntityFactory.withParent(board).build({ title: 'Done', position: 1 });
+
+				const yellowCard = cardEntityFactory
+					.withParent(firstColumn)
+					.build({ position: 0, backgroundColor: Colors.AMBER });
+				const plainCard = cardEntityFactory.withParent(firstColumn).build({ position: 1 });
+				const doneCard = cardEntityFactory
+					.withParent(secondColumn)
+					.build({ position: 0, backgroundColor: Colors.GREEN });
+
+				const text = richTextElementEntityFactory.withParent(yellowCard).build({ position: 0 });
+				const poll = pollElementEntityFactory.withParent(yellowCard).build({ position: 1 });
+
+				const roomContent = roomContentEntityFactory.build({
+					roomId: room.id,
+					items: [{ id: board.id, type: RoomContentType.BOARD }],
+				});
+
+				const { teacherAccount, teacherUser } = UserAndAccountTestFactory.buildTeacher({ school });
+				const { roomOwnerRole } = RoomRolesTestFactory.createRoomRoles();
+				const userGroupEntity = groupEntityFactory.buildWithId({
+					type: GroupEntityTypes.ROOM,
+					users: [{ role: roomOwnerRole, user: teacherUser }],
+					organization: teacherUser.school,
+					externalSource: undefined,
+				});
+				const roomMembership = roomMembershipEntityFactory.build({
+					userGroupId: userGroupEntity.id,
+					roomId: room.id,
+					schoolId: school.id,
+				});
+
+				await em
+					.persist([
+						room,
+						board,
+						firstColumn,
+						secondColumn,
+						yellowCard,
+						plainCard,
+						doneCard,
+						text,
+						poll,
+						roomContent,
+						teacherAccount,
+						teacherUser,
+						roomOwnerRole,
+						userGroupEntity,
+						roomMembership,
+					])
+					.flush();
+				em.clear();
+
+				const loggedInClient = await testApiClient.login(teacherAccount);
+
+				return { loggedInClient, room };
+			};
+
+			it('should return a preview of the columns, cards and element types', async () => {
+				const { loggedInClient, room } = await setupWithContent();
+
+				const response = await loggedInClient.get(`${room.id}/boards`);
+
+				expect(response.status).toBe(HttpStatus.OK);
+				const [boardItem] = (response.body as { data: { preview: unknown }[] }).data;
+				expect(boardItem.preview).toEqual({
+					columnCount: 2,
+					columns: [
+						{
+							title: 'To do',
+							cardCount: 2,
+							cards: [
+								{
+									backgroundColor: Colors.AMBER,
+									elementTypes: [ContentElementType.RICH_TEXT, ContentElementType.POLL],
+									elementCount: 2,
+								},
+								{ backgroundColor: Colors.TRANSPARENT, elementTypes: [], elementCount: 0 },
+							],
+						},
+						{
+							title: 'Done',
+							cardCount: 1,
+							cards: [{ backgroundColor: Colors.GREEN, elementTypes: [], elementCount: 0 }],
+						},
+					],
 				});
 			});
 		});

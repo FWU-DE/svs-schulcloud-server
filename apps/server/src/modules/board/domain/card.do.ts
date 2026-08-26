@@ -77,6 +77,15 @@ export class Card extends BoardNode<CardProps> {
 		this.props.commentsEnabled = value;
 	}
 
+	/** `undefined` means the card follows its column. */
+	get reactionType(): CardReactionType | undefined {
+		return this.props.reactionType;
+	}
+
+	set reactionType(value: CardReactionType | undefined) {
+		this.props.reactionType = value;
+	}
+
 	/** `undefined` means the card follows the board. */
 	get readersCanEdit(): boolean | undefined {
 		return this.props.readersCanEdit;

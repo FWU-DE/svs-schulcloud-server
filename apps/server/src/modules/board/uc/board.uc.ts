@@ -86,6 +86,8 @@ export class BoardUc {
 		board: ColumnBoard;
 		features: BoardFeature[];
 		allowedOperations: Record<BoardOperation, boolean>;
+		/** What the board would inherit if it set nothing itself. */
+		roomDefaults: { commentsEnabled: boolean; reactionType: CardReactionType };
 	}> {
 		// TODO set depth=2 to reduce data?
 		const board = await this.boardNodeService.findByClassAndId(ColumnBoard, boardId);
@@ -96,7 +98,15 @@ export class BoardUc {
 
 		const features = await this.boardContextApiHelperService.getFeaturesForBoardNode(boardId);
 		const allowedOperations = this.boardNodeRule.listAllowedOperations(user, boardNodeAuthorizable);
-		return { board, features, allowedOperations };
+		return {
+			board,
+			features,
+			allowedOperations,
+			roomDefaults: {
+				commentsEnabled: boardNodeAuthorizable.boardConfiguration.roomCommentsEnabled ?? false,
+				reactionType: boardNodeAuthorizable.boardConfiguration.roomReactionType ?? CardReactionType.NONE,
+			},
+		};
 	}
 
 	public async findBoardContext(userId: EntityId, boardId: EntityId): Promise<BoardExternalReference> {
@@ -233,7 +243,7 @@ export class BoardUc {
 	public async updateReactionType(
 		userId: EntityId,
 		boardId: EntityId,
-		reactionType: CardReactionType
+		reactionType: CardReactionType | null
 	): Promise<ColumnBoard> {
 		this.checkInteractiveElementsEnabled();
 
@@ -243,7 +253,7 @@ export class BoardUc {
 
 		throwForbiddenIfFalse(this.boardNodeRule.can('updateBoardReactionType', user, boardNodeAuthorizable));
 
-		await this.columnBoardService.updateReactionType(board, reactionType);
+		await this.columnBoardService.updateReactionType(board, reactionType ?? undefined);
 
 		return board;
 	}
@@ -251,7 +261,7 @@ export class BoardUc {
 	public async updateCommentsEnabled(
 		userId: EntityId,
 		boardId: EntityId,
-		commentsEnabled: boolean
+		commentsEnabled: boolean | null
 	): Promise<ColumnBoard> {
 		this.checkInteractiveElementsEnabled();
 
@@ -261,7 +271,7 @@ export class BoardUc {
 
 		throwForbiddenIfFalse(this.boardNodeRule.can('updateBoardCommentsEnabled', user, boardNodeAuthorizable));
 
-		await this.columnBoardService.updateCommentsEnabled(board, commentsEnabled);
+		await this.columnBoardService.updateCommentsEnabled(board, commentsEnabled ?? undefined);
 
 		return board;
 	}

@@ -167,6 +167,8 @@ export class ContentElementUpdateService {
 
 	public updateChecklistElement(element: ChecklistElement, content: ChecklistContentBody): void {
 		element.title = sanitizeRichText(content.title, InputFormat.PLAIN_TEXT);
+		// The mode first: it may clear the progress, and the items are re-seated afterwards.
+		element.setProgressMode(content.progressMode);
 		element.setItems(
 			content.items.map((item) => ({ id: item.id, text: sanitizeRichText(item.text, InputFormat.PLAIN_TEXT) })),
 			() => new ObjectId().toHexString()

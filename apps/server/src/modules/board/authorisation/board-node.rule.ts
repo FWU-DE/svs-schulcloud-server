@@ -33,6 +33,7 @@ export const BoardOperationValues = [
 	'moveColumn',
 	'shareColumn',
 	'updateColumnTitle',
+	'updateColumnSettings',
 
 	// card
 	'copyCard',
@@ -182,6 +183,7 @@ export class BoardNodeRule implements Rule<BoardNodeAuthorizable> {
 			moveColumn: _canEditBoard,
 			shareColumn: canShareBoardNode,
 			updateColumnTitle: _canEditBoard,
+			updateColumnSettings: _canEditBoard,
 
 			// card
 			copyCard: _canEditBoard,

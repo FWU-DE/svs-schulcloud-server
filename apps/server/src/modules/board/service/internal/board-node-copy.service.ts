@@ -509,6 +509,7 @@ export class BoardNodeCopyService {
 			...original.getProps(),
 			...this.buildSpecificProps([]),
 			items: original.items.map((item) => ({ ...item, checked: false, checkedAt: undefined })),
+			checks: [],
 		});
 
 		return Promise.resolve({

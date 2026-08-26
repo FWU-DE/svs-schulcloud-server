@@ -213,14 +213,14 @@ export class ElementController {
 		@Body() bodyParams: ChecklistItemCheckedBodyParams,
 		@CurrentUser() currentUser: ICurrentUser
 	): Promise<ChecklistElementResponse> {
-		const element = await this.elementUc.setChecklistItemChecked(
+		const { element, viewContext } = await this.elementUc.setChecklistItemChecked(
 			currentUser.userId,
 			urlParams.contentElementId,
 			urlParams.itemId,
 			bodyParams.checked
 		);
 
-		return ChecklistElementResponseMapper.getInstance().mapToResponse(element);
+		return ChecklistElementResponseMapper.getInstance().mapToResponse(element, viewContext);
 	}
 
 	@ApiOperation({ summary: 'Delete a single content element.' })

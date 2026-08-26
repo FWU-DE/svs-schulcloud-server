@@ -1,5 +1,6 @@
 import { type AuthorizableObject, DomainObject } from '@shared/domain/domain-object';
 import { type EntityId } from '@shared/domain/types';
+import { CardReactionType } from '../type';
 import { type RoomColor, type RoomFeatures } from '../type';
 
 export interface RoomProps extends AuthorizableObject {
@@ -10,11 +11,21 @@ export interface RoomProps extends AuthorizableObject {
 	endDate?: Date;
 	schoolId: EntityId;
 	features: RoomFeatures[];
+	/**
+	 * Defaults for the boards in this room. They are the top of the chain
+	 * room → board → column → card, where every level below may overrule the one above.
+	 * Off by default, so a room that was never configured leaves its boards as they were.
+	 */
+	commentsEnabled: boolean;
+	reactionType: CardReactionType;
 	createdAt: Date;
 	updatedAt: Date;
 }
 
-export type RoomCreateProps = Pick<RoomProps, 'name' | 'color' | 'startDate' | 'endDate' | 'schoolId' | 'features'>;
+export type RoomCreateProps = Pick<
+	RoomProps,
+	'name' | 'color' | 'startDate' | 'endDate' | 'schoolId' | 'features' | 'commentsEnabled' | 'reactionType'
+>;
 export type RoomUpdateProps = Omit<RoomCreateProps, 'schoolId'>;
 
 export class Room extends DomainObject<RoomProps> {
@@ -82,6 +93,23 @@ export class Room extends DomainObject<RoomProps> {
 
 	set features(value: RoomFeatures[]) {
 		this.props.features = value;
+	}
+
+	get commentsEnabled(): boolean {
+		// Rooms created before the setting existed had no comments either.
+		return this.props.commentsEnabled ?? false;
+	}
+
+	set commentsEnabled(value: boolean) {
+		this.props.commentsEnabled = value;
+	}
+
+	get reactionType(): CardReactionType {
+		return this.props.reactionType ?? CardReactionType.NONE;
+	}
+
+	set reactionType(value: CardReactionType) {
+		this.props.reactionType = value;
 	}
 
 	public getRoomName(): string {

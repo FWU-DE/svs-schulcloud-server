@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { BoardLayout } from '@modules/board';
 import { BoardOperation, BoardOperationValues } from '@modules/board/authorisation/board-node.rule';
+import { BoardPreviewResponse } from './board-preview.response';
 
 export class RoomBoardItemResponse {
 	@ApiProperty()
@@ -31,6 +32,9 @@ export class RoomBoardItemResponse {
 	})
 	allowedOperations: Partial<Record<BoardOperation, boolean>>;
 
+	@ApiProperty({ type: BoardPreviewResponse })
+	preview: BoardPreviewResponse;
+
 	constructor(item: RoomBoardItemResponse) {
 		this.id = item.id;
 		this.title = item.title;
@@ -39,5 +43,6 @@ export class RoomBoardItemResponse {
 		this.createdAt = item.createdAt;
 		this.updatedAt = item.updatedAt;
 		this.allowedOperations = item.allowedOperations;
+		this.preview = item.preview;
 	}
 }

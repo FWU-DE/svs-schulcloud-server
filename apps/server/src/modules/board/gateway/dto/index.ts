@@ -28,6 +28,8 @@ export {
 	ReportCardCommentMessageParams,
 } from './card-comment.message.param';
 export { ReactToCardMessageParams } from './react-to-card.message.param';
+export { UpdateCardSettingsMessageParams } from './update-card-settings.message.param';
+export { UpdateColumnSettingsMessageParams } from './update-column-settings.message.param';
 export { UpdateBoardCommentsEnabledMessageParams } from './update-board-comments-enabled.message.param';
 export { UpdateBoardReactionTypeMessageParams } from './update-board-reaction-type.message.param';
 export { SetChecklistItemCheckedMessageParams } from './set-checklist-item-checked.message.param';

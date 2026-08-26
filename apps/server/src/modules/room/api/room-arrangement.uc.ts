@@ -1,4 +1,5 @@
 import { AuthorizationService } from '@modules/authorization';
+import { BoardExternalReferenceType, ColumnBoardService } from '@modules/board';
 import { RoleName } from '@modules/role';
 import { RoomMembershipService } from '@modules/room-membership';
 import { RoomRule } from '@modules/room-membership/authorization/room.rule';
@@ -16,7 +17,8 @@ export class RoomArrangementUc {
 		private readonly roomMembershipService: RoomMembershipService,
 		private readonly roomService: RoomService,
 		private readonly roomArrangementService: RoomArrangementService,
-		private readonly roomRule: RoomRule
+		private readonly roomRule: RoomRule,
+		private readonly columnBoardService: ColumnBoardService
 	) {}
 
 	public async getRoomsByUserArrangement(userId: EntityId): Promise<RoomWithAllowedOperationsAndLockedStatus[]> {
@@ -29,6 +31,12 @@ export class RoomArrangementUc {
 		const orderedRoomIds = await this.roomArrangementService.sortRoomIdsByUserArrangement(userId, existingRoomIds);
 		rooms.sort((a, b) => orderedRoomIds.indexOf(a.id) - orderedRoomIds.indexOf(b.id));
 
+		const boardCounts = await this.columnBoardService.countBoardsByContexts(
+			rooms.map((room) => {
+				return { type: BoardExternalReferenceType.Room, id: room.id };
+			})
+		);
+
 		const roomsWithAllowedOperationsAndLockedStatus = rooms
 			.map((room) => {
 				const roomAuthorizable = accessibleRoomAuthorizables.find((item) => item.roomId === room.id);
@@ -40,11 +48,16 @@ export class RoomArrangementUc {
 						item.roomId === room.id &&
 						item.members.some((member) => member.roles.some((role) => role.name === RoleName.ROOMOWNER))
 				);
+				// Drafts only count for members who are allowed to see them.
+				const counts = boardCounts.get(room.id);
+				const boardCount = allowedOperations.viewDraftContent ? (counts?.total ?? 0) : (counts?.visible ?? 0);
+
 				return {
 					room,
 					allowedOperations,
 					isLocked: !hasOwner,
 					totalMembers: roomAuthorizable.members.length,
+					boardCount,
 				};
 			})
 			.filter((room) => TypeGuard.isNotNullOrUndefined(room));

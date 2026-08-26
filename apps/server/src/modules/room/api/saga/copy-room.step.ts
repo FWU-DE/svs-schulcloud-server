@@ -51,6 +51,8 @@ export class CopyRoomStep extends SagaStep<'copyRoom'> {
 			endDate: originalRoom.endDate,
 			schoolId: user.school.id,
 			features: [],
+			commentsEnabled: originalRoom.commentsEnabled,
+			reactionType: originalRoom.reactionType,
 		});
 		await this.roomMembershipService.createNewRoomMembership(roomCopied.id, userId);
 

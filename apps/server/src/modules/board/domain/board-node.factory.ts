@@ -27,6 +27,7 @@ import {
 	BoardLayout,
 	BoardNodeProps,
 	CardReactionType,
+	ChecklistProgressMode,
 	Colors,
 	ContentElementType,
 	PollResultVisibility,
@@ -167,6 +168,8 @@ export class BoardNodeFactory {
 				element = new ChecklistElement({
 					...this.getBaseProps(),
 					title: '',
+					progressMode: ChecklistProgressMode.SHARED,
+					checks: [],
 					items: [],
 				});
 				break;

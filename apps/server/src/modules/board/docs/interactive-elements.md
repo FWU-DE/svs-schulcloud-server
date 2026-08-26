@@ -96,17 +96,59 @@ abstimmenden Person mitteilen — genau das, was eine anonyme Umfrage nicht darf
   über den `UserService` auf und legt sie in den `BoardViewContext`. Wer keinen
   Namen auflösen kann, bekommt einen neutralen Platzhalter statt einer ID.
 
-## Karten-Einstellungen statt nur Board-Einstellungen
+## Die Einstellungs-Kette: Raum → Bereich → Spalte → Karte
 
-Kommentare und „Alle dürfen bearbeiten" gibt es auf beiden Ebenen. Die Karte
-überschreibt das Board — als **Tri-State**: `undefined` heißt „was das Board
-sagt", und nur ein ausdrücklich gesetzter Wert gewinnt. `null` über die API setzt
-die Karte wieder unter das Board. Ohne diese dritte Stufe könnte man eine einmal
-konfigurierte Karte nie wieder ans Board zurückgeben.
+Kommentare und Feedback-Art gibt es auf vier Ebenen. Jede Ebene darf die über ihr
+übersteuern; unten in der Kette steht **aus**. Ein Board, an dem niemand etwas
+eingestellt hat, verhält sich deshalb genau wie vor diesen Funktionen.
 
-Die Bearbeitungs-Übersteuerung greift in `BoardNodeAuthorizableService`
-(`applyCardOverrides`), also **vor** der Rechteprüfung — sie gilt damit auch für
-alle Elemente auf dieser Karte, nicht nur für die Karte selbst.
+Jede Ebene hält einen **Tri-State**: `undefined` heißt „was die Ebene über mir
+sagt", und nur ein ausdrücklich gesetzter Wert gewinnt. Über die API setzt `null`
+die Ebene wieder unter die darüberliegende. Ohne diese dritte Stufe könnte man
+eine einmal konfigurierte Karte nie wieder ans Board zurückgeben.
+
+Der Raum liegt außerhalb des Board-Baums, seine Werte kommen deshalb nicht von
+einem Knoten, sondern aus dem vorbereiteten Board-Kontext
+(`BoardConfiguration.roomCommentsEnabled` / `roomReactionType`). Ein Board in
+einem **Kurs** hat keine Raum-Ebene — seine Kette beginnt eine Stufe tiefer.
+
+Aufgelöst wird in `resolveCommentsEnabled` / `resolveReactionType`
+(`domain/board-settings.ts`); `settingsChainOf` in der `CardUc` baut die Kette aus
+dem Authorizable (`boardNode` = Karte, `parentNode` = Spalte, `rootNode` = Board).
+
+`Room.reactionType` speichert dieselben Werte wie `CardReactionType`, aber über
+eine **Kopie** des Enums im Raum-Modul: ein Raum darf nicht vom Board-Modul
+abhängen. Beide Seiten pinnen sich auf dieselbe Literal-Liste statt sich
+gegenseitig zu importieren — ein Import über die Grenze legt einen Zyklus in den
+Typgraphen, der auf der anderen Seite unbeteiligte Typen still zu `any`
+degradiert. (Genau das ist beim Bauen einmal passiert und hat einen fremden Test
+zum Compilieren gebracht, der eigentlich kaputt war.)
+
+**„Alle dürfen bearbeiten"** gibt es auf Board- und Kartenebene. Diese
+Übersteuerung greift in `BoardNodeAuthorizableService` (`applyCardOverrides`),
+also **vor** der Rechteprüfung — sie gilt damit auch für alle Elemente auf dieser
+Karte, nicht nur für die Karte selbst.
+
+## Checkliste: geteilt oder persönlich
+
+`ChecklistProgressMode` entscheidet, **wessen** Fortschritt eine Liste festhält.
+`SHARED` ist der Fortschritt der Gruppe: ein Satz Häkchen, den alle sehen und alle
+ändern können. `PER_USER` ist eine persönliche Liste — ein Lernweg oder ein
+Selbsttest —, bei der jede Person ihre eigenen Häkchen behält.
+
+- **Der Moduswechsel setzt den Fortschritt zurück.** Ein geteiltes Häkchen und ein
+  persönliches sind nicht dieselbe Aussage; sie umzudeuten wäre schlimmer als neu
+  anzufangen.
+- **Wer die Liste führt, sieht Zahlen — keine Namen.** Im persönlichen Modus
+  liefert die Antwort für Bearbeitende `checkedCount` pro Punkt und
+  `participantCount`; für Teilnehmende fehlen beide. Eine persönliche Checkliste
+  soll beim Überblick helfen, nicht über jemanden berichten. Ein API-Test prüft,
+  dass in der Antwort kein `userId` vorkommt.
+- **Der Socket schweigt bei persönlichen Häkchen.** Ein geteiltes Häkchen geht an
+  den ganzen Raum, ein persönliches nur an den eigenen Client — den Raum betrifft
+  daran nichts.
+- Punkte zu löschen nimmt die persönlichen Häkchen dieser Punkte mit; eine Kopie
+  der Liste startet ohne Fortschritt.
 
 ## Termine im Kalender
 

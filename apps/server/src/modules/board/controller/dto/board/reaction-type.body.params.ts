@@ -1,13 +1,19 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum } from 'class-validator';
+import { IsEnum, IsOptional, ValidateIf } from 'class-validator';
 import { CardReactionType } from '../../../domain';
 
 export class ReactionTypeBodyParams {
+	@IsOptional()
+	@ValidateIf((_object, value) => value !== null)
 	@IsEnum(CardReactionType)
 	@ApiProperty({
+		type: String,
 		enum: CardReactionType,
 		enumName: 'CardReactionType',
-		description: "The reaction kind for every card on this board. 'none' turns reactions off.",
+		nullable: true,
+		description:
+			"The reaction kind for the cards of this board. 'none' turns reactions off here; null " +
+			'follows whatever the room is set to.',
 	})
-	reactionType!: CardReactionType;
+	reactionType!: CardReactionType | null;
 }

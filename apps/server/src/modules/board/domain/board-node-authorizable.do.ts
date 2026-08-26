@@ -1,7 +1,7 @@
 import { type AuthorizableObject, DomainObject } from '@shared/domain/domain-object';
 import { Permission } from '@shared/domain/interface';
 import { type EntityId } from '@shared/domain/types';
-import { type AnyBoardNode } from './types';
+import { type AnyBoardNode, type CardReactionType } from './types';
 
 export enum BoardRoles {
 	EDITOR = 'editor',
@@ -30,6 +30,12 @@ export interface BoardConfiguration {
 	canReadersEdit?: boolean;
 	canAdminsToggleReadersCanEdit?: boolean;
 	isLocked?: boolean;
+	/**
+	 * The room's defaults for its boards. Absent for a board that does not hang in a room —
+	 * a course has no such setting, so its chain simply starts one level lower.
+	 */
+	roomCommentsEnabled?: boolean;
+	roomReactionType?: CardReactionType;
 }
 
 export class BoardNodeAuthorizable extends DomainObject<BoardNodeAuthorizableProps> {

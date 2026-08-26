@@ -1,8 +1,8 @@
 import { RoomUpdateProps } from '@modules/room/domain';
-import { RoomColor, RoomFeatures } from '@modules/room/domain/type';
+import { CardReactionType, RoomColor, RoomFeatures } from '@modules/room/domain/type';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { NullToUndefined, SanitizeHtml } from '@shared/controller/transformer';
-import { IsArray, IsDate, IsEnum, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsArray, IsBoolean, IsDate, IsEnum, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 
 export class UpdateRoomBodyParams implements RoomUpdateProps {
 	@ApiProperty({
@@ -53,4 +53,23 @@ export class UpdateRoomBodyParams implements RoomUpdateProps {
 		isArray: true,
 	})
 	features!: RoomFeatures[];
+
+	@IsBoolean()
+	@IsOptional()
+	@ApiPropertyOptional({
+		description:
+			'Whether cards in this room allow comments by default. Boards, columns and cards may ' +
+			'each overrule it. Omitted means off, so a client that does not know the setting — and ' +
+			'every board that existed before it — keeps behaving as it did.',
+	})
+	commentsEnabled: boolean = false;
+
+	@IsEnum(CardReactionType)
+	@IsOptional()
+	@ApiPropertyOptional({
+		description: 'The feedback kind cards in this room use by default. Omitted means none.',
+		enum: CardReactionType,
+		enumName: 'CardReactionType',
+	})
+	reactionType: CardReactionType = CardReactionType.NONE;
 }

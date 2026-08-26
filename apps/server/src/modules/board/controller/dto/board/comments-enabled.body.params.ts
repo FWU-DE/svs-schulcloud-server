@@ -1,10 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { StringToBoolean } from '@shared/controller/transformer';
-import { IsBoolean } from 'class-validator';
+import { IsBoolean, IsOptional, ValidateIf } from 'class-validator';
 
 export class CommentsEnabledBodyParams {
+	@IsOptional()
+	@ValidateIf((_object, value) => value !== null)
 	@IsBoolean()
-	@StringToBoolean()
-	@ApiProperty({ description: 'Whether participants may comment on the cards of this board.' })
-	commentsEnabled!: boolean;
+	@ApiProperty({
+		type: Boolean,
+		nullable: true,
+		description:
+			'Whether participants may comment on the cards of this board. null follows whatever the ' +
+			'room is set to.',
+	})
+	commentsEnabled!: boolean | null;
 }
