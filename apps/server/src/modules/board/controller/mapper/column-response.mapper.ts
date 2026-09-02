@@ -19,6 +19,8 @@ export class ColumnResponseMapper {
 				});
 			}),
 			timestamps: new TimestampsResponse({ lastUpdatedAt: column.updatedAt, createdAt: column.createdAt }),
+			commentsEnabled: column.commentsEnabled ?? null,
+			reactionType: column.reactionType ?? null,
 		});
 		return result;
 	}
@@ -35,6 +37,8 @@ export class ColumnResponseMapper {
 				return CardResponseMapper.mapToResponse(card);
 			}),
 			timestamps: new TimestampsResponse({ lastUpdatedAt: column.updatedAt, createdAt: column.createdAt }),
+			commentsEnabled: column.commentsEnabled ?? null,
+			reactionType: column.reactionType ?? null,
 		});
 		return result;
 	}
