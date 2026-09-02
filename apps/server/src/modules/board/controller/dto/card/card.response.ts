@@ -146,7 +146,6 @@ export class CardResponse {
 	readersCanEdit?: boolean | null;
 
 	@ApiPropertyOptional({
-		type: String,
 		enum: CardReactionType,
 		enumName: 'CardReactionType',
 		nullable: true,

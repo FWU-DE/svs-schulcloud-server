@@ -7,7 +7,6 @@ export class ReactionTypeBodyParams {
 	@ValidateIf((_object, value) => value !== null)
 	@IsEnum(CardReactionType)
 	@ApiProperty({
-		type: String,
 		enum: CardReactionType,
 		enumName: 'CardReactionType',
 		nullable: true,
