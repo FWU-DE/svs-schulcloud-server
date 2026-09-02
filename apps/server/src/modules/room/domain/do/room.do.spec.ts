@@ -18,8 +18,8 @@ describe('Room', () => {
 		createdAt: new Date('2024-01-01'),
 		updatedAt: new Date('2024-01-01'),
 		features: [],
-			commentsEnabled: false,
-			reactionType: CardReactionType.NONE,
+		commentsEnabled: false,
+		reactionType: CardReactionType.NONE,
 	};
 
 	beforeEach(() => {
