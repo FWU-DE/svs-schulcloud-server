@@ -170,7 +170,9 @@ export class ContentElementUpdateService {
 		// The mode first: it may clear the progress, and the items are re-seated afterwards.
 		element.setProgressMode(content.progressMode);
 		element.setItems(
-			content.items.map((item) => ({ id: item.id, text: sanitizeRichText(item.text, InputFormat.PLAIN_TEXT) })),
+			content.items.map((item) => {
+				return { id: item.id, text: sanitizeRichText(item.text, InputFormat.PLAIN_TEXT) };
+			}),
 			() => new ObjectId().toHexString()
 		);
 	}
@@ -181,10 +183,12 @@ export class ContentElementUpdateService {
 	}
 
 	public updatePollElement(element: PollElement, content: PollContentBody): void {
-		const pollOptions = content.options.map((option) => ({
-			id: option.id ?? new ObjectId().toHexString(),
-			text: sanitizeRichText(option.text, InputFormat.PLAIN_TEXT),
-		}));
+		const pollOptions = content.options.map((option) => {
+			return {
+				id: option.id ?? new ObjectId().toHexString(),
+				text: sanitizeRichText(option.text, InputFormat.PLAIN_TEXT),
+			};
+		});
 
 		element.configure({
 			question: sanitizeRichText(content.question, InputFormat.PLAIN_TEXT),

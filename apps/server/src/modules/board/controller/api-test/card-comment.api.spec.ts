@@ -9,7 +9,7 @@ import { TestApiClient } from '@testing/test-api-client';
 import { BoardExternalReferenceType } from '../../domain';
 import { BoardNodeEntity } from '../../repo';
 import { cardEntityFactory, columnBoardEntityFactory, columnEntityFactory } from '../../testing';
-import { CardCommentResponse, CardResponse } from '../dto';
+import { type CardCommentResponse, type CardListResponse } from '../dto';
 
 describe('card comment (api)', () => {
 	let app: INestApplication;
@@ -116,7 +116,7 @@ describe('card comment (api)', () => {
 
 			await comment(studentCards, card.id, 'Sichtbar für alle');
 			const response = await otherStudentCards.get().query({ ids: [card.id] });
-			const body = response.body.data[0] as CardResponse;
+			const body = (response.body as CardListResponse).data[0];
 
 			expect(body.comments).toHaveLength(1);
 			expect(body.comments?.[0].text).toEqual('Sichtbar für alle');
@@ -156,7 +156,7 @@ describe('card comment (api)', () => {
 
 			const response = await studentCards.get().query({ ids: [card.id] });
 
-			expect((response.body.data[0] as CardResponse).comments).toBeUndefined();
+			expect((response.body as CardListResponse).data[0].comments).toBeUndefined();
 		});
 	});
 
@@ -229,7 +229,7 @@ describe('card comment (api)', () => {
 			const created = await comment(studentCards, card.id, 'Wird entfernt');
 			await studentCards.delete(`${card.id}/comments/${created.id}`);
 			const response = await otherStudentCards.get().query({ ids: [card.id] });
-			const body = response.body.data[0] as CardResponse;
+			const body = (response.body as CardListResponse).data[0];
 
 			expect(body.comments).toHaveLength(1);
 			expect(body.comments?.[0].isRemoved).toBe(true);
@@ -242,7 +242,9 @@ describe('card comment (api)', () => {
 			const { studentCards, otherStudentCards, card } = await setup();
 
 			const created = await comment(studentCards, card.id);
-			const response = await otherStudentCards.post(`${card.id}/comments/${created.id}/report`, { reason: 'Beleidigend' });
+			const response = await otherStudentCards.post(`${card.id}/comments/${created.id}/report`, {
+				reason: 'Beleidigend',
+			});
 
 			expect(response.statusCode).toEqual(200);
 			expect((response.body as CardCommentResponse).ownReport).toBe(true);
@@ -264,7 +266,7 @@ describe('card comment (api)', () => {
 			await otherStudentCards.post(`${card.id}/comments/${created.id}/report`, {});
 			await otherStudentCards.post(`${card.id}/comments/${created.id}/report`, {});
 			const response = await teacherCards.get().query({ ids: [card.id] });
-			const body = response.body.data[0] as CardResponse;
+			const body = (response.body as CardListResponse).data[0];
 
 			expect(body.comments?.[0].reportCount).toEqual(1);
 		});
@@ -276,7 +278,7 @@ describe('card comment (api)', () => {
 			await otherStudentCards.post(`${card.id}/comments/${created.id}/report`, {});
 			const response = await teacherCards.get().query({ ids: [card.id] });
 
-			expect((response.body.data[0] as CardResponse).comments?.[0].reportCount).toEqual(1);
+			expect((response.body as CardListResponse).data[0].comments?.[0].reportCount).toEqual(1);
 		});
 
 		it('should hide the report count from students', async () => {
@@ -286,7 +288,7 @@ describe('card comment (api)', () => {
 			await otherStudentCards.post(`${card.id}/comments/${created.id}/report`, {});
 			const response = await studentCards.get().query({ ids: [card.id] });
 
-			expect((response.body.data[0] as CardResponse).comments?.[0].reportCount).toBeUndefined();
+			expect((response.body as CardListResponse).data[0].comments?.[0].reportCount).toBeUndefined();
 		});
 
 		it('should never reveal who reported', async () => {

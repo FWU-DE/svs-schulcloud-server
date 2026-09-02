@@ -1,6 +1,6 @@
-import { Card } from './card.do';
-import { ColumnBoard } from './colum-board.do';
-import { Column } from './column.do';
+import { type Card } from './card.do';
+import { type ColumnBoard } from './colum-board.do';
+import { type Column } from './column.do';
 import { CardReactionType } from './types';
 
 /**
@@ -20,8 +20,7 @@ export interface BoardSettingsChain {
 	roomReactionType?: CardReactionType;
 }
 
-const firstDefined = <T>(...values: (T | undefined)[]): T | undefined =>
-	values.find((value) => value !== undefined);
+const firstDefined = <T>(...values: (T | undefined)[]): T | undefined => values.find((value) => value !== undefined);
 
 export const resolveCommentsEnabled = (chain: BoardSettingsChain): boolean =>
 	firstDefined(

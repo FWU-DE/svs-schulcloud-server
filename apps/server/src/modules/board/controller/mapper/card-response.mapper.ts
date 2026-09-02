@@ -34,7 +34,7 @@ export class CardResponseMapper {
 			return undefined;
 		}
 
-		const reactions = card.reactions;
+		const { reactions } = card;
 
 		return new CardReactionsResponse({
 			type,

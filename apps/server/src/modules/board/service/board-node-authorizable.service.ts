@@ -5,14 +5,7 @@ import {
 } from '@modules/authorization';
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { type EntityId } from '@shared/domain/types';
-import {
-	AnyBoardNode,
-	BoardConfiguration,
-	BoardNodeAuthorizable,
-	ColumnBoard,
-	isCard,
-	MediaBoard,
-} from '../domain';
+import { AnyBoardNode, BoardConfiguration, BoardNodeAuthorizable, ColumnBoard, isCard, MediaBoard } from '../domain';
 import { BoardNodeRepo } from '../repo';
 import { BoardNodeService } from './board-node.service';
 import { BoardContextResolverService } from './internal/board-context/board-context-resolver.service';

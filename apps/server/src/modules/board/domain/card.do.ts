@@ -1,5 +1,5 @@
 import { ForbiddenException, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
-import { EntityId } from '@shared/domain/types';
+import { type EntityId } from '@shared/domain/types';
 import { BoardNode } from './board-node.do';
 import {
 	type AnyBoardNode,

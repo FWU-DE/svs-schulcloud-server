@@ -16,8 +16,7 @@ export class CardReactionsResponse {
 	count: number;
 
 	@ApiProperty({
-		description:
-			'Sum of all reaction values: the like count, the total of the stars, or the net score of the votes.',
+		description: 'Sum of all reaction values: the like count, the total of the stars, or the net score of the votes.',
 	})
 	sum: number;
 

@@ -18,8 +18,7 @@ export class ChecklistItemResponse {
 	text: string;
 
 	@ApiProperty({
-		description:
-			'In a shared list the group\'s tick, in a personal list the requesting user\'s own tick.',
+		description: "In a shared list the group's tick, in a personal list the requesting user's own tick.",
 	})
 	checked: boolean;
 
@@ -49,7 +48,7 @@ export class ChecklistElementContent {
 	@ApiProperty({ enum: ChecklistProgressMode, enumName: 'ChecklistProgressMode' })
 	progressMode: ChecklistProgressMode;
 
-	@ApiProperty({ description: "Items the requesting user sees as done, out of items.length." })
+	@ApiProperty({ description: 'Items the requesting user sees as done, out of items.length.' })
 	completedCount: number;
 
 	@ApiPropertyOptional({

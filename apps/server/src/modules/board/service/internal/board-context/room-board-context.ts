@@ -6,7 +6,6 @@ import {
 	type BoardConfiguration,
 	BoardExternalReferenceType,
 	BoardRoles,
-	type CardReactionType,
 	ColumnBoard,
 	type MediaBoard,
 	type UserWithBoardRoles,
@@ -48,7 +47,7 @@ export class RoomBoardContext implements PreparedBoardContext {
 			canAdminsToggleReadersCanEdit: isColumnBoard,
 			isLocked: !this.hasOwner,
 			roomCommentsEnabled: this.room.commentsEnabled,
-			roomReactionType: this.room.reactionType as CardReactionType,
+			roomReactionType: this.room.reactionType,
 		};
 	}
 

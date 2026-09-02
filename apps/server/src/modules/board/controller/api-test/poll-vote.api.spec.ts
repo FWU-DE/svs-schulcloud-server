@@ -14,7 +14,7 @@ import {
 	columnEntityFactory,
 	pollElementEntityFactory,
 } from '../../testing';
-import { PollElementResponse } from '../dto';
+import { type CardListResponse, type PollElementResponse } from '../dto';
 
 describe('poll vote (api)', () => {
 	let app: INestApplication;
@@ -169,7 +169,9 @@ describe('poll vote (api)', () => {
 					type: ContentElementType.POLL,
 					content: {
 						question: 'my own question',
-						options: optionIds.map((id) => ({ id, text: 'x' })),
+						options: optionIds.map((id) => {
+							return { id, text: 'x' };
+						}),
 						anonymous: false,
 						multipleChoice: false,
 						closed: false,
@@ -222,7 +224,7 @@ describe('poll vote (api)', () => {
 
 			await studentClient.put(`${pollElement.id}/vote`, { optionIds: [optionIds[0]] });
 			const response = await teacherCards.get().query({ ids: [card.id] });
-			const element = response.body.data[0].elements[0] as PollElementResponse;
+			const element = (response.body as CardListResponse).data[0].elements[0] as PollElementResponse;
 
 			expect(element.content.options.every((option) => option.voterIds === undefined)).toBe(true);
 			expect(element.content.options.map((option) => option.count)).toEqual([1, 0]);
@@ -233,7 +235,7 @@ describe('poll vote (api)', () => {
 
 			await studentClient.put(`${pollElement.id}/vote`, { optionIds: [optionIds[0]] });
 			const response = await studentCards.get().query({ ids: [card.id] });
-			const element = response.body.data[0].elements[0] as PollElementResponse;
+			const element = (response.body as CardListResponse).data[0].elements[0] as PollElementResponse;
 
 			expect(element.content.ownVote).toEqual([optionIds[0]]);
 		});
@@ -245,7 +247,7 @@ describe('poll vote (api)', () => {
 
 			await studentClient.put(`${pollElement.id}/vote`, { optionIds: [optionIds[0]] });
 			const response = await teacherCards.get().query({ ids: [card.id] });
-			const element = response.body.data[0].elements[0] as PollElementResponse;
+			const element = (response.body as CardListResponse).data[0].elements[0] as PollElementResponse;
 
 			expect(element.content.options[0].voterIds).toEqual([studentUser.id]);
 		});
@@ -259,7 +261,7 @@ describe('poll vote (api)', () => {
 
 			await studentClient.put(`${pollElement.id}/vote`, { optionIds: [optionIds[0]] });
 			const response = await otherStudentCards.get().query({ ids: [card.id] });
-			const element = response.body.data[0].elements[0] as PollElementResponse;
+			const element = (response.body as CardListResponse).data[0].elements[0] as PollElementResponse;
 
 			expect(element.content.resultsVisible).toBe(false);
 			expect(element.content.voterCount).toBeUndefined();
@@ -271,7 +273,7 @@ describe('poll vote (api)', () => {
 
 			await studentClient.put(`${pollElement.id}/vote`, { optionIds: [optionIds[0]] });
 			const response = await studentCards.get().query({ ids: [card.id] });
-			const element = response.body.data[0].elements[0] as PollElementResponse;
+			const element = (response.body as CardListResponse).data[0].elements[0] as PollElementResponse;
 
 			expect(element.content.resultsVisible).toBe(true);
 			expect(element.content.options.map((option) => option.count)).toEqual([1, 0]);
@@ -287,7 +289,7 @@ describe('poll vote (api)', () => {
 
 			await studentClient.put(`${pollElement.id}/vote`, { optionIds: [optionIds[0]] });
 			const response = await studentCards.get().query({ ids: [card.id] });
-			const element = response.body.data[0].elements[0] as PollElementResponse;
+			const element = (response.body as CardListResponse).data[0].elements[0] as PollElementResponse;
 
 			expect(element.content.resultsVisible).toBe(false);
 			expect(element.content.options.every((option) => option.count === undefined)).toBe(true);
@@ -298,7 +300,7 @@ describe('poll vote (api)', () => {
 
 			await studentClient.put(`${pollElement.id}/vote`, { optionIds: [optionIds[0]] });
 			const response = await teacherCards.get().query({ ids: [card.id] });
-			const element = response.body.data[0].elements[0] as PollElementResponse;
+			const element = (response.body as CardListResponse).data[0].elements[0] as PollElementResponse;
 
 			expect(element.content.resultsVisible).toBe(true);
 		});
@@ -308,7 +310,7 @@ describe('poll vote (api)', () => {
 
 			await studentClient.put(`${pollElement.id}/vote`, { optionIds: [optionIds[0]] });
 			const response = await studentCards.get().query({ ids: [card.id] });
-			const element = response.body.data[0].elements[0] as PollElementResponse;
+			const element = (response.body as CardListResponse).data[0].elements[0] as PollElementResponse;
 
 			expect(element.content.resultsVisible).toBe(true);
 			expect(element.content.options.map((option) => option.count)).toEqual([1, 0]);
@@ -321,7 +323,7 @@ describe('poll vote (api)', () => {
 
 			await studentClient.put(`${pollElement.id}/vote`, { optionIds: [optionIds[0]] });
 			const response = await otherStudentCards.get().query({ ids: [card.id] });
-			const element = response.body.data[0].elements[0] as PollElementResponse;
+			const element = (response.body as CardListResponse).data[0].elements[0] as PollElementResponse;
 
 			expect(element.content.ownVote).toEqual([]);
 		});

@@ -23,7 +23,7 @@ import {
 	formulaElementEntityFactory,
 	recordingElementEntityFactory,
 } from '../../testing';
-import { ChecklistElementResponse } from '../dto';
+import { type BoardDeadlineListResponse, type CardListResponse, type ChecklistElementResponse } from '../dto';
 
 describe('interactive board elements (api)', () => {
 	let app: INestApplication;
@@ -195,7 +195,7 @@ describe('interactive board elements (api)', () => {
 			});
 			const response = await teacherBoards.get('deadlines');
 
-			expect(response.body.data).toEqual([]);
+			expect((response.body as BoardDeadlineListResponse).data).toEqual([]);
 		});
 
 		it('should list it for everyone who may see the board once the option is on', async () => {
@@ -209,8 +209,8 @@ describe('interactive board elements (api)', () => {
 			});
 			const response = await studentBoards.get('deadlines');
 
-			expect(response.body.data).toHaveLength(1);
-			expect(response.body.data[0]).toMatchObject({
+			expect((response.body as BoardDeadlineListResponse).data).toHaveLength(1);
+			expect((response.body as BoardDeadlineListResponse).data[0]).toMatchObject({
 				elementId: deadline.id,
 				cardId: card.id,
 				title: 'Auch im Kalender',
@@ -228,7 +228,7 @@ describe('interactive board elements (api)', () => {
 			});
 			const response = await outsiderBoards.get('deadlines');
 
-			expect(response.body.data).toEqual([]);
+			expect((response.body as BoardDeadlineListResponse).data).toEqual([]);
 		});
 
 		it('should not list a deadline without a date', async () => {
@@ -239,12 +239,12 @@ describe('interactive board elements (api)', () => {
 			});
 			const response = await teacherBoards.get('deadlines');
 
-			expect(response.body.data).toEqual([]);
+			expect((response.body as BoardDeadlineListResponse).data).toEqual([]);
 		});
 	});
 
 	describe('the personal checklist', () => {
-		const switchToPerUser = async (teacherElements: TestApiClient, checklist: BoardNodeEntity) =>
+		const switchToPerUser = (teacherElements: TestApiClient, checklist: BoardNodeEntity) =>
 			teacherElements.patch(`${checklist.id}/content`, {
 				data: {
 					type: ContentElementType.CHECKLIST,
@@ -266,8 +266,8 @@ describe('interactive board elements (api)', () => {
 			const otherView = await otherStudentElements.get(`${checklist.id}`);
 			const ownView = await studentElements.get(`${checklist.id}`);
 
-			const otherItems = (otherView.body.element as ChecklistElementResponse).content.items;
-			const ownItems = (ownView.body.element as ChecklistElementResponse).content.items;
+			const otherItems = (otherView.body as { element: ChecklistElementResponse }).element.content.items;
+			const ownItems = (ownView.body as { element: ChecklistElementResponse }).element.content.items;
 
 			expect(ownItems[0].checked).toBe(true);
 			expect(otherItems[0].checked).toBe(false);
@@ -282,7 +282,7 @@ describe('interactive board elements (api)', () => {
 			await studentElements.put(`${checklist.id}/checklist/${itemId}`, { checked: true });
 			await otherStudentElements.put(`${checklist.id}/checklist/${itemId}`, { checked: true });
 			const teacherView = await teacherElements.get(`${checklist.id}`);
-			const content = (teacherView.body.element as ChecklistElementResponse).content;
+			const { content } = (teacherView.body as { element: ChecklistElementResponse }).element;
 
 			expect(content.items[0].checkedCount).toBe(2);
 			expect(content.participantCount).toBe(2);
@@ -296,7 +296,7 @@ describe('interactive board elements (api)', () => {
 
 			await studentElements.put(`${checklist.id}/checklist/${itemId}`, { checked: true });
 			const studentView = await studentElements.get(`${checklist.id}`);
-			const content = (studentView.body.element as ChecklistElementResponse).content;
+			const { content } = (studentView.body as { element: ChecklistElementResponse }).element;
 
 			expect(content.items[0].checkedCount).toBeUndefined();
 			expect(content.participantCount).toBeUndefined();
@@ -321,7 +321,7 @@ describe('interactive board elements (api)', () => {
 			const itemId = (configured.body as ChecklistElementResponse).content.items[0].id;
 
 			const response = await studentElements.put(`${checklist.id}/checklist/${itemId}`, { checked: true });
-			const content = (response.body as ChecklistElementResponse).content;
+			const { content } = response.body as ChecklistElementResponse;
 
 			expect(content.completedCount).toBe(1);
 			expect(content.items).toHaveLength(2);
@@ -346,7 +346,7 @@ describe('interactive board elements (api)', () => {
 			});
 			const view = await studentElements.get(`${checklist.id}`);
 
-			expect((view.body.element as ChecklistElementResponse).content.items[0].checked).toBe(false);
+			expect((view.body as { element: ChecklistElementResponse }).element.content.items[0].checked).toBe(false);
 		});
 
 		it('should still let a student tick, although they may not edit the element', async () => {
@@ -419,8 +419,8 @@ describe('interactive board elements (api)', () => {
 
 			await studentElements.put(`${checklist.id}/checklist/${itemId}`, { checked: true });
 			const response = await studentCards.get().query({ ids: [card.id] });
-			const element = response.body.data[0].elements.find(
-				(e: { id: string }) => e.id === checklist.id
+			const element = (response.body as CardListResponse).data[0].elements.find(
+				(e) => e.id === checklist.id
 			) as ChecklistElementResponse;
 
 			expect(element.content.items[0].checked).toBe(true);

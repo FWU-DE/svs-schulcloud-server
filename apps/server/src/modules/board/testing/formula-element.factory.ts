@@ -3,7 +3,7 @@ import { BaseFactory } from '@testing/factory/base.factory';
 import { type FormulaElementProps, ROOT_PATH } from '../domain';
 import { FormulaElement } from '../domain/formula-element.do';
 
-export const formulaElementFactory = BaseFactory.define<FormulaElement, FormulaElementProps>(FormulaElement, ({ sequence }) => {
+export const formulaElementFactory = BaseFactory.define<FormulaElement, FormulaElementProps>(FormulaElement, () => {
 	return {
 		id: new ObjectId().toHexString(),
 		path: ROOT_PATH,

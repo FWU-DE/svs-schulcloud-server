@@ -12,7 +12,7 @@ import { UserAndAccountTestFactory } from '@testing/factory/user-and-account.tes
 import { TestApiClient } from '@testing/test-api-client';
 import { BoardExternalReferenceType, CardReactionType } from '../../domain';
 import { cardEntityFactory, columnBoardEntityFactory, columnEntityFactory } from '../../testing';
-import { CardResponse } from '../dto';
+import { type CardListResponse, type CardResponse } from '../dto';
 
 /**
  * Comment and feedback settings cascade room → board → column → card. These tests pin the
@@ -104,7 +104,7 @@ describe('board settings chain (api)', () => {
 	const readCard = async (client: TestApiClient, cardId: string): Promise<CardResponse> => {
 		const response = await client.get().query({ ids: [cardId] });
 
-		return response.body.data[0] as CardResponse;
+		return (response.body as CardListResponse).data[0];
 	};
 
 	describe('when only the room is set', () => {

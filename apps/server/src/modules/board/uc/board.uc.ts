@@ -297,7 +297,9 @@ export class BoardUc {
 			contexts.map(async (context) => {
 				const boards = await this.columnBoardService.findByExternalReference(context.reference);
 
-				return boards.map((board) => ({ board, context }));
+				return boards.map((board) => {
+					return { board, context };
+				});
 			})
 		);
 
@@ -322,19 +324,17 @@ export class BoardUc {
 		);
 
 		const [courses] = await this.courseService.findAllByUserId(userId, schoolId);
-		const courseContexts = courses.map((course) => ({
-			reference: { type: BoardExternalReferenceType.Course, id: course.id },
-			name: course.name,
-		}));
+		const courseContexts = courses.map((course) => {
+			return {
+				reference: { type: BoardExternalReferenceType.Course, id: course.id },
+				name: course.name,
+			};
+		});
 
 		return [...rooms, ...courseContexts];
 	}
 
-	private async collectDeadlines(
-		user: User,
-		board: ColumnBoard,
-		context: BoardContextInfo
-	): Promise<BoardDeadline[]> {
+	private async collectDeadlines(user: User, board: ColumnBoard, context: BoardContextInfo): Promise<BoardDeadline[]> {
 		const authorizable = await this.boardNodeAuthorizableService.getBoardAuthorizable(board);
 		if (!this.boardNodeRule.can('findBoard', user, authorizable)) {
 			return [];

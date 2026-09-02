@@ -265,10 +265,9 @@ export class CardUc {
 
 		const authors = await this.userService.findByIds(authorIds);
 		const entries = await Promise.all(
-			authors.map(async (author): Promise<[EntityId, string]> => [
-				author.id ?? '',
-				await this.userService.getDisplayName(author),
-			])
+			authors.map(
+				async (author): Promise<[EntityId, string]> => [author.id ?? '', await this.userService.getDisplayName(author)]
+			)
 		);
 
 		return new Map(entries);

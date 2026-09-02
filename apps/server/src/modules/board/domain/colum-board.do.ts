@@ -1,7 +1,7 @@
 import { BoardNode } from './board-node.do';
 import { Column } from './column.do';
 import type { AnyBoardNode, BoardExternalReference, BoardLayout, ColumnBoardProps } from './types';
-import { CardReactionType } from './types/card-reaction';
+import { type CardReactionType } from './types/card-reaction';
 
 export class ColumnBoard extends BoardNode<ColumnBoardProps> {
 	get title(): string {

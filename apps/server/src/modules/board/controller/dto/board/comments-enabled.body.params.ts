@@ -9,8 +9,7 @@ export class CommentsEnabledBodyParams {
 		type: Boolean,
 		nullable: true,
 		description:
-			'Whether participants may comment on the cards of this board. null follows whatever the ' +
-			'room is set to.',
+			'Whether participants may comment on the cards of this board. null follows whatever the ' + 'room is set to.',
 	})
 	commentsEnabled!: boolean | null;
 }

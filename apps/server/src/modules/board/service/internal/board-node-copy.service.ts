@@ -111,13 +111,21 @@ export class BoardNodeCopyService {
 				result = await this.copyFileFolderElement(boardNode as FileFolderElement, context);
 				break;
 			case BoardNodeType.DEADLINE_ELEMENT:
-				result = await this.copyPlainElement(boardNode as DeadlineElement, DeadlineElement, CopyElementType.DEADLINE_ELEMENT);
+				result = await this.copyPlainElement(
+					boardNode as DeadlineElement,
+					DeadlineElement,
+					CopyElementType.DEADLINE_ELEMENT
+				);
 				break;
 			case BoardNodeType.CODE_ELEMENT:
 				result = await this.copyPlainElement(boardNode as CodeElement, CodeElement, CopyElementType.CODE_ELEMENT);
 				break;
 			case BoardNodeType.FORMULA_ELEMENT:
-				result = await this.copyPlainElement(boardNode as FormulaElement, FormulaElement, CopyElementType.FORMULA_ELEMENT);
+				result = await this.copyPlainElement(
+					boardNode as FormulaElement,
+					FormulaElement,
+					CopyElementType.FORMULA_ELEMENT
+				);
 				break;
 			case BoardNodeType.CHECKLIST_ELEMENT:
 				result = await this.copyChecklistElement(boardNode as ChecklistElement);
@@ -508,7 +516,9 @@ export class BoardNodeCopyService {
 		const copy = new ChecklistElement({
 			...original.getProps(),
 			...this.buildSpecificProps([]),
-			items: original.items.map((item) => ({ ...item, checked: false, checkedAt: undefined })),
+			items: original.items.map((item) => {
+				return { ...item, checked: false, checkedAt: undefined };
+			}),
 			checks: [],
 		});
 

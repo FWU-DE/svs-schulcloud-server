@@ -1,5 +1,5 @@
 import { NotFoundException } from '@nestjs/common';
-import { EntityId } from '@shared/domain/types';
+import { type EntityId } from '@shared/domain/types';
 import { BoardNode } from './board-node.do';
 import type { ChecklistCheck, ChecklistElementProps, ChecklistItem } from './types';
 import { ChecklistProgressMode } from './types';
@@ -63,7 +63,9 @@ export class ChecklistElement extends BoardNode<ChecklistElementProps> {
 
 		this.props.progressMode = mode;
 		this.props.checks = [];
-		this.props.items = this.props.items.map((item) => ({ ...item, checked: false, checkedAt: undefined }));
+		this.props.items = this.props.items.map((item) => {
+			return { ...item, checked: false, checkedAt: undefined };
+		});
 	}
 
 	public setChecked(itemId: string, userId: EntityId, checked: boolean): ChecklistItem {
@@ -111,7 +113,7 @@ export class ChecklistElement extends BoardNode<ChecklistElementProps> {
 	}
 
 	/** How many distinct people ticked at least one item. */
-	public get participantCount(): number {
+	get participantCount(): number {
 		return new Set(this.checks.map((check) => check.userId)).size;
 	}
 

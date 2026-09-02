@@ -9,7 +9,7 @@ import { TestApiClient } from '@testing/test-api-client';
 import { BoardExternalReferenceType, CardReactionType } from '../../domain';
 import { BoardNodeEntity } from '../../repo';
 import { cardEntityFactory, columnBoardEntityFactory, columnEntityFactory } from '../../testing';
-import { CardResponse } from '../dto';
+import { type CardListResponse, type CardResponse } from '../dto';
 
 describe('card reaction (api)', () => {
 	let app: INestApplication;
@@ -150,7 +150,7 @@ describe('card reaction (api)', () => {
 
 			const response = await studentCards.get().query({ ids: [card.id] });
 
-			expect((response.body.data[0] as CardResponse).reactions).toBeUndefined();
+			expect((response.body as CardListResponse).data[0].reactions).toBeUndefined();
 		});
 	});
 
@@ -191,7 +191,7 @@ describe('card reaction (api)', () => {
 
 			await studentCards.put(`${card.id}/reaction`, { value: 1 });
 			const response = await otherStudentCards.get().query({ ids: [card.id] });
-			const body = response.body.data[0] as CardResponse;
+			const body = (response.body as CardListResponse).data[0];
 
 			expect(body.reactions?.count).toEqual(1);
 			expect(body.reactions?.ownValue).toBeUndefined();

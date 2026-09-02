@@ -1,6 +1,6 @@
 import { UnprocessableEntityException } from '@nestjs/common';
 import { createHmac, randomBytes } from 'crypto';
-import { EntityId } from '@shared/domain/types';
+import { type EntityId } from '@shared/domain/types';
 import { BoardNode } from './board-node.do';
 import type { PollElementProps, PollOption, PollResult, PollResultVisibility, PollVote } from './types';
 
@@ -128,15 +128,17 @@ export class PollElement extends BoardNode<PollElementProps> {
 	}
 
 	public getResults(): PollResult[] {
-		const results = this.props.pollOptions.map((option) => ({
-			optionId: option.id,
-			count: this.props.votes.filter((vote) => vote.optionIds.includes(option.id)).length,
-		}));
+		const results = this.props.pollOptions.map((option) => {
+			return {
+				optionId: option.id,
+				count: this.props.votes.filter((vote) => vote.optionIds.includes(option.id)).length,
+			};
+		});
 
 		return results;
 	}
 
-	public get voterCount(): number {
+	get voterCount(): number {
 		return this.props.votes.length;
 	}
 

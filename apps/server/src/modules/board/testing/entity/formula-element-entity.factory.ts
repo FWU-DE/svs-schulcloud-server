@@ -2,7 +2,7 @@ import { ObjectId } from '@mikro-orm/mongodb';
 import { BoardNodeType, type FormulaElementProps, ROOT_PATH } from '../../domain';
 import { BoardNodeEntityFactory, type PropsWithType } from './board-node-entity.factory';
 
-export const formulaElementEntityFactory = BoardNodeEntityFactory.define<PropsWithType<FormulaElementProps>>(({ sequence }) => {
+export const formulaElementEntityFactory = BoardNodeEntityFactory.define<PropsWithType<FormulaElementProps>>(() => {
 	return {
 		id: new ObjectId().toHexString(),
 		path: ROOT_PATH,
