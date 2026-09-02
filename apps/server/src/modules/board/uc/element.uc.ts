@@ -1,12 +1,21 @@
 import { Logger } from '@infra/logger';
 import { AuthorizationService } from '@modules/authorization';
 import { BoardContextApiHelperService } from '@modules/board-context';
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnprocessableEntityException } from '@nestjs/common';
 import { throwForbiddenIfFalse } from '@shared/common/utils';
 import { EntityId } from '@shared/domain/types';
 import { BoardNodeRule } from '../authorisation/board-node.rule';
 import { AnyElementContentBody } from '../controller/dto';
-import { AnyContentElement, BoardNodeFactory, ContentElementWithParentHierarchy } from '../domain';
+import {
+	AnyContentElement,
+	BoardNodeFactory,
+	type ChecklistElement,
+	ContentElementWithParentHierarchy,
+	type BoardViewContext,
+	isChecklistElement,
+	isPollElement,
+	PollElement,
+} from '../domain';
 import { BoardNodeAuthorizableService, BoardNodeService } from '../service';
 
 @Injectable()
@@ -35,8 +44,43 @@ export class ElementUc {
 		throwForbiddenIfFalse(this.boardNodeRule.can('viewElement', user, boardNodeAuthorizable));
 
 		const parentHierarchy = await this.boardContextApiHelperService.getParentsOfElement(element.rootId);
+		const viewContext: BoardViewContext = {
+			userId,
+			canEdit: this.boardNodeRule.can('updateElement', user, boardNodeAuthorizable),
+		};
 
-		return { element, parentHierarchy };
+		return { element, parentHierarchy, viewContext };
+	}
+
+	/**
+	 * Voting is deliberately not an element update: it needs read access to the board, not write
+	 * access, so that readers can answer a poll they are not allowed to edit.
+	 */
+	public async voteInPoll(
+		userId: EntityId,
+		elementId: EntityId,
+		optionIds: string[]
+	): Promise<{ element: PollElement; viewContext: BoardViewContext }> {
+		const user = await this.authorizationService.getUserWithPermissions(userId);
+		const element = await this.boardNodeService.findContentElementById(elementId);
+
+		if (!isPollElement(element)) {
+			throw new UnprocessableEntityException(`Element '${elementId}' is not a poll`);
+		}
+
+		const boardNode = await this.boardNodeService.findRoot(element);
+		const boardNodeAuthorizable = await this.boardNodeAuthorizableService.getBoardAuthorizable(boardNode);
+
+		throwForbiddenIfFalse(this.boardNodeRule.can('voteInPoll', user, boardNodeAuthorizable));
+
+		await this.boardNodeService.voteInPoll(element, userId, optionIds);
+
+		const viewContext: BoardViewContext = {
+			userId,
+			canEdit: this.boardNodeRule.can('updateElement', user, boardNodeAuthorizable),
+		};
+
+		return { element, viewContext };
 	}
 
 	public async updateElement(
@@ -54,6 +98,40 @@ export class ElementUc {
 		await this.boardNodeService.updateContent(element, content);
 
 		return element;
+	}
+
+	/**
+	 * Ticking a checklist item, like voting, needs read access rather than write access: the point
+	 * is that participants can record progress on a board they may not edit. The returned view
+	 * context matters here — a personal list has to be rendered for one specific person.
+	 */
+	public async setChecklistItemChecked(
+		userId: EntityId,
+		elementId: EntityId,
+		itemId: string,
+		checked: boolean
+	): Promise<{ element: ChecklistElement; viewContext: BoardViewContext }> {
+		const user = await this.authorizationService.getUserWithPermissions(userId);
+		const element = await this.boardNodeService.findContentElementById(elementId);
+
+		if (!isChecklistElement(element)) {
+			throw new UnprocessableEntityException(`Element '${elementId}' is not a checklist`);
+		}
+
+		const boardNode = await this.boardNodeService.findRoot(element);
+		const boardNodeAuthorizable = await this.boardNodeAuthorizableService.getBoardAuthorizable(boardNode);
+
+		throwForbiddenIfFalse(this.boardNodeRule.can('checkChecklistItem', user, boardNodeAuthorizable));
+
+		await this.boardNodeService.setChecklistItemChecked(element, itemId, userId, checked);
+
+		return {
+			element,
+			viewContext: {
+				userId,
+				canEdit: this.boardNodeRule.can('updateElement', user, boardNodeAuthorizable),
+			},
+		};
 	}
 
 	public async deleteElement(userId: EntityId, elementId: EntityId): Promise<EntityId> {

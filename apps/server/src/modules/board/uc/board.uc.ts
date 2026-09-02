@@ -14,18 +14,36 @@ import { EntityId } from '@shared/domain/types';
 import { BoardNodeRule, BoardOperation } from '../authorisation/board-node.rule';
 import { BOARD_CONFIG_TOKEN, BoardConfig } from '../board.config';
 import { CreateBoardBodyParams } from '../controller/dto';
+import { type User } from '@modules/user/repo';
 import {
 	BoardExternalReference,
 	BoardExternalReferenceType,
 	BoardFeature,
 	BoardLayout,
 	BoardNodeFactory,
+	CardReactionType,
+	isDeadlineElement,
 	Column,
 	ColumnBoard,
 	isColumn,
 } from '../domain';
 import { BoardNodeAuthorizableService, BoardNodeService, ColumnBoardService } from '../service';
 import { StorageLocationReference } from '../service/internal';
+
+export interface BoardContextInfo {
+	reference: BoardExternalReference;
+	name: string;
+}
+
+export interface BoardDeadline {
+	elementId: EntityId;
+	cardId: EntityId;
+	boardId: EntityId;
+	boardTitle: string;
+	title: string;
+	dueDate: Date;
+	context: BoardContextInfo;
+}
 
 @Injectable()
 export class BoardUc {
@@ -68,6 +86,8 @@ export class BoardUc {
 		board: ColumnBoard;
 		features: BoardFeature[];
 		allowedOperations: Record<BoardOperation, boolean>;
+		/** What the board would inherit if it set nothing itself. */
+		roomDefaults: { commentsEnabled: boolean; reactionType: CardReactionType };
 	}> {
 		// TODO set depth=2 to reduce data?
 		const board = await this.boardNodeService.findByClassAndId(ColumnBoard, boardId);
@@ -78,7 +98,15 @@ export class BoardUc {
 
 		const features = await this.boardContextApiHelperService.getFeaturesForBoardNode(boardId);
 		const allowedOperations = this.boardNodeRule.listAllowedOperations(user, boardNodeAuthorizable);
-		return { board, features, allowedOperations };
+		return {
+			board,
+			features,
+			allowedOperations,
+			roomDefaults: {
+				commentsEnabled: boardNodeAuthorizable.boardConfiguration.roomCommentsEnabled ?? false,
+				reactionType: boardNodeAuthorizable.boardConfiguration.roomReactionType ?? CardReactionType.NONE,
+			},
+		};
 	}
 
 	public async findBoardContext(userId: EntityId, boardId: EntityId): Promise<BoardExternalReference> {
@@ -210,6 +238,134 @@ export class BoardUc {
 		await this.boardNodeService.updateVisibility(board, isVisible);
 
 		return board;
+	}
+
+	public async updateReactionType(
+		userId: EntityId,
+		boardId: EntityId,
+		reactionType: CardReactionType | null
+	): Promise<ColumnBoard> {
+		this.checkInteractiveElementsEnabled();
+
+		const board = await this.boardNodeService.findByClassAndId(ColumnBoard, boardId);
+		const user = await this.authorizationService.getUserWithPermissions(userId);
+		const boardNodeAuthorizable = await this.boardNodeAuthorizableService.getBoardAuthorizable(board);
+
+		throwForbiddenIfFalse(this.boardNodeRule.can('updateBoardReactionType', user, boardNodeAuthorizable));
+
+		await this.columnBoardService.updateReactionType(board, reactionType ?? undefined);
+
+		return board;
+	}
+
+	public async updateCommentsEnabled(
+		userId: EntityId,
+		boardId: EntityId,
+		commentsEnabled: boolean | null
+	): Promise<ColumnBoard> {
+		this.checkInteractiveElementsEnabled();
+
+		const board = await this.boardNodeService.findByClassAndId(ColumnBoard, boardId);
+		const user = await this.authorizationService.getUserWithPermissions(userId);
+		const boardNodeAuthorizable = await this.boardNodeAuthorizableService.getBoardAuthorizable(board);
+
+		throwForbiddenIfFalse(this.boardNodeRule.can('updateBoardCommentsEnabled', user, boardNodeAuthorizable));
+
+		await this.columnBoardService.updateCommentsEnabled(board, commentsEnabled ?? undefined);
+
+		return board;
+	}
+
+	/**
+	 * Every deadline the user may see and that is marked for the calendar.
+	 *
+	 * The dates are not pushed into the external calendar service. That service is optional,
+	 * lives outside this system and would have to be kept in sync in both directions — a board
+	 * deadline that someone deleted in their calendar app is a worse problem than one that is
+	 * simply read from the board. The board stays the one place the date lives; the calendar
+	 * view asks for it.
+	 */
+	public async findDeadlinesForUser(userId: EntityId): Promise<BoardDeadline[]> {
+		if (!this.config.featureColumnBoardInteractiveElementsEnabled) {
+			return [];
+		}
+
+		const user = await this.authorizationService.getUserWithPermissions(userId);
+		const contexts = await this.findBoardContextsOfUser(userId, user.school.id);
+
+		const boardsPerContext = await Promise.all(
+			contexts.map(async (context) => {
+				const boards = await this.columnBoardService.findByExternalReference(context.reference);
+
+				return boards.map((board) => {
+					return { board, context };
+				});
+			})
+		);
+
+		const deadlines = await Promise.all(
+			boardsPerContext.flat().map(({ board, context }) => this.collectDeadlines(user, board, context))
+		);
+
+		return deadlines.flat().sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime());
+	}
+
+	private async findBoardContextsOfUser(userId: EntityId, schoolId: EntityId): Promise<BoardContextInfo[]> {
+		const roomAuthorizables = await this.roomMembershipService.getRoomAuthorizablesByUserId(userId);
+		const rooms = await Promise.all(
+			roomAuthorizables.map(async (authorizable) => {
+				const room = await this.roomService.getSingleRoom(authorizable.roomId);
+
+				return {
+					reference: { type: BoardExternalReferenceType.Room, id: authorizable.roomId },
+					name: room.name,
+				};
+			})
+		);
+
+		const [courses] = await this.courseService.findAllByUserId(userId, schoolId);
+		const courseContexts = courses.map((course) => {
+			return {
+				reference: { type: BoardExternalReferenceType.Course, id: course.id },
+				name: course.name,
+			};
+		});
+
+		return [...rooms, ...courseContexts];
+	}
+
+	private async collectDeadlines(user: User, board: ColumnBoard, context: BoardContextInfo): Promise<BoardDeadline[]> {
+		const authorizable = await this.boardNodeAuthorizableService.getBoardAuthorizable(board);
+		if (!this.boardNodeRule.can('findBoard', user, authorizable)) {
+			return [];
+		}
+
+		const deadlines: BoardDeadline[] = [];
+		for (const column of board.children) {
+			for (const card of column.children) {
+				for (const element of card.children) {
+					if (isDeadlineElement(element) && element.showInCalendar && element.dueDate) {
+						deadlines.push({
+							elementId: element.id,
+							cardId: card.id,
+							boardId: board.id,
+							boardTitle: board.title,
+							title: element.title,
+							dueDate: element.dueDate,
+							context,
+						});
+					}
+				}
+			}
+		}
+
+		return deadlines;
+	}
+
+	private checkInteractiveElementsEnabled(): void {
+		if (!this.config.featureColumnBoardInteractiveElementsEnabled) {
+			throw new FeatureDisabledLoggableException('FEATURE_COLUMN_BOARD_INTERACTIVE_ELEMENTS_ENABLED');
+		}
 	}
 
 	public async updateReadersCanEdit(

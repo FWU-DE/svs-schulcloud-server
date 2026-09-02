@@ -1,8 +1,26 @@
 import { ApiProperty, ApiPropertyOptional, getSchemaPath } from '@nestjs/swagger';
 import { InputFormat } from '@shared/domain/types';
 import { Type } from 'class-transformer';
-import { IsEnum, IsMongoId, IsOptional, IsString, ValidateNested } from 'class-validator';
-import { ContentElementType } from '../../../domain/types';
+import {
+	ArrayMaxSize,
+	ArrayMinSize,
+	IsArray,
+	IsDateString,
+	IsBoolean,
+	IsEnum,
+	IsMongoId,
+	IsOptional,
+	IsString,
+	MaxLength,
+	ValidateNested,
+} from 'class-validator';
+import {
+	ChecklistProgressMode,
+	ContentElementType,
+	MAX_CHECKLIST_ITEMS,
+	PollResultVisibility,
+	RecordingMediaType,
+} from '../../../domain/types';
 
 abstract class ElementContentBody {
 	@IsEnum(ContentElementType)
@@ -164,6 +182,195 @@ export class H5pElementContentBody extends ElementContentBody {
 	content!: H5pContentBody;
 }
 
+export class PollOptionBody {
+	@IsMongoId()
+	@IsOptional()
+	@ApiPropertyOptional({ description: 'Omit to add a new option. Keeping the id keeps the votes cast for it.' })
+	id?: string;
+
+	@IsString()
+	@MaxLength(200)
+	@ApiProperty()
+	text!: string;
+}
+
+export class PollContentBody {
+	@IsString()
+	@MaxLength(500)
+	@ApiProperty()
+	question!: string;
+
+	@IsArray()
+	@ArrayMinSize(2)
+	@ArrayMaxSize(20)
+	@ValidateNested({ each: true })
+	@Type(() => PollOptionBody)
+	@ApiProperty({ type: [PollOptionBody] })
+	options!: PollOptionBody[];
+
+	@IsBoolean()
+	@ApiProperty()
+	anonymous!: boolean;
+
+	@IsBoolean()
+	@ApiProperty()
+	multipleChoice!: boolean;
+
+	@IsBoolean()
+	@ApiProperty()
+	closed!: boolean;
+
+	@IsEnum(PollResultVisibility)
+	@ApiProperty({ enum: PollResultVisibility, enumName: 'PollResultVisibility' })
+	showResults!: PollResultVisibility;
+
+	@IsBoolean()
+	@ApiProperty({ description: 'Set by whoever may edit the poll to reveal the tally to participants.' })
+	resultsReleased!: boolean;
+}
+
+export class PollElementContentBody extends ElementContentBody {
+	@ApiProperty({ type: () => ContentElementType.POLL })
+	type!: ContentElementType.POLL;
+
+	@ValidateNested()
+	@ApiProperty()
+	content!: PollContentBody;
+}
+
+export class DeadlineContentBody {
+	@IsString()
+	@MaxLength(200)
+	@ApiProperty()
+	title!: string;
+
+	@IsDateString()
+	@IsOptional()
+	@ApiPropertyOptional({ type: String, format: 'date-time', description: 'Omit to clear the date.' })
+	dueDate?: string;
+
+	@IsBoolean()
+	@ApiProperty({ description: 'List this deadline in the calendar of everyone who can see the board.' })
+	showInCalendar!: boolean;
+}
+
+export class DeadlineElementContentBody extends ElementContentBody {
+	@ApiProperty({ type: () => ContentElementType.DEADLINE })
+	type!: ContentElementType.DEADLINE;
+
+	@ValidateNested()
+	@ApiProperty()
+	content!: DeadlineContentBody;
+}
+
+export class CodeContentBody {
+	@IsString()
+	@MaxLength(20000)
+	@ApiProperty()
+	code!: string;
+
+	@IsString()
+	@MaxLength(40)
+	@ApiProperty()
+	language!: string;
+
+	@IsBoolean()
+	@ApiProperty()
+	showLineNumbers!: boolean;
+
+	@IsBoolean()
+	@ApiProperty()
+	syntaxHighlighting!: boolean;
+}
+
+export class CodeElementContentBody extends ElementContentBody {
+	@ApiProperty({ type: () => ContentElementType.CODE })
+	type!: ContentElementType.CODE;
+
+	@ValidateNested()
+	@ApiProperty()
+	content!: CodeContentBody;
+}
+
+export class FormulaContentBody {
+	@IsString()
+	@MaxLength(5000)
+	@ApiProperty()
+	latex!: string;
+}
+
+export class FormulaElementContentBody extends ElementContentBody {
+	@ApiProperty({ type: () => ContentElementType.FORMULA })
+	type!: ContentElementType.FORMULA;
+
+	@ValidateNested()
+	@ApiProperty()
+	content!: FormulaContentBody;
+}
+
+export class ChecklistItemBody {
+	@IsMongoId()
+	@IsOptional()
+	@ApiPropertyOptional({ description: 'Omit to add a new item. Keeping the id keeps its checked state.' })
+	id?: string;
+
+	@IsString()
+	@MaxLength(500)
+	@ApiProperty()
+	text!: string;
+}
+
+export class ChecklistContentBody {
+	@IsString()
+	@MaxLength(200)
+	@ApiProperty()
+	title!: string;
+
+	@IsArray()
+	@ArrayMaxSize(MAX_CHECKLIST_ITEMS)
+	@ValidateNested({ each: true })
+	@Type(() => ChecklistItemBody)
+	@ApiProperty({ type: [ChecklistItemBody] })
+	items!: ChecklistItemBody[];
+
+	@IsEnum(ChecklistProgressMode)
+	@ApiProperty({
+		enum: ChecklistProgressMode,
+		enumName: 'ChecklistProgressMode',
+		description: 'Switching the mode starts the progress over: a shared tick is not a personal one.',
+	})
+	progressMode!: ChecklistProgressMode;
+}
+
+export class ChecklistElementContentBody extends ElementContentBody {
+	@ApiProperty({ type: () => ContentElementType.CHECKLIST })
+	type!: ContentElementType.CHECKLIST;
+
+	@ValidateNested()
+	@ApiProperty()
+	content!: ChecklistContentBody;
+}
+
+export class RecordingContentBody {
+	@IsEnum(RecordingMediaType)
+	@ApiProperty({ enum: RecordingMediaType, enumName: 'RecordingMediaType' })
+	mediaType!: RecordingMediaType;
+
+	@IsString()
+	@MaxLength(500)
+	@ApiProperty()
+	caption!: string;
+}
+
+export class RecordingElementContentBody extends ElementContentBody {
+	@ApiProperty({ type: () => ContentElementType.RECORDING })
+	type!: ContentElementType.RECORDING;
+
+	@ValidateNested()
+	@ApiProperty()
+	content!: RecordingContentBody;
+}
+
 export type AnyElementContentBody =
 	| FileContentBody
 	| DrawingContentBody
@@ -172,7 +379,13 @@ export type AnyElementContentBody =
 	| ExternalToolContentBody
 	| VideoConferenceContentBody
 	| FileFolderContentBody
-	| H5pContentBody;
+	| H5pContentBody
+	| PollContentBody
+	| DeadlineContentBody
+	| CodeContentBody
+	| FormulaContentBody
+	| ChecklistContentBody
+	| RecordingContentBody;
 
 export class UpdateElementContentBodyParams {
 	@ValidateNested()
@@ -188,6 +401,12 @@ export class UpdateElementContentBodyParams {
 				{ value: VideoConferenceElementContentBody, name: ContentElementType.VIDEO_CONFERENCE },
 				{ value: FileFolderElementContentBody, name: ContentElementType.FILE_FOLDER },
 				{ value: H5pElementContentBody, name: ContentElementType.H5P },
+				{ value: PollElementContentBody, name: ContentElementType.POLL },
+				{ value: DeadlineElementContentBody, name: ContentElementType.DEADLINE },
+				{ value: CodeElementContentBody, name: ContentElementType.CODE },
+				{ value: FormulaElementContentBody, name: ContentElementType.FORMULA },
+				{ value: ChecklistElementContentBody, name: ContentElementType.CHECKLIST },
+				{ value: RecordingElementContentBody, name: ContentElementType.RECORDING },
 			],
 		},
 		keepDiscriminatorProperty: true,
@@ -202,6 +421,12 @@ export class UpdateElementContentBodyParams {
 			{ $ref: getSchemaPath(VideoConferenceElementContentBody) },
 			{ $ref: getSchemaPath(FileFolderElementContentBody) },
 			{ $ref: getSchemaPath(H5pElementContentBody) },
+			{ $ref: getSchemaPath(PollElementContentBody) },
+			{ $ref: getSchemaPath(DeadlineElementContentBody) },
+			{ $ref: getSchemaPath(CodeElementContentBody) },
+			{ $ref: getSchemaPath(FormulaElementContentBody) },
+			{ $ref: getSchemaPath(ChecklistElementContentBody) },
+			{ $ref: getSchemaPath(RecordingElementContentBody) },
 		],
 	})
 	data!:
@@ -212,5 +437,11 @@ export class UpdateElementContentBodyParams {
 		| DrawingElementContentBody
 		| VideoConferenceElementContentBody
 		| FileFolderElementContentBody
-		| H5pElementContentBody;
+		| H5pElementContentBody
+		| PollElementContentBody
+		| DeadlineElementContentBody
+		| CodeElementContentBody
+		| FormulaElementContentBody
+		| ChecklistElementContentBody
+		| RecordingElementContentBody;
 }

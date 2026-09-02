@@ -1,7 +1,7 @@
 import { ObjectId } from '@mikro-orm/mongodb';
 import { BaseFactory } from '@testing/factory/base.factory';
 import { Room, type RoomProps } from '../domain/do/room.do';
-import { RoomColor, RoomFeatures } from '../domain/type';
+import { CardReactionType, RoomColor, RoomFeatures } from '../domain/type';
 
 export const roomFactory = BaseFactory.define<Room, RoomProps>(Room, ({ sequence }) => {
 	const props: RoomProps = {
@@ -14,6 +14,8 @@ export const roomFactory = BaseFactory.define<Room, RoomProps>(Room, ({ sequence
 		updatedAt: new Date(),
 		endDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
 		features: [RoomFeatures.EDITOR_MANAGE_VIDEOCONFERENCE],
+		commentsEnabled: false,
+		reactionType: CardReactionType.NONE,
 	};
 
 	return props;

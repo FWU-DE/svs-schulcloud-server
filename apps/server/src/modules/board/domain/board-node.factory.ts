@@ -1,4 +1,5 @@
 import { ObjectId } from '@mikro-orm/mongodb';
+import { randomBytes } from 'crypto';
 import { Injectable, NotImplementedException, UnprocessableEntityException } from '@nestjs/common';
 import { InputFormat } from '@shared/domain/types';
 import { Card } from './card.do';
@@ -11,7 +12,13 @@ import { FileElement } from './file-element.do';
 import { FileFolderElement } from './file-folder-element.do';
 import { H5pElement } from './h5p-element.do';
 import { LinkElement } from './link-element.do';
+import { ChecklistElement } from './checklist-element.do';
+import { CodeElement } from './code-element.do';
+import { DeadlineElement } from './deadline-element.do';
+import { FormulaElement } from './formula-element.do';
 import { ROOT_PATH } from './path-utils';
+import { RecordingElement } from './recording-element.do';
+import { PollElement } from './poll-element.do';
 import { RichTextElement } from './rich-text-element.do';
 import { handleNonExhaustiveSwitch } from './type-mapping';
 import {
@@ -19,15 +26,26 @@ import {
 	BoardExternalReference,
 	BoardLayout,
 	BoardNodeProps,
+	CardReactionType,
+	ChecklistProgressMode,
 	Colors,
 	ContentElementType,
+	PollResultVisibility,
+	RecordingMediaType,
 } from './types';
 import { VideoConferenceElement } from './video-conference-element.do';
 
 @Injectable()
 export class BoardNodeFactory {
 	public buildColumnBoard(props: { context: BoardExternalReference; title: string; layout: BoardLayout }): ColumnBoard {
-		const columnBoard = new ColumnBoard({ ...this.getBaseProps(), isVisible: false, readersCanEdit: false, ...props });
+		const columnBoard = new ColumnBoard({
+			...this.getBaseProps(),
+			isVisible: false,
+			readersCanEdit: false,
+			reactionType: CardReactionType.NONE,
+			commentsEnabled: false,
+			...props,
+		});
 
 		return columnBoard;
 	}
@@ -40,7 +58,14 @@ export class BoardNodeFactory {
 
 	public buildCard(children: AnyContentElement[] = []): Card {
 		// TODO right way to specify default card height?
-		const card = new Card({ ...this.getBaseProps(), backgroundColor: Colors.TRANSPARENT, height: 150, children });
+		const card = new Card({
+			...this.getBaseProps(),
+			backgroundColor: Colors.TRANSPARENT,
+			height: 150,
+			reactions: [],
+			comments: [],
+			children,
+		});
 
 		return card;
 	}
@@ -98,6 +123,61 @@ export class BoardNodeFactory {
 				element = new VideoConferenceElement({
 					...this.getBaseProps(),
 					title: '',
+				});
+				break;
+			case ContentElementType.POLL:
+				element = new PollElement({
+					...this.getBaseProps(),
+					question: '',
+					pollOptions: [
+						{ id: new ObjectId().toHexString(), text: '' },
+						{ id: new ObjectId().toHexString(), text: '' },
+					],
+					anonymous: false,
+					multipleChoice: false,
+					closed: false,
+					showResults: PollResultVisibility.ALWAYS,
+					resultsReleased: false,
+					votes: [],
+					voterSalt: randomBytes(16).toString('hex'),
+				});
+				break;
+			case ContentElementType.DEADLINE:
+				element = new DeadlineElement({
+					...this.getBaseProps(),
+					title: '',
+					showInCalendar: false,
+				});
+				break;
+			case ContentElementType.CODE:
+				element = new CodeElement({
+					...this.getBaseProps(),
+					code: '',
+					language: 'plaintext',
+					showLineNumbers: false,
+					syntaxHighlighting: true,
+				});
+				break;
+			case ContentElementType.FORMULA:
+				element = new FormulaElement({
+					...this.getBaseProps(),
+					latex: '',
+				});
+				break;
+			case ContentElementType.CHECKLIST:
+				element = new ChecklistElement({
+					...this.getBaseProps(),
+					title: '',
+					progressMode: ChecklistProgressMode.SHARED,
+					checks: [],
+					items: [],
+				});
+				break;
+			case ContentElementType.RECORDING:
+				element = new RecordingElement({
+					...this.getBaseProps(),
+					mediaType: RecordingMediaType.AUDIO,
+					caption: '',
 				});
 				break;
 			case ContentElementType.H5P:

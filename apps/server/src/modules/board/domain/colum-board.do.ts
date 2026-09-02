@@ -1,6 +1,7 @@
 import { BoardNode } from './board-node.do';
 import { Column } from './column.do';
 import type { AnyBoardNode, BoardExternalReference, BoardLayout, ColumnBoardProps } from './types';
+import { type CardReactionType } from './types/card-reaction';
 
 export class ColumnBoard extends BoardNode<ColumnBoardProps> {
 	get title(): string {
@@ -44,6 +45,24 @@ export class ColumnBoard extends BoardNode<ColumnBoardProps> {
 
 	set readersCanEdit(readersCanEdit: boolean) {
 		this.props.readersCanEdit = readersCanEdit;
+	}
+
+	/** `undefined` follows the room. */
+	get reactionType(): CardReactionType | undefined {
+		return this.props.reactionType;
+	}
+
+	set reactionType(reactionType: CardReactionType | undefined) {
+		this.props.reactionType = reactionType;
+	}
+
+	/** `undefined` follows the room. */
+	get commentsEnabled(): boolean | undefined {
+		return this.props.commentsEnabled;
+	}
+
+	set commentsEnabled(commentsEnabled: boolean | undefined) {
+		this.props.commentsEnabled = commentsEnabled;
 	}
 
 	public canHaveChild(childNode: AnyBoardNode): boolean {

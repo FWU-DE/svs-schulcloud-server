@@ -124,6 +124,9 @@ export class ConfigResponse {
 	FEATURE_COLUMN_BOARD_COLLABORA_ENABLED: boolean;
 
 	@ApiProperty()
+	FEATURE_COLUMN_BOARD_INTERACTIVE_ELEMENTS_ENABLED: boolean;
+
+	@ApiProperty()
 	FEATURE_COURSE_SHARE: boolean;
 
 	@ApiProperty()
@@ -375,5 +378,6 @@ export class ConfigResponse {
 		this.ROOM_MEMBER_ADD_EXTERNAL_PERSON_REQUIREMENTS_URL = config.roomMemberAddExternalPersonRequirementsUrl;
 		this.FEATURE_COLUMN_BOARD_H5P_ENABLED = config.featureColumnBoardH5pEnabled;
 		this.FEATURE_COLUMN_BOARD_COLLABORA_ENABLED = config.featureColumnBoardCollaboraEnabled;
+		this.FEATURE_COLUMN_BOARD_INTERACTIVE_ELEMENTS_ENABLED = config.featureColumnBoardInteractiveElementsEnabled;
 	}
 }

@@ -46,6 +46,8 @@ export class RoomBoardContext implements PreparedBoardContext {
 			canReadersEdit: this.determineCanReadersEdit(rootNode),
 			canAdminsToggleReadersCanEdit: isColumnBoard,
 			isLocked: !this.hasOwner,
+			roomCommentsEnabled: this.room.commentsEnabled,
+			roomReactionType: this.room.reactionType,
 		};
 	}
 

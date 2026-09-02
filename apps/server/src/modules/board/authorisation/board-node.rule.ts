@@ -23,6 +23,8 @@ export const BoardOperationValues = [
 	'updateBoardLayout',
 	'updateBoardTitle',
 	'updateReadersCanEditSetting',
+	'updateBoardReactionType',
+	'updateBoardCommentsEnabled',
 
 	// column
 	'copyColumn',
@@ -31,6 +33,7 @@ export const BoardOperationValues = [
 	'moveColumn',
 	'shareColumn',
 	'updateColumnTitle',
+	'updateColumnSettings',
 
 	// card
 	'copyCard',
@@ -42,6 +45,10 @@ export const BoardOperationValues = [
 	'updateCardHeight',
 	'updateCardTitle',
 	'updateCardColor',
+	'updateCardSettings',
+	'reactToCard',
+	'commentOnCard',
+	'moderateCardComments',
 
 	// element
 	'createElement',
@@ -55,6 +62,12 @@ export const BoardOperationValues = [
 
 	// element / fileElement
 	'createFileElement',
+
+	// element / pollElement
+	'voteInPoll',
+
+	// element / checklistElement
+	'checkChecklistItem',
 
 	// element / videoConferenceElement
 	'manageVideoConference',
@@ -160,6 +173,8 @@ export class BoardNodeRule implements Rule<BoardNodeAuthorizable> {
 			updateBoardLayout: _canManageBoard,
 			updateBoardTitle: canEditBoardTitle,
 			updateReadersCanEditSetting: canUpdateReadersCanEditSetting,
+			updateBoardReactionType: _canManageBoard,
+			updateBoardCommentsEnabled: _canManageBoard,
 
 			// column
 			copyColumn: _canEditBoard,
@@ -168,6 +183,7 @@ export class BoardNodeRule implements Rule<BoardNodeAuthorizable> {
 			moveColumn: _canEditBoard,
 			shareColumn: canShareBoardNode,
 			updateColumnTitle: _canEditBoard,
+			updateColumnSettings: _canEditBoard,
 
 			// card
 			copyCard: _canEditBoard,
@@ -179,6 +195,12 @@ export class BoardNodeRule implements Rule<BoardNodeAuthorizable> {
 			updateCardHeight: _canEditBoard,
 			updateCardTitle: _canEditBoard,
 			updateCardColor: _canEditBoard,
+			updateCardSettings: _canEditBoard,
+			// Reacting is a reader's action, like voting in a poll — not an edit of the card.
+			reactToCard: _canViewBoard,
+			// Writing a comment is a reader's action; removing someone else's is not.
+			commentOnCard: _canViewBoard,
+			moderateCardComments: _canEditBoard,
 
 			// element
 			createElement: _canEditBoard,
@@ -192,6 +214,13 @@ export class BoardNodeRule implements Rule<BoardNodeAuthorizable> {
 
 			// element / fileElement
 			createFileElement: _canEditBoard,
+
+			// element / pollElement
+			voteInPoll: _canViewBoard,
+
+			// element / checklistElement
+			// Ticking a shared checklist is progress on a task, not an edit of the board.
+			checkChecklistItem: _canViewBoard,
 
 			// element / videoConferenceElement
 			manageVideoConference: canManageVideoConference,

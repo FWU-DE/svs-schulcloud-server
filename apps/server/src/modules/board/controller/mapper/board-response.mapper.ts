@@ -1,6 +1,6 @@
 import { InternalServerErrorException } from '@nestjs/common';
 import { type BoardOperation } from '../../authorisation/board-node.rule';
-import { type BoardFeature, Column, type ColumnBoard } from '../../domain';
+import { type BoardFeature, type CardReactionType, Column, type ColumnBoard } from '../../domain';
 import { BoardResponse, TimestampsResponse } from '../dto';
 import { ColumnResponseMapper } from './column-response.mapper';
 
@@ -8,7 +8,8 @@ export class BoardResponseMapper {
 	public static mapToResponse(
 		board: ColumnBoard,
 		features: BoardFeature[],
-		allowedOperations: Record<BoardOperation, boolean>
+		allowedOperations: Record<BoardOperation, boolean>,
+		roomDefaults: { commentsEnabled: boolean; reactionType: CardReactionType }
 	): BoardResponse {
 		const result = new BoardResponse({
 			id: board.id,
@@ -23,6 +24,10 @@ export class BoardResponseMapper {
 			timestamps: new TimestampsResponse({ lastUpdatedAt: board.updatedAt, createdAt: board.createdAt }),
 			isVisible: board.isVisible,
 			readersCanEdit: board.readersCanEdit,
+			reactionType: board.reactionType ?? null,
+			commentsEnabled: board.commentsEnabled ?? null,
+			roomReactionType: roomDefaults.reactionType,
+			roomCommentsEnabled: roomDefaults.commentsEnabled,
 			layout: board.layout,
 			features,
 			allowedOperations,

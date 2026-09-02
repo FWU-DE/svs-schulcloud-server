@@ -1,9 +1,10 @@
-import { type ColumnBoard } from '@modules/board';
+import { type BoardPreview, type ColumnBoard } from '@modules/board';
 import { type BoardOperation } from '@modules/board/authorisation/board-node.rule';
 import { type RoomOperation } from '@modules/room-membership/authorization/room.rule';
 import { type PaginationParams } from '@shared/controller/dto';
 import { type Page } from '@shared/domain/domainobject';
 import { type Room } from '../../domain/do/room.do';
+import { BoardPreviewResponse } from '../dto/response/board-preview.response';
 import { RoomBoardItemResponse } from '../dto/response/room-board-item.response';
 import { RoomBoardListResponse } from '../dto/response/room-board-list.response';
 import { RoomCreatedResponse } from '../dto/response/room-created.response';
@@ -31,6 +32,7 @@ export class RoomMapper {
 		allowedOperations,
 		isLocked,
 		totalMembers,
+		boardCount,
 	}: RoomWithAllowedOperationsAndLockedStatus): RoomItemResponse {
 		const response = new RoomItemResponse({
 			id: room.id,
@@ -44,6 +46,7 @@ export class RoomMapper {
 			allowedOperations,
 			isLocked,
 			totalMembers,
+			boardCount,
 		});
 
 		return response;
@@ -80,7 +83,8 @@ export class RoomMapper {
 
 	public static mapToRoomBoardItemReponse(
 		board: ColumnBoard,
-		allowedOperations: Partial<Record<BoardOperation, boolean>>
+		allowedOperations: Partial<Record<BoardOperation, boolean>>,
+		preview: BoardPreview
 	): RoomBoardItemResponse {
 		const response = new RoomBoardItemResponse({
 			id: board.id,
@@ -90,16 +94,21 @@ export class RoomMapper {
 			createdAt: board.createdAt,
 			updatedAt: board.updatedAt,
 			allowedOperations: Object.fromEntries(Object.entries(allowedOperations).filter(([, value]) => value)),
+			preview: new BoardPreviewResponse(preview),
 		});
 
 		return response;
 	}
 
 	public static mapToRoomBoardListResponse(
-		boardsWithOperations: { board: ColumnBoard; allowedOperations: Record<BoardOperation, boolean> }[]
+		boardsWithOperations: {
+			board: ColumnBoard;
+			allowedOperations: Record<BoardOperation, boolean>;
+			preview: BoardPreview;
+		}[]
 	): RoomBoardListResponse {
-		const itemData = boardsWithOperations.map(({ board, allowedOperations }) =>
-			this.mapToRoomBoardItemReponse(board, allowedOperations)
+		const itemData = boardsWithOperations.map(({ board, allowedOperations, preview }) =>
+			this.mapToRoomBoardItemReponse(board, allowedOperations, preview)
 		);
 
 		const response = new RoomBoardListResponse(itemData, boardsWithOperations.length);

@@ -1,3 +1,4 @@
+import { ObjectId } from '@mikro-orm/mongodb';
 import { Injectable } from '@nestjs/common';
 import { sanitizeRichText } from '@shared/controller/transformer';
 import { InputFormat } from '@shared/domain/types';
@@ -7,13 +8,25 @@ import {
 	ExternalToolContentBody,
 	FileContentBody,
 	FileFolderContentBody,
+	ChecklistContentBody,
+	CodeContentBody,
+	DeadlineContentBody,
+	FormulaContentBody,
 	H5pContentBody,
 	LinkContentBody,
+	PollContentBody,
+	RecordingContentBody,
 	RichTextContentBody,
 	VideoConferenceContentBody,
 } from '../../controller/dto';
 import type {
 	AnyContentElement,
+	ChecklistElement,
+	CodeElement,
+	DeadlineElement,
+	FormulaElement,
+	PollElement,
+	RecordingElement,
 	DrawingElement,
 	ExternalToolElement,
 	FileElement,
@@ -29,7 +42,13 @@ import {
 	isFileElement,
 	isFileFolderElement,
 	isH5pElement,
+	isChecklistElement,
+	isCodeElement,
+	isDeadlineElement,
+	isFormulaElement,
 	isLinkElement,
+	isPollElement,
+	isRecordingElement,
 	isRichTextElement,
 	isVideoConferenceElement,
 } from '../../domain';
@@ -57,6 +76,18 @@ export class ContentElementUpdateService {
 			this.updateFileFolderElement(element, content);
 		} else if (isH5pElement(element) && content instanceof H5pContentBody) {
 			this.updateH5pElement(element, content);
+		} else if (isPollElement(element) && content instanceof PollContentBody) {
+			this.updatePollElement(element, content);
+		} else if (isDeadlineElement(element) && content instanceof DeadlineContentBody) {
+			this.updateDeadlineElement(element, content);
+		} else if (isCodeElement(element) && content instanceof CodeContentBody) {
+			this.updateCodeElement(element, content);
+		} else if (isFormulaElement(element) && content instanceof FormulaContentBody) {
+			this.updateFormulaElement(element, content);
+		} else if (isChecklistElement(element) && content instanceof ChecklistContentBody) {
+			this.updateChecklistElement(element, content);
+		} else if (isRecordingElement(element) && content instanceof RecordingContentBody) {
+			this.updateRecordingElement(element, content);
 		} else {
 			throw new Error(`Cannot update element of type: '${element.constructor.name}'`);
 		}
@@ -110,6 +141,64 @@ export class ContentElementUpdateService {
 
 	public updateFileFolderElement(element: FileFolderElement, content: FileFolderContentBody): void {
 		element.title = content.title;
+	}
+
+	public updateDeadlineElement(element: DeadlineElement, content: DeadlineContentBody): void {
+		element.title = sanitizeRichText(content.title, InputFormat.PLAIN_TEXT);
+		element.dueDate = content.dueDate ? new Date(content.dueDate) : undefined;
+		element.showInCalendar = content.showInCalendar;
+	}
+
+	/**
+	 * The code is stored verbatim, not sanitised: mangling a snippet is the one thing a code
+	 * block must not do. It is rendered as text, never as markup.
+	 */
+	public updateCodeElement(element: CodeElement, content: CodeContentBody): void {
+		element.code = content.code;
+		element.language = sanitizeRichText(content.language, InputFormat.PLAIN_TEXT);
+		element.showLineNumbers = content.showLineNumbers;
+		element.syntaxHighlighting = content.syntaxHighlighting;
+	}
+
+	/** LaTeX source, likewise stored verbatim and rendered by the client's math renderer. */
+	public updateFormulaElement(element: FormulaElement, content: FormulaContentBody): void {
+		element.latex = content.latex;
+	}
+
+	public updateChecklistElement(element: ChecklistElement, content: ChecklistContentBody): void {
+		element.title = sanitizeRichText(content.title, InputFormat.PLAIN_TEXT);
+		// The mode first: it may clear the progress, and the items are re-seated afterwards.
+		element.setProgressMode(content.progressMode);
+		element.setItems(
+			content.items.map((item) => {
+				return { id: item.id, text: sanitizeRichText(item.text, InputFormat.PLAIN_TEXT) };
+			}),
+			() => new ObjectId().toHexString()
+		);
+	}
+
+	public updateRecordingElement(element: RecordingElement, content: RecordingContentBody): void {
+		element.mediaType = content.mediaType;
+		element.caption = sanitizeRichText(content.caption, InputFormat.PLAIN_TEXT);
+	}
+
+	public updatePollElement(element: PollElement, content: PollContentBody): void {
+		const pollOptions = content.options.map((option) => {
+			return {
+				id: option.id ?? new ObjectId().toHexString(),
+				text: sanitizeRichText(option.text, InputFormat.PLAIN_TEXT),
+			};
+		});
+
+		element.configure({
+			question: sanitizeRichText(content.question, InputFormat.PLAIN_TEXT),
+			pollOptions,
+			anonymous: content.anonymous,
+			multipleChoice: content.multipleChoice,
+			showResults: content.showResults,
+			resultsReleased: content.resultsReleased,
+			closed: content.closed,
+		});
 	}
 
 	public updateH5pElement(element: H5pElement, content: H5pContentBody): void {

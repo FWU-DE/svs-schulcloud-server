@@ -10,6 +10,7 @@ import {
 	Param,
 	Patch,
 	Put,
+	UnprocessableEntityException,
 } from '@nestjs/common';
 import { ApiExtraModels, ApiOperation, ApiResponse, ApiTags, getSchemaPath } from '@nestjs/swagger';
 import { ApiValidationError } from '@shared/common/error';
@@ -26,8 +27,23 @@ import {
 	FileElementResponse,
 	FileFolderElementContentBody,
 	FileFolderElementResponse,
+	ChecklistElementContentBody,
+	ChecklistElementResponse,
+	ChecklistItemCheckedBodyParams,
+	ChecklistItemUrlParams,
+	CodeElementContentBody,
+	CodeElementResponse,
+	DeadlineElementContentBody,
+	DeadlineElementResponse,
+	FormulaElementContentBody,
+	FormulaElementResponse,
 	H5pElementContentBody,
 	H5pElementResponse,
+	PollElementContentBody,
+	PollElementResponse,
+	RecordingElementContentBody,
+	RecordingElementResponse,
+	PollVoteBodyParams,
 	LinkElementContentBody,
 	LinkElementResponse,
 	MoveContentElementBody,
@@ -37,7 +53,12 @@ import {
 	VideoConferenceElementContentBody,
 	VideoConferenceElementResponse,
 } from './dto';
-import { ContentElementResponseFactory, ParentNodeInfoResponseMapper } from './mapper';
+import {
+	ChecklistElementResponseMapper,
+	ContentElementResponseFactory,
+	ParentNodeInfoResponseMapper,
+	PollElementResponseMapper,
+} from './mapper';
 
 @ApiTags('Board Element')
 @JwtAuthentication()
@@ -58,12 +79,12 @@ export class ElementController {
 		@Param() urlParams: ContentElementUrlParams,
 		@CurrentUser() currentUser: ICurrentUser
 	): Promise<ElementWithParentHierarchyResponse> {
-		const { element, parentHierarchy } = await this.elementUc.getElementWithParentHierarchy(
+		const { element, parentHierarchy, viewContext } = await this.elementUc.getElementWithParentHierarchy(
 			currentUser.userId,
 			urlParams.contentElementId
 		);
 
-		const elementReponse = ContentElementResponseFactory.mapToResponse(element);
+		const elementReponse = ContentElementResponseFactory.mapToResponse(element, viewContext);
 		const parentHierarchyResponse = ParentNodeInfoResponseMapper.mapToResponse(parentHierarchy);
 
 		const response = new ElementWithParentHierarchyResponse({
@@ -103,7 +124,13 @@ export class ElementController {
 		DrawingElementContentBody,
 		VideoConferenceElementContentBody,
 		FileFolderElementContentBody,
-		H5pElementContentBody
+		H5pElementContentBody,
+		PollElementContentBody,
+		DeadlineElementContentBody,
+		CodeElementContentBody,
+		FormulaElementContentBody,
+		ChecklistElementContentBody,
+		RecordingElementContentBody
 	)
 	@ApiResponse({
 		status: 200,
@@ -117,6 +144,12 @@ export class ElementController {
 				{ $ref: getSchemaPath(VideoConferenceElementResponse) },
 				{ $ref: getSchemaPath(FileFolderElementResponse) },
 				{ $ref: getSchemaPath(H5pElementResponse) },
+				{ $ref: getSchemaPath(PollElementResponse) },
+				{ $ref: getSchemaPath(DeadlineElementResponse) },
+				{ $ref: getSchemaPath(CodeElementResponse) },
+				{ $ref: getSchemaPath(FormulaElementResponse) },
+				{ $ref: getSchemaPath(ChecklistElementResponse) },
+				{ $ref: getSchemaPath(RecordingElementResponse) },
 			],
 		},
 	})
@@ -135,8 +168,59 @@ export class ElementController {
 			urlParams.contentElementId,
 			bodyParams.data.content
 		);
-		const response = ContentElementResponseFactory.mapToResponse(element);
+		// The update itself proved the user may edit this element, so they see the full picture.
+		const response = ContentElementResponseFactory.mapToResponse(element, {
+			userId: currentUser.userId,
+			canEdit: true,
+		});
 		return response;
+	}
+
+	@ApiOperation({ summary: 'Cast, change or withdraw a vote in a poll element.' })
+	@ApiResponse({ status: 200, type: PollElementResponse })
+	@ApiResponse({ status: 400, type: ApiValidationError })
+	@ApiResponse({ status: 403, type: ForbiddenException })
+	@ApiResponse({ status: 404, type: NotFoundException })
+	@ApiResponse({ status: 422, type: UnprocessableEntityException })
+	@HttpCode(200)
+	@Put(':contentElementId/vote')
+	public async voteInPoll(
+		@Param() urlParams: ContentElementUrlParams,
+		@Body() bodyParams: PollVoteBodyParams,
+		@CurrentUser() currentUser: ICurrentUser
+	): Promise<PollElementResponse> {
+		const { element, viewContext } = await this.elementUc.voteInPoll(
+			currentUser.userId,
+			urlParams.contentElementId,
+			bodyParams.optionIds
+		);
+
+		const response = PollElementResponseMapper.getInstance().mapToResponse(element, viewContext);
+
+		return response;
+	}
+
+	@ApiOperation({ summary: 'Tick or untick an item of a checklist element.' })
+	@ApiResponse({ status: 200, type: ChecklistElementResponse })
+	@ApiResponse({ status: 400, type: ApiValidationError })
+	@ApiResponse({ status: 403, type: ForbiddenException })
+	@ApiResponse({ status: 404, type: NotFoundException })
+	@ApiResponse({ status: 422, type: UnprocessableEntityException })
+	@HttpCode(200)
+	@Put(':contentElementId/checklist/:itemId')
+	public async setChecklistItemChecked(
+		@Param() urlParams: ChecklistItemUrlParams,
+		@Body() bodyParams: ChecklistItemCheckedBodyParams,
+		@CurrentUser() currentUser: ICurrentUser
+	): Promise<ChecklistElementResponse> {
+		const { element, viewContext } = await this.elementUc.setChecklistItemChecked(
+			currentUser.userId,
+			urlParams.contentElementId,
+			urlParams.itemId,
+			bodyParams.checked
+		);
+
+		return ChecklistElementResponseMapper.getInstance().mapToResponse(element, viewContext);
 	}
 
 	@ApiOperation({ summary: 'Delete a single content element.' })

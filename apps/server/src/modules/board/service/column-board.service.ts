@@ -5,6 +5,10 @@ import {
 	AnyBoardNode,
 	BoardExternalReference,
 	BoardExternalReferenceType,
+	BoardCounts,
+	BoardPreview,
+	buildBoardPreviews,
+	CardReactionType,
 	ColumnBoard,
 	ColumnBoardProps,
 	isColumnBoard,
@@ -43,8 +47,35 @@ export class ColumnBoardService {
 		return boards;
 	}
 
+	/** The miniatures of the given boards, keyed by board id. */
+	public async getPreviews(boardIds: EntityId[]): Promise<Map<EntityId, BoardPreview>> {
+		const previewNodes = await this.boardNodeRepo.findPreviewNodes(boardIds);
+		const previews = buildBoardPreviews(boardIds, previewNodes);
+
+		return previews;
+	}
+
+	/** How many boards each context (a room, say) holds, split into published and draft. */
+	public async countBoardsByContexts(references: BoardExternalReference[]): Promise<Map<EntityId, BoardCounts>> {
+		const counts = await this.boardNodeRepo.countBoardsByContexts(references);
+
+		return counts;
+	}
+
 	public async updateVisibility(columnBoard: ColumnBoard, visibility: boolean): Promise<void> {
 		await this.boardNodeService.updateVisibility(columnBoard, visibility);
+	}
+
+	public async updateReactionType(board: ColumnBoard, reactionType?: CardReactionType): Promise<void> {
+		board.reactionType = reactionType;
+
+		await this.boardNodeRepo.save(board);
+	}
+
+	public async updateCommentsEnabled(board: ColumnBoard, commentsEnabled?: boolean): Promise<void> {
+		board.commentsEnabled = commentsEnabled;
+
+		await this.boardNodeRepo.save(board);
 	}
 
 	public async updateReadersCanEdit(columnBoard: ColumnBoard, readersCanEdit: boolean): Promise<void> {

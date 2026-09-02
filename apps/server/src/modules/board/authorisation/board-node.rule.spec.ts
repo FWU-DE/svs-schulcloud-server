@@ -745,6 +745,8 @@ describe(BoardNodeRule.name, () => {
 					// board
 					copyBoard: true,
 					deleteBoard: true,
+					updateBoardReactionType: true,
+					updateBoardCommentsEnabled: true,
 					findBoard: true,
 					relocateContent: true,
 					shareBoard: true,
@@ -759,6 +761,7 @@ describe(BoardNodeRule.name, () => {
 					moveColumn: true,
 					shareColumn: true,
 					updateColumnTitle: true,
+					updateColumnSettings: true,
 
 					// card
 					copyCard: true,
@@ -770,6 +773,10 @@ describe(BoardNodeRule.name, () => {
 					updateCardHeight: true,
 					updateCardTitle: true,
 					updateCardColor: true,
+					updateCardSettings: true,
+					moderateCardComments: true,
+					reactToCard: true,
+					commentOnCard: true,
 
 					// element
 					createElement: true,
@@ -783,6 +790,10 @@ describe(BoardNodeRule.name, () => {
 
 					// element / fileElement
 					createFileElement: true,
+
+					// element / pollElement
+					voteInPoll: true,
+					checkChecklistItem: true,
 
 					// element / videoConferenceElement
 					manageVideoConference: true,
@@ -830,6 +841,8 @@ describe(BoardNodeRule.name, () => {
 					// board
 					copyBoard: true,
 					deleteBoard: true,
+					updateBoardReactionType: true,
+					updateBoardCommentsEnabled: true,
 					findBoard: true,
 					relocateContent: false,
 					shareBoard: false,
@@ -844,6 +857,7 @@ describe(BoardNodeRule.name, () => {
 					moveColumn: true,
 					shareColumn: false,
 					updateColumnTitle: true,
+					updateColumnSettings: true,
 
 					// card
 					copyCard: true,
@@ -855,6 +869,10 @@ describe(BoardNodeRule.name, () => {
 					updateCardHeight: true,
 					updateCardTitle: true,
 					updateCardColor: true,
+					updateCardSettings: true,
+					moderateCardComments: true,
+					reactToCard: true,
+					commentOnCard: true,
 
 					// element
 					createElement: true,
@@ -868,6 +886,10 @@ describe(BoardNodeRule.name, () => {
 
 					// element / fileElement
 					createFileElement: true,
+
+					// element / pollElement
+					voteInPoll: true,
+					checkChecklistItem: true,
 
 					// element / videoConferenceElement
 					manageVideoConference: true,
@@ -916,6 +938,8 @@ describe(BoardNodeRule.name, () => {
 					// board
 					copyBoard: false,
 					deleteBoard: false,
+					updateBoardReactionType: false,
+					updateBoardCommentsEnabled: false,
 					findBoard: true,
 					relocateContent: false,
 					shareBoard: false,
@@ -930,6 +954,7 @@ describe(BoardNodeRule.name, () => {
 					moveColumn: false,
 					shareColumn: false,
 					updateColumnTitle: false,
+					updateColumnSettings: false,
 
 					// card
 					copyCard: false,
@@ -941,6 +966,10 @@ describe(BoardNodeRule.name, () => {
 					updateCardHeight: false,
 					updateCardTitle: false,
 					updateCardColor: false,
+					updateCardSettings: false,
+					moderateCardComments: false,
+					reactToCard: true,
+					commentOnCard: true,
 
 					// element
 					createElement: false,
@@ -954,6 +983,10 @@ describe(BoardNodeRule.name, () => {
 
 					// element / fileElement
 					createFileElement: false,
+
+					// element / pollElement
+					voteInPoll: true,
+					checkChecklistItem: true,
 
 					// element / videoConferenceElement
 					manageVideoConference: false,
@@ -1015,6 +1048,8 @@ describe(BoardNodeRule.name, () => {
 					// board
 					copyBoard: false,
 					deleteBoard: false,
+					updateBoardReactionType: false,
+					updateBoardCommentsEnabled: false,
 					findBoard: false,
 					relocateContent: false,
 					shareBoard: false,
@@ -1029,6 +1064,7 @@ describe(BoardNodeRule.name, () => {
 					moveColumn: false,
 					shareColumn: false,
 					updateColumnTitle: false,
+					updateColumnSettings: false,
 
 					// card
 					copyCard: false,
@@ -1040,6 +1076,10 @@ describe(BoardNodeRule.name, () => {
 					updateCardHeight: false,
 					updateCardTitle: false,
 					updateCardColor: false,
+					updateCardSettings: false,
+					moderateCardComments: false,
+					reactToCard: false,
+					commentOnCard: false,
 
 					// element
 					createElement: false,
@@ -1053,6 +1093,10 @@ describe(BoardNodeRule.name, () => {
 
 					// element / fileElement
 					createFileElement: false,
+
+					// element / pollElement
+					voteInPoll: false,
+					checkChecklistItem: false,
 
 					// element / videoConferenceElement
 					manageVideoConference: false,

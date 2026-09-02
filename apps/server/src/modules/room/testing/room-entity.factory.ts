@@ -1,6 +1,6 @@
 import { ObjectId } from '@mikro-orm/mongodb';
 import { EntityFactory } from '@testing/factory/entity.factory';
-import { type RoomProps } from '../domain';
+import { CardReactionType, type RoomProps } from '../domain';
 import { RoomColor } from '../domain/type';
 import { RoomEntity } from '../repo/entity/room.entity';
 
@@ -16,5 +16,7 @@ export const roomEntityFactory = EntityFactory.define<RoomEntity, RoomProps>(Roo
 		createdAt: new Date(),
 		updatedAt: new Date(),
 		features: [],
+		commentsEnabled: false,
+		reactionType: CardReactionType.NONE,
 	};
 });

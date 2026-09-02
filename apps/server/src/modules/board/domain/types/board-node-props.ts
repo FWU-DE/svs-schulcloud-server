@@ -3,7 +3,12 @@ import type { Colors } from '../media-board';
 import type { AnyBoardNode } from './any-board-node';
 import type { BoardExternalReference } from './board-external-reference';
 import type { BoardLayout } from './board-layout.enum';
+import type { CardComment } from './card-comment';
+import type { CardReaction, CardReactionType } from './card-reaction';
+import type { ChecklistCheck, ChecklistItem, ChecklistProgressMode } from './checklist';
 import type { ContentElementType } from './content-element-type.enum';
+import type { RecordingMediaType } from './recording';
+import type { PollOption, PollResultVisibility, PollVote } from './poll';
 
 export interface BoardNodeProps {
 	id: EntityId;
@@ -21,16 +26,31 @@ export interface ColumnBoardProps extends BoardNodeProps {
 	isVisible: boolean;
 	layout: BoardLayout;
 	readersCanEdit: boolean;
+	/** Tri-state: `undefined` follows the room. See {@link BoardSettingsChain}. */
+	reactionType?: CardReactionType;
+	commentsEnabled?: boolean;
 }
 
 export interface ColumnProps extends BoardNodeProps {
 	title?: string;
+	/** Tri-state overrides of the board's settings. See {@link BoardSettingsChain}. */
+	commentsEnabled?: boolean;
+	reactionType?: CardReactionType;
 }
 
 export interface CardProps extends BoardNodeProps {
 	title?: string;
 	backgroundColor?: Colors;
 	height: number;
+	reactions: CardReaction[];
+	comments: CardComment[];
+	/**
+	 * Per-card overrides of the board-wide settings. `undefined` means "whatever the board
+	 * says" — a tri-state, because "off" and "not decided here" have to stay distinguishable.
+	 */
+	commentsEnabled?: boolean;
+	reactionType?: CardReactionType;
+	readersCanEdit?: boolean;
 }
 
 export type CollaborativeTextEditorElementProps = BoardNodeProps;
@@ -78,6 +98,53 @@ export interface H5pElementProps extends BoardNodeProps {
 	contentId?: string;
 }
 
+export interface PollElementProps extends BoardNodeProps {
+	question: string;
+	pollOptions: PollOption[];
+	anonymous: boolean;
+	multipleChoice: boolean;
+	closed: boolean;
+	showResults: PollResultVisibility;
+	resultsReleased: boolean;
+	votes: PollVote[];
+	voterSalt: string;
+}
+
+export interface DeadlineElementProps extends BoardNodeProps {
+	title: string;
+	dueDate?: Date;
+	/**
+	 * Whether this deadline is listed in the calendar of everyone who can see the board. It is
+	 * not written into the external calendar service; the board stays the one place the date
+	 * lives, and the calendar view reads it from here.
+	 */
+	showInCalendar: boolean;
+}
+
+export interface CodeElementProps extends BoardNodeProps {
+	code: string;
+	language: string;
+	showLineNumbers: boolean;
+	syntaxHighlighting: boolean;
+}
+
+export interface FormulaElementProps extends BoardNodeProps {
+	latex: string;
+}
+
+export interface ChecklistElementProps extends BoardNodeProps {
+	title: string;
+	items: ChecklistItem[];
+	progressMode: ChecklistProgressMode;
+	/** Personal ticks; empty in `SHARED` mode. */
+	checks: ChecklistCheck[];
+}
+
+export interface RecordingElementProps extends BoardNodeProps {
+	mediaType: RecordingMediaType;
+	caption: string;
+}
+
 export interface MediaBoardProps extends BoardNodeProps {
 	context: BoardExternalReference;
 	backgroundColor: Colors;
@@ -112,4 +179,10 @@ export type AnyBoardNodeProps =
 	| VideoConferenceElementProps
 	| DeletedElementProps
 	| H5pElementProps
+	| PollElementProps
+	| DeadlineElementProps
+	| CodeElementProps
+	| FormulaElementProps
+	| ChecklistElementProps
+	| RecordingElementProps
 	| MediaBoardNodeProps;

@@ -1,5 +1,11 @@
 import { Action, AuthorizationService } from '@modules/authorization';
-import { BoardNodeAuthorizableService, ColumnBoardService, type ColumnBoard } from '@modules/board';
+import {
+	BoardNodeAuthorizableService,
+	type BoardPreview,
+	ColumnBoardService,
+	emptyBoardPreview,
+	type ColumnBoard,
+} from '@modules/board';
 import { BoardNodeRule, BoardOperation } from '@modules/board/authorisation/board-node.rule';
 import { RoomMembershipService } from '@modules/room-membership';
 import { RoomRule } from '@modules/room-membership/authorization/room.rule';
@@ -24,7 +30,7 @@ export class RoomContentUc {
 	public async getRoomBoards(
 		userId: EntityId,
 		roomId: EntityId
-	): Promise<{ board: ColumnBoard; allowedOperations: Record<BoardOperation, boolean> }[]> {
+	): Promise<{ board: ColumnBoard; allowedOperations: Record<BoardOperation, boolean>; preview: BoardPreview }[]> {
 		await this.roomPermissionService.checkRoomIsLocked(roomId);
 
 		const user = await this.authorizationService.getUserWithPermissions(userId);
@@ -35,7 +41,15 @@ export class RoomContentUc {
 		const boards = await this.roomBoardService.getOrderedBoards(roomId);
 		const authorizedBoards = await this.filterAuthorizedBoards(userId, boards);
 
-		return authorizedBoards;
+		const previews = await this.columnBoardService.getPreviews(authorizedBoards.map(({ board }) => board.id));
+		const boardsWithPreview = authorizedBoards.map((item) => {
+			return {
+				...item,
+				preview: previews.get(item.board.id) ?? emptyBoardPreview(),
+			};
+		});
+
+		return boardsWithPreview;
 	}
 
 	public async moveBoard(userId: EntityId, roomId: EntityId, boardId: EntityId, toPosition: number): Promise<void> {

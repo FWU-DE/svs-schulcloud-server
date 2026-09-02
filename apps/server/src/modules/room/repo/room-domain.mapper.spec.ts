@@ -1,3 +1,4 @@
+import { CardReactionType } from '../domain/type';
 import { ObjectId } from '@mikro-orm/mongodb';
 import { Room, type RoomProps } from '../domain/do/room.do';
 import { RoomColor } from '../domain/type';
@@ -39,6 +40,8 @@ describe('RoomDomainMapper', () => {
 				createdAt: new Date('2023-01-01'),
 				updatedAt: new Date('2023-01-01'),
 				features: [],
+				commentsEnabled: false,
+				reactionType: CardReactionType.NONE,
 			});
 
 			const roomEntity = {
@@ -65,6 +68,8 @@ describe('RoomDomainMapper', () => {
 				createdAt: new Date('2023-01-01'),
 				updatedAt: new Date('2023-01-01'),
 				features: [],
+				commentsEnabled: false,
+				reactionType: CardReactionType.NONE,
 			});
 			expect(result.getProps().id).toBe('1');
 			expect(result.getProps().id).not.toBe(roomEntity.id);
@@ -112,6 +117,8 @@ describe('RoomDomainMapper', () => {
 					createdAt: new Date('2024-10-1'),
 					updatedAt: new Date('2024-10-1'),
 					features: [],
+					commentsEnabled: false,
+					reactionType: CardReactionType.NONE,
 				};
 				const room = new Room(roomEntity);
 

@@ -1,3 +1,4 @@
+import { CardReactionType } from '../type';
 import { createMock, type DeepMocked } from '@golevelup/ts-jest';
 import { MailService } from '@infra/mail';
 import { ObjectId } from '@mikro-orm/mongodb';
@@ -68,6 +69,8 @@ describe('RoomService', () => {
 				color: RoomColor.ORANGE,
 				schoolId: new ObjectId().toHexString(),
 				features: [],
+				commentsEnabled: false,
+				reactionType: CardReactionType.NONE,
 			};
 			return { props };
 		};
@@ -150,6 +153,8 @@ describe('RoomService', () => {
 				name: 'updated name',
 				color: RoomColor.BLUE_GREY,
 				features: [],
+				commentsEnabled: false,
+				reactionType: CardReactionType.NONE,
 			};
 
 			return { props, room };

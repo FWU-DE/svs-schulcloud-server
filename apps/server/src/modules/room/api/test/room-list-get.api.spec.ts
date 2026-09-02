@@ -1,4 +1,6 @@
 import { EntityManager } from '@mikro-orm/mongodb';
+import { BoardExternalReferenceType } from '@modules/board';
+import { columnBoardEntityFactory } from '@modules/board/testing';
 import { GroupEntityTypes } from '@modules/group/entity/group.entity';
 import { groupEntityFactory } from '@modules/group/testing';
 import { roomMembershipEntityFactory } from '@modules/room-membership/testing/room-membership-entity.factory';
@@ -108,6 +110,7 @@ describe('Room Controller (API)', () => {
 						updatedAt: room.updatedAt.toISOString(),
 						isLocked: false,
 						totalMembers: 2,
+						boardCount: 0,
 						allowedOperations: expect.any(Object),
 					};
 				});
@@ -124,6 +127,7 @@ describe('Room Controller (API)', () => {
 						updatedAt: room.updatedAt.toISOString(),
 						isLocked: true,
 						totalMembers: 1,
+						boardCount: 0,
 						allowedOperations: expect.any(Object),
 					};
 				});
@@ -224,6 +228,83 @@ describe('Room Controller (API)', () => {
 						expect(resultIds.length).toEqual(expectedIds.length);
 					});
 				});
+			});
+		});
+
+		describe('when the rooms have boards', () => {
+			const setupWithBoards = async () => {
+				const school = schoolEntityFactory.buildWithId();
+				const roomWithBoard = roomEntityFactory.buildWithId({ schoolId: school.id, name: 'A room with a board' });
+				const roomWithDraftOnly = roomEntityFactory.buildWithId({ schoolId: school.id, name: 'B room with a draft' });
+
+				const board = columnBoardEntityFactory.build({
+					context: { type: BoardExternalReferenceType.Room, id: roomWithBoard.id },
+					isVisible: true,
+				});
+				const draftBoard = columnBoardEntityFactory.build({
+					context: { type: BoardExternalReferenceType.Room, id: roomWithDraftOnly.id },
+					isVisible: false,
+				});
+
+				const { teacherAccount, teacherUser } = UserAndAccountTestFactory.buildTeacher({ school });
+				const { studentAccount, studentUser } = UserAndAccountTestFactory.buildStudent({ school });
+				const { roomOwnerRole, roomViewerRole } = RoomRolesTestFactory.createRoomRoles();
+				const userGroupEntity = groupEntityFactory.buildWithId({
+					type: GroupEntityTypes.ROOM,
+					users: [
+						{ role: roomOwnerRole, user: teacherUser },
+						{ role: roomViewerRole, user: studentUser },
+					],
+					organization: teacherUser.school,
+					externalSource: undefined,
+				});
+				const roomMemberships = [roomWithBoard, roomWithDraftOnly].map((room) =>
+					roomMembershipEntityFactory.build({
+						userGroupId: userGroupEntity.id,
+						roomId: room.id,
+						schoolId: school.id,
+					})
+				);
+
+				await em
+					.persist([
+						school,
+						roomWithBoard,
+						roomWithDraftOnly,
+						board,
+						draftBoard,
+						teacherAccount,
+						teacherUser,
+						studentAccount,
+						studentUser,
+						roomOwnerRole,
+						roomViewerRole,
+						userGroupEntity,
+						...roomMemberships,
+					])
+					.flush();
+				em.clear();
+
+				return { teacherAccount, studentAccount };
+			};
+
+			it('should count the draft boards for a member who may see them', async () => {
+				const { teacherAccount } = await setupWithBoards();
+				const loggedInClient = await testApiClient.login(teacherAccount);
+
+				const response = await loggedInClient.get();
+
+				expect(response.status).toBe(HttpStatus.OK);
+				expect((response.body as RoomListResponse).data.map((room) => room.boardCount)).toEqual([1, 1]);
+			});
+
+			it('should not count the draft boards for a member who may not see them', async () => {
+				const { studentAccount } = await setupWithBoards();
+				const loggedInClient = await testApiClient.login(studentAccount);
+
+				const response = await loggedInClient.get();
+
+				expect((response.body as RoomListResponse).data.map((room) => room.boardCount)).toEqual([1, 0]);
 			});
 		});
 

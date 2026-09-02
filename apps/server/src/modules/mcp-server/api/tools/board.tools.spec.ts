@@ -1,3 +1,4 @@
+import { CardReactionType } from '@modules/board';
 import { ErrorLogger } from '@infra/logger';
 import { createMock, type DeepMocked } from '@golevelup/ts-jest';
 import { type ICurrentUser } from '@infra/auth-guard';
@@ -85,7 +86,12 @@ describe(BoardTools.name, () => {
 		boardUc.createBoard.mockResolvedValue(board);
 		boardUc.createColumn.mockResolvedValue(column);
 		boardUc.updateVisibility.mockResolvedValue(board);
-		boardUc.findBoard.mockResolvedValue({ board, features: [], allowedOperations: {} as never });
+		boardUc.findBoard.mockResolvedValue({
+			board,
+			features: [],
+			allowedOperations: {} as never,
+			roomDefaults: { commentsEnabled: false, reactionType: CardReactionType.NONE },
+		});
 		columnUc.createCard.mockResolvedValue(card);
 		cardUc.createElement.mockResolvedValue(element);
 

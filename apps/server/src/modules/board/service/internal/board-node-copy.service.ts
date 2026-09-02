@@ -1,6 +1,7 @@
 import type { CopyFileDto } from '@infra/files-storage-amqp-client/dto';
 import { CopyContentParams, CopyContentParentType, H5pEditorProducer } from '@infra/h5p-editor-client';
 import { ObjectId } from '@mikro-orm/mongodb';
+import { randomBytes } from 'crypto';
 import { BOARD_CONFIG_TOKEN, BoardConfig } from '@modules/board/board.config';
 import { CopyElementType, CopyHelperService, CopyMapper, type CopyStatus, CopyStatusEnum } from '@modules/copy-helper';
 import { ContextExternalToolService } from '@modules/tool/context-external-tool';
@@ -27,6 +28,12 @@ import {
 	FileFolderElementFactory,
 	getBoardNodeType,
 	H5pElement,
+	ChecklistElement,
+	CodeElement,
+	DeadlineElement,
+	FormulaElement,
+	PollElement,
+	RecordingElement,
 	handleNonExhaustiveSwitch,
 	LinkElement,
 	type MediaBoard,
@@ -102,6 +109,32 @@ export class BoardNodeCopyService {
 				break;
 			case BoardNodeType.FILE_FOLDER_ELEMENT:
 				result = await this.copyFileFolderElement(boardNode as FileFolderElement, context);
+				break;
+			case BoardNodeType.DEADLINE_ELEMENT:
+				result = await this.copyPlainElement(
+					boardNode as DeadlineElement,
+					DeadlineElement,
+					CopyElementType.DEADLINE_ELEMENT
+				);
+				break;
+			case BoardNodeType.CODE_ELEMENT:
+				result = await this.copyPlainElement(boardNode as CodeElement, CodeElement, CopyElementType.CODE_ELEMENT);
+				break;
+			case BoardNodeType.FORMULA_ELEMENT:
+				result = await this.copyPlainElement(
+					boardNode as FormulaElement,
+					FormulaElement,
+					CopyElementType.FORMULA_ELEMENT
+				);
+				break;
+			case BoardNodeType.CHECKLIST_ELEMENT:
+				result = await this.copyChecklistElement(boardNode as ChecklistElement);
+				break;
+			case BoardNodeType.RECORDING_ELEMENT:
+				result = await this.copyRecordingElement(boardNode as RecordingElement, context);
+				break;
+			case BoardNodeType.POLL_ELEMENT:
+				result = await this.copyPollElement(boardNode as PollElement);
 				break;
 			case BoardNodeType.H5P_ELEMENT:
 				result = await this.copyH5pElement(boardNode as H5pElement, context);
@@ -211,9 +244,9 @@ export class BoardNodeCopyService {
 	}
 
 	private async copyFilesOfParent(
-		original: FileElement | LinkElement | FileFolderElement,
+		original: FileElement | LinkElement | FileFolderElement | RecordingElement,
 		context: CopyContext,
-		copy: FileFolderElement | FileElement
+		copy: FileFolderElement | FileElement | RecordingElement
 	): Promise<CopyStatus[]> {
 		const fileCopies = await context.copyFilesOfParent(original.id, copy.id);
 		const copyStatus = CopyMapper.mapFileDtosToCopyStatus(fileCopies);
@@ -434,6 +467,88 @@ export class BoardNodeCopyService {
 			copyEntity: copy,
 			type: CopyElementType.DELETED_ELEMENT,
 			status: CopyStatusEnum.SUCCESS,
+		};
+
+		return Promise.resolve(result);
+	}
+
+	/** The recording travels with the element, the same way a file element's attachment does. */
+	public async copyRecordingElement(original: RecordingElement, context: CopyContext): Promise<CopyStatus> {
+		const copy = new RecordingElement({
+			...original.getProps(),
+			...this.buildSpecificProps([]),
+		});
+
+		const fileCopyStatus = await this.copyFilesOfParent(original, context, copy);
+
+		return {
+			copyEntity: copy,
+			type: CopyElementType.RECORDING_ELEMENT,
+			status: CopyStatusEnum.SUCCESS,
+			elements: fileCopyStatus,
+		};
+	}
+
+	/** These elements carry no state that a copy would have to reset. */
+	private copyPlainElement<T extends DeadlineElement | CodeElement | FormulaElement>(
+		original: T,
+		Constructor: new (props: ReturnType<T['getProps']>) => T,
+		type: CopyElementType
+	): Promise<CopyStatus> {
+		const copy = new Constructor({
+			...original.getProps(),
+			...this.buildSpecificProps([]),
+		} as ReturnType<T['getProps']>);
+
+		return Promise.resolve({
+			copyEntity: copy,
+			type,
+			status: CopyStatusEnum.SUCCESS,
+			elements: [],
+		});
+	}
+
+	/**
+	 * A copied checklist starts unticked: the copy is a fresh task, not a record of what the
+	 * original group already did.
+	 */
+	private copyChecklistElement(original: ChecklistElement): Promise<CopyStatus> {
+		const copy = new ChecklistElement({
+			...original.getProps(),
+			...this.buildSpecificProps([]),
+			items: original.items.map((item) => {
+				return { ...item, checked: false, checkedAt: undefined };
+			}),
+			checks: [],
+		});
+
+		return Promise.resolve({
+			copyEntity: copy,
+			type: CopyElementType.CHECKLIST_ELEMENT,
+			status: CopyStatusEnum.SUCCESS,
+			elements: [],
+		});
+	}
+
+	/**
+	 * A copied poll is a fresh poll: it keeps the question and the options but starts without
+	 * ballots, and gets its own salt so the copy cannot be lined up against the original.
+	 */
+	public copyPollElement(original: PollElement): Promise<CopyStatus> {
+		const copy = new PollElement({
+			...original.getProps(),
+			...this.buildSpecificProps([]),
+			votes: [],
+			voterSalt: randomBytes(16).toString('hex'),
+			closed: false,
+			resultsReleased: false,
+		});
+
+		const result: CopyStatus = {
+			copyEntity: copy,
+			type: CopyElementType.POLL_ELEMENT,
+			status: CopyStatusEnum.SUCCESS,
+			elements: [],
 		};
 
 		return Promise.resolve(result);

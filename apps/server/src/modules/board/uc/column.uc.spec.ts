@@ -1,3 +1,4 @@
+import { BOARD_CONFIG_TOKEN } from '../board.config';
 import { createMock, type DeepMocked } from '@golevelup/ts-jest';
 import { LegacyLogger } from '@infra/logger';
 import { AuthorizationService } from '@modules/authorization';
@@ -26,6 +27,10 @@ describe(ColumnUc.name, () => {
 		module = await Test.createTestingModule({
 			providers: [
 				ColumnUc,
+				{
+					provide: BOARD_CONFIG_TOKEN,
+					useValue: { featureColumnBoardInteractiveElementsEnabled: true },
+				},
 				{
 					provide: AuthorizationService,
 					useValue: createMock<AuthorizationService>(),

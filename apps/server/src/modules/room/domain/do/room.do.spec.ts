@@ -1,3 +1,4 @@
+import { CardReactionType } from '../type';
 import { ObjectId } from '@mikro-orm/mongodb';
 import { type EntityId } from '@shared/domain/types';
 import { roomFactory } from '../../testing';
@@ -17,6 +18,8 @@ describe('Room', () => {
 		createdAt: new Date('2024-01-01'),
 		updatedAt: new Date('2024-01-01'),
 		features: [],
+		commentsEnabled: false,
+		reactionType: CardReactionType.NONE,
 	};
 
 	beforeEach(() => {

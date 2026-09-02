@@ -2,7 +2,24 @@ import { Embedded, Entity, Enum, Index, Property } from '@mikro-orm/core';
 import { BaseEntityWithTimestamps } from '@shared/domain/entity/base.entity';
 import { EntityId, InputFormat } from '@shared/domain/types';
 import { ObjectIdType } from '@shared/repo/types/object-id.type';
-import { AnyBoardNode, BoardLayout, BoardNodeType, ContentElementType, Colors, ROOT_PATH } from '../../domain';
+import {
+	AnyBoardNode,
+	BoardLayout,
+	BoardNodeType,
+	CardComment,
+	CardReaction,
+	CardReactionType,
+	ChecklistCheck,
+	ChecklistItem,
+	ChecklistProgressMode,
+	ContentElementType,
+	Colors,
+	PollOption,
+	PollResultVisibility,
+	PollVote,
+	RecordingMediaType,
+	ROOT_PATH,
+} from '../../domain';
 import type { BoardNodeEntityProps } from '../types';
 import { Context } from './embeddables';
 
@@ -52,6 +69,8 @@ export class BoardNodeEntity extends BaseEntityWithTimestamps implements BoardNo
 	@Property({ type: 'boolean', nullable: true })
 	isVisible: boolean | undefined;
 
+	// ColumnBoard sets it for the whole board, a Card may override it for itself.
+	// Absent on a card means "follow the board".
 	@Property({ type: 'boolean', nullable: true })
 	readersCanEdit: boolean | undefined;
 
@@ -59,6 +78,22 @@ export class BoardNodeEntity extends BaseEntityWithTimestamps implements BoardNo
 	// --------------------------------------------------------------------------
 	@Property({ type: 'integer', nullable: true })
 	height: number | undefined;
+
+	@Property({ type: 'json', nullable: true })
+	reactions: CardReaction[] | undefined;
+
+	@Property({ type: 'json', nullable: true })
+	comments: CardComment[] | undefined;
+
+	// ColumnBoard
+	// --------------------------------------------------------------------------
+	@Enum({ type: 'CardReactionType', nullable: true })
+	reactionType: CardReactionType | undefined;
+
+	// ColumnBoard sets it for the whole board, a Card may override it for itself.
+	// Absent on a card means "follow the board".
+	@Property({ type: 'boolean', nullable: true })
+	commentsEnabled: boolean | undefined;
 
 	// RichTextElement
 	// --------------------------------------------------------------------------
@@ -111,4 +146,76 @@ export class BoardNodeEntity extends BaseEntityWithTimestamps implements BoardNo
 	// --------------------------------------------------------------------------
 	@Enum({ type: 'ContentElementType', nullable: true })
 	deletedElementType: ContentElementType | undefined;
+
+	// PollElement
+	// --------------------------------------------------------------------------
+	@Property({ type: 'string', nullable: true })
+	question: string | undefined;
+
+	@Property({ type: 'json', nullable: true })
+	pollOptions: PollOption[] | undefined;
+
+	@Property({ type: 'boolean', nullable: true })
+	anonymous: boolean | undefined;
+
+	@Property({ type: 'boolean', nullable: true })
+	multipleChoice: boolean | undefined;
+
+	@Property({ type: 'boolean', nullable: true })
+	closed: boolean | undefined;
+
+	@Enum({ type: 'PollResultVisibility', nullable: true })
+	showResults: PollResultVisibility | undefined;
+
+	@Property({ type: 'boolean', nullable: true })
+	resultsReleased: boolean | undefined;
+
+	@Property({ type: 'json', nullable: true })
+	votes: PollVote[] | undefined;
+
+	@Property({ type: 'string', nullable: true })
+	voterSalt: string | undefined;
+
+	// DeadlineElement
+	// --------------------------------------------------------------------------
+	@Property({ type: 'Date', nullable: true })
+	dueDate: Date | undefined;
+
+	@Property({ type: 'boolean', nullable: true })
+	showInCalendar: boolean | undefined;
+
+	// CodeElement
+	// --------------------------------------------------------------------------
+	@Property({ type: 'string', nullable: true })
+	code: string | undefined;
+
+	@Property({ type: 'string', nullable: true })
+	language: string | undefined;
+
+	@Property({ type: 'boolean', nullable: true })
+	showLineNumbers: boolean | undefined;
+
+	@Property({ type: 'boolean', nullable: true })
+	syntaxHighlighting: boolean | undefined;
+
+	// FormulaElement
+	// --------------------------------------------------------------------------
+	@Property({ type: 'string', nullable: true })
+	latex: string | undefined;
+
+	// ChecklistElement
+	// --------------------------------------------------------------------------
+	@Property({ type: 'json', nullable: true })
+	items: ChecklistItem[] | undefined;
+
+	@Enum({ type: 'ChecklistProgressMode', nullable: true })
+	progressMode: ChecklistProgressMode | undefined;
+
+	@Property({ type: 'json', nullable: true })
+	checks: ChecklistCheck[] | undefined;
+
+	// RecordingElement
+	// --------------------------------------------------------------------------
+	@Enum({ type: 'RecordingMediaType', nullable: true })
+	mediaType: RecordingMediaType | undefined;
 }

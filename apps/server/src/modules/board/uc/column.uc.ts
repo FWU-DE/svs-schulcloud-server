@@ -2,11 +2,13 @@ import { StorageLocation } from '@infra/files-storage-amqp-client';
 import { LegacyLogger } from '@infra/logger';
 import { AuthorizationService } from '@modules/authorization';
 import { CopyStatusEnum } from '@modules/copy-helper';
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
+import { FeatureDisabledLoggableException } from '@shared/common/loggable-exception';
 import { throwForbiddenIfFalse } from '@shared/common/utils';
 import { EntityId } from '@shared/domain/types';
 import { BoardNodeRule } from '../authorisation/board-node.rule';
-import { BoardNodeFactory, Card, Column, ColumnBoard, ContentElementType, isCard } from '../domain';
+import { BOARD_CONFIG_TOKEN, BoardConfig } from '../board.config';
+import { BoardNodeFactory, Card, CardReactionType, Column, ColumnBoard, ContentElementType, isCard } from '../domain';
 import { BoardNodeAuthorizableService, BoardNodeService, ColumnBoardService } from '../service';
 
 @Injectable()
@@ -19,7 +21,8 @@ export class ColumnUc {
 		private readonly columnBoardService: ColumnBoardService,
 		private readonly boardNodeFactory: BoardNodeFactory,
 
-		private readonly logger: LegacyLogger
+		private readonly logger: LegacyLogger,
+		@Inject(BOARD_CONFIG_TOKEN) private readonly boardConfig: BoardConfig
 	) {
 		this.logger.setContext(ColumnUc.name);
 	}
@@ -45,6 +48,36 @@ export class ColumnUc {
 		throwForbiddenIfFalse(this.boardNodeRule.can('updateColumnTitle', user, boardNodeAuthorizable));
 
 		await this.boardNodeService.updateTitle(column, title);
+		return column;
+	}
+
+	/**
+	 * A column may overrule the board's comment and feedback settings for the cards on it, and be
+	 * put back under the board by clearing the override.
+	 */
+	public async updateColumnSettings(
+		userId: EntityId,
+		columnId: EntityId,
+		settings: { commentsEnabled?: boolean | null; reactionType?: CardReactionType | null }
+	): Promise<Column> {
+		if (!this.boardConfig.featureColumnBoardInteractiveElementsEnabled) {
+			throw new FeatureDisabledLoggableException('FEATURE_COLUMN_BOARD_INTERACTIVE_ELEMENTS_ENABLED');
+		}
+
+		const column = await this.boardNodeService.findByClassAndId(Column, columnId);
+		const user = await this.authorizationService.getUserWithPermissions(userId);
+		const authorizable = await this.boardNodeAuthorizableService.getBoardAuthorizable(column);
+
+		throwForbiddenIfFalse(this.boardNodeRule.can('updateColumnSettings', user, authorizable));
+
+		if (settings.commentsEnabled !== undefined) {
+			column.commentsEnabled = settings.commentsEnabled ?? undefined;
+		}
+		if (settings.reactionType !== undefined) {
+			column.reactionType = settings.reactionType ?? undefined;
+		}
+		await this.boardNodeService.saveColumn(column);
+
 		return column;
 	}
 

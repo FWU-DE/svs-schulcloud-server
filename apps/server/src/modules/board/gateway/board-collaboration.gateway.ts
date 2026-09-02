@@ -18,10 +18,13 @@ import {
 	BoardResponseMapper,
 	CardResponseMapper,
 	ColumnResponseMapper,
+	CardCommentResponseMapper,
+	ChecklistElementResponseMapper,
 	ContentElementResponseFactory,
+	PollElementResponseMapper,
 } from '../controller/mapper';
 import { MoveCardResponseMapper } from '../controller/mapper/move-card-response.mapper';
-import { AnyBoardNode, ColumnBoard } from '../domain';
+import { AnyBoardNode, type BoardViewContext, type CardComment, ColumnBoard } from '../domain';
 import { MetricsService } from '../metrics/metrics.service';
 import { TrackExecutionTime } from '../metrics/track-execution-time.decorator';
 import { BoardUc, CardUc, ColumnUc, ElementUc } from '../uc';
@@ -48,7 +51,18 @@ import {
 	UpdateCardHeightMessageParams,
 	UpdateCardTitleMessageParams,
 	UpdateColumnTitleMessageParams,
+	AddCardCommentMessageParams,
+	EditCardCommentMessageParams,
+	ReactToCardMessageParams,
+	UpdateCardSettingsMessageParams,
+	UpdateColumnSettingsMessageParams,
+	RemoveCardCommentMessageParams,
+	ReportCardCommentMessageParams,
+	UpdateBoardCommentsEnabledMessageParams,
+	UpdateBoardReactionTypeMessageParams,
+	SetChecklistItemCheckedMessageParams,
 	UpdateContentElementMessageParams,
+	VoteInPollMessageParams,
 } from './dto';
 import { UpdateReadersCanEditMessageParams } from './dto/update-users-can-edit.message.param';
 
@@ -198,6 +212,145 @@ export class BoardCollaborationGateway implements OnGatewayConnection, OnGateway
 		}
 	}
 
+	/**
+	 * Like a poll vote, a reaction splits into two payloads: the room sees the new totals, the
+	 * reacting client alone learns its own value back.
+	 */
+	@SubscribeMessage('react-to-card-request')
+	@TrackExecutionTime()
+	@EnsureRequestContext()
+	public async reactToCard(socket: Socket, data: ReactToCardMessageParams): Promise<void> {
+		const emitter = this.buildBoardSocketEmitter({ socket, action: 'react-to-card' });
+		const { userId } = this.getCurrentUser(socket);
+		try {
+			const { card, viewContext } = await this.cardUc.reactToCard(userId, data.cardId, data.value);
+
+			emitter.emitToClient({ ...data, card: CardResponseMapper.mapToResponse(card, viewContext) });
+			emitter.emitToRoom(
+				{
+					cardId: data.cardId,
+					card: CardResponseMapper.mapToResponse(card, { ...viewContext, userId: undefined }),
+				},
+				card
+			);
+		} catch {
+			emitter.emitFailure(data);
+		}
+	}
+
+	@SubscribeMessage('update-board-reaction-type-request')
+	@TrackExecutionTime()
+	@EnsureRequestContext()
+	public async updateBoardReactionType(socket: Socket, data: UpdateBoardReactionTypeMessageParams): Promise<void> {
+		const emitter = this.buildBoardSocketEmitter({ socket, action: 'update-board-reaction-type' });
+		const { userId } = this.getCurrentUser(socket);
+		try {
+			const board = await this.boardUc.updateReactionType(userId, data.boardId, data.reactionType);
+			emitter.emitToClientAndRoom(data, board);
+		} catch {
+			emitter.emitFailure(data);
+		}
+	}
+
+	/**
+	 * Comment traffic is broadcast to the whole room, but each recipient needs their own view of
+	 * it: only the author sees `isOwn`, only a moderator sees the report count, only a reporter
+	 * sees their own report. The room therefore gets the neutral rendering and refetches the
+	 * card, while the acting client gets the version built for them.
+	 */
+	@SubscribeMessage('add-card-comment-request')
+	@TrackExecutionTime()
+	@EnsureRequestContext()
+	public async addCardComment(socket: Socket, data: AddCardCommentMessageParams): Promise<void> {
+		await this.handleCommentAction(socket, 'add-card-comment', data, () =>
+			this.cardUc.addComment(this.getCurrentUser(socket).userId, data.cardId, data.text)
+		);
+	}
+
+	@SubscribeMessage('edit-card-comment-request')
+	@TrackExecutionTime()
+	@EnsureRequestContext()
+	public async editCardComment(socket: Socket, data: EditCardCommentMessageParams): Promise<void> {
+		await this.handleCommentAction(socket, 'edit-card-comment', data, () =>
+			this.cardUc.editComment(this.getCurrentUser(socket).userId, data.cardId, data.commentId, data.text)
+		);
+	}
+
+	@SubscribeMessage('remove-card-comment-request')
+	@TrackExecutionTime()
+	@EnsureRequestContext()
+	public async removeCardComment(socket: Socket, data: RemoveCardCommentMessageParams): Promise<void> {
+		await this.handleCommentAction(socket, 'remove-card-comment', data, () =>
+			this.cardUc.removeComment(this.getCurrentUser(socket).userId, data.cardId, data.commentId)
+		);
+	}
+
+	@SubscribeMessage('report-card-comment-request')
+	@TrackExecutionTime()
+	@EnsureRequestContext()
+	public async reportCardComment(socket: Socket, data: ReportCardCommentMessageParams): Promise<void> {
+		await this.handleCommentAction(socket, 'report-card-comment', data, () =>
+			this.cardUc.reportComment(this.getCurrentUser(socket).userId, data.cardId, data.commentId, data.reason)
+		);
+	}
+
+	@SubscribeMessage('update-board-comments-enabled-request')
+	@TrackExecutionTime()
+	@EnsureRequestContext()
+	public async updateBoardCommentsEnabled(
+		socket: Socket,
+		data: UpdateBoardCommentsEnabledMessageParams
+	): Promise<void> {
+		const emitter = this.buildBoardSocketEmitter({ socket, action: 'update-board-comments-enabled' });
+		const { userId } = this.getCurrentUser(socket);
+		try {
+			const board = await this.boardUc.updateCommentsEnabled(userId, data.boardId, data.commentsEnabled);
+			emitter.emitToClientAndRoom(data, board);
+		} catch {
+			emitter.emitFailure(data);
+		}
+	}
+
+	private async handleCommentAction(
+		socket: Socket,
+		action: string,
+		data: { cardId: string },
+		perform: () => Promise<{ card: AnyBoardNode; comment: CardComment; viewContext: BoardViewContext }>
+	): Promise<void> {
+		const emitter = this.buildBoardSocketEmitter({ socket, action });
+		try {
+			const { card, comment, viewContext } = await perform();
+
+			emitter.emitToClient({ ...data, comment: CardCommentResponseMapper.mapToResponse(comment, viewContext) });
+			emitter.emitToRoom({ cardId: data.cardId }, card);
+		} catch {
+			emitter.emitFailure(data);
+		}
+	}
+
+	/**
+	 * How a card reads depends on the reader once its settings change, so the room is told only
+	 * which card to refetch.
+	 */
+	@SubscribeMessage('update-card-settings-request')
+	@TrackExecutionTime()
+	@EnsureRequestContext()
+	public async updateCardSettings(socket: Socket, data: UpdateCardSettingsMessageParams): Promise<void> {
+		const emitter = this.buildBoardSocketEmitter({ socket, action: 'update-card-settings' });
+		const { userId } = this.getCurrentUser(socket);
+		try {
+			const { card, viewContext } = await this.cardUc.updateCardSettings(userId, data.cardId, {
+				commentsEnabled: data.commentsEnabled,
+				readersCanEdit: data.readersCanEdit,
+			});
+
+			emitter.emitToClient({ ...data, card: CardResponseMapper.mapToResponse(card, viewContext) });
+			emitter.emitToRoom({ cardId: data.cardId }, card);
+		} catch {
+			emitter.emitFailure(data);
+		}
+	}
+
 	@SubscribeMessage('delete-card-request')
 	@TrackExecutionTime()
 	@EnsureRequestContext()
@@ -266,8 +419,8 @@ export class BoardCollaborationGateway implements OnGatewayConnection, OnGateway
 		const emitter = this.buildBoardSocketEmitter({ socket, action: 'fetch-board' });
 		const { userId } = this.getCurrentUser(socket);
 		try {
-			const { board, features, allowedOperations } = await this.boardUc.findBoard(userId, data.boardId);
-			const responsePayload = BoardResponseMapper.mapToResponse(board, features, allowedOperations);
+			const { board, features, allowedOperations, roomDefaults } = await this.boardUc.findBoard(userId, data.boardId);
+			const responsePayload = BoardResponseMapper.mapToResponse(board, features, allowedOperations, roomDefaults);
 			await emitter.joinRoom(board);
 			emitter.emitSuccess(responsePayload);
 		} catch {
@@ -430,6 +583,27 @@ export class BoardCollaborationGateway implements OnGatewayConnection, OnGateway
 		}
 	}
 
+	/**
+	 * Which cards a column change affects depends on what each of them overrides itself, so the
+	 * room is told to refetch the board rather than handed a resolved answer.
+	 */
+	@SubscribeMessage('update-column-settings-request')
+	@TrackExecutionTime()
+	@EnsureRequestContext()
+	public async updateColumnSettings(socket: Socket, data: UpdateColumnSettingsMessageParams): Promise<void> {
+		const emitter = this.buildBoardSocketEmitter({ socket, action: 'update-column-settings' });
+		const { userId } = this.getCurrentUser(socket);
+		try {
+			const column = await this.columnUc.updateColumnSettings(userId, data.columnId, {
+				commentsEnabled: data.commentsEnabled,
+				reactionType: data.reactionType,
+			});
+			emitter.emitToClientAndRoom(data, column);
+		} catch {
+			emitter.emitFailure(data);
+		}
+	}
+
 	@SubscribeMessage('delete-column-request')
 	@TrackExecutionTime()
 	@EnsureRequestContext()
@@ -452,7 +626,7 @@ export class BoardCollaborationGateway implements OnGatewayConnection, OnGateway
 		const { userId } = this.getCurrentUser(socket);
 		try {
 			const cards = await this.cardUc.findCards(userId, data.cardIds);
-			const cardResponses = cards.map((card) => CardResponseMapper.mapToResponse(card));
+			const cardResponses = cards.map(({ card, viewContext }) => CardResponseMapper.mapToResponse(card, viewContext));
 
 			emitter.emitSuccess({ cards: cardResponses });
 		} catch {
@@ -497,6 +671,68 @@ export class BoardCollaborationGateway implements OnGatewayConnection, OnGateway
 		try {
 			const element = await this.elementUc.updateElement(userId, data.elementId, data.data.content);
 			emitter.emitToClientAndRoom(data, element);
+		} catch {
+			emitter.emitFailure(data);
+		}
+	}
+
+	/**
+	 * A vote produces two different payloads on purpose: the room only learns the new tally,
+	 * while the voter alone gets their own ballot back. Broadcasting one shared payload would
+	 * hand every other participant the voter's choice — which is exactly what an anonymous
+	 * poll must not do.
+	 */
+	@SubscribeMessage('vote-in-poll-request')
+	@TrackExecutionTime()
+	@EnsureRequestContext()
+	public async voteInPoll(socket: Socket, data: VoteInPollMessageParams): Promise<void> {
+		const emitter = this.buildBoardSocketEmitter({ socket, action: 'vote-in-poll' });
+		const { userId } = this.getCurrentUser(socket);
+		try {
+			const { element, viewContext } = await this.elementUc.voteInPoll(userId, data.elementId, data.optionIds);
+			const mapper = PollElementResponseMapper.getInstance();
+
+			emitter.emitToClient({
+				...data,
+				pollElement: mapper.mapToResponse(element, viewContext),
+			});
+			emitter.emitToRoom(
+				{
+					elementId: data.elementId,
+					optionIds: [],
+					pollElement: mapper.mapToResponse(element, { canEdit: viewContext.canEdit }),
+				},
+				element
+			);
+		} catch {
+			emitter.emitFailure(data);
+		}
+	}
+
+	/**
+	 * A shared checklist is shared state, so everyone gets the same payload. A personal one is
+	 * not: its ticks belong to one person, so only that client gets the element back, and the
+	 * room is told nothing at all — there is nothing about a personal tick that concerns it.
+	 */
+	@SubscribeMessage('set-checklist-item-checked-request')
+	@TrackExecutionTime()
+	@EnsureRequestContext()
+	public async setChecklistItemChecked(socket: Socket, data: SetChecklistItemCheckedMessageParams): Promise<void> {
+		const emitter = this.buildBoardSocketEmitter({ socket, action: 'set-checklist-item-checked' });
+		const { userId } = this.getCurrentUser(socket);
+		try {
+			const { element, viewContext } = await this.elementUc.setChecklistItemChecked(
+				userId,
+				data.elementId,
+				data.itemId,
+				data.checked
+			);
+			const mapper = ChecklistElementResponseMapper.getInstance();
+
+			emitter.emitToClient({ ...data, element: mapper.mapToResponse(element, viewContext) });
+			if (!element.isPerUser) {
+				emitter.emitToRoom({ ...data, element: mapper.mapToResponse(element) }, element);
+			}
 		} catch {
 			emitter.emitFailure(data);
 		}
