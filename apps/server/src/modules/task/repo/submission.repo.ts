@@ -32,6 +32,24 @@ export class SubmissionRepo extends BaseRepo<Submission> {
 		return [submissions, count];
 	}
 
+	/**
+	 * The submission a user may write on for a task — their own, a team submission they are a
+	 * member of, or one of their course group. Used before creating a new one, so that opening
+	 * the same task twice does not leave two submissions behind.
+	 */
+	public async findByTaskAndUser(taskId: EntityId, userId: EntityId): Promise<Submission | null> {
+		const userQuery = await this.byUserIdQuery(userId);
+		const submission = await this._em.findOne(this.entityName, {
+			$and: [{ task: taskId }, userQuery],
+		});
+
+		if (submission) {
+			await this.populateReferences([submission]);
+		}
+
+		return submission;
+	}
+
 	public async findAllByUserId(userId: EntityId): Promise<Counted<Submission[]>> {
 		const result = await this._em.findAndCount(this.entityName, await this.byUserIdQuery(userId));
 		return result;

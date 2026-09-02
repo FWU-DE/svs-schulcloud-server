@@ -145,6 +145,59 @@ describe('submission repo', () => {
 		});
 	});
 
+	describe('findByTaskAndUser', () => {
+		it('should return the own submission for the task', async () => {
+			const student = userFactory.build();
+			const task = taskFactory.build();
+			task.submissions.add(submissionFactory.build({ task, student }));
+			await em.persist([task]).flush();
+			em.clear();
+
+			const result = await repo.findByTaskAndUser(task.id, student.id);
+
+			expect(result?.student?.id).toEqual(student.id);
+		});
+
+		it('should return a team submission the user is a member of', async () => {
+			const student1 = userFactory.build();
+			const student2 = userFactory.build();
+			const task = taskFactory.build();
+			task.submissions.add(submissionFactory.build({ task, student: student1, teamMembers: [student1, student2] }));
+			await em.persist([task]).flush();
+			em.clear();
+
+			const result = await repo.findByTaskAndUser(task.id, student2.id);
+
+			expect(result).not.toBeNull();
+		});
+
+		it('should not return a submission of another user', async () => {
+			const student = userFactory.build();
+			const otherStudent = userFactory.build();
+			const task = taskFactory.build();
+			task.submissions.add(submissionFactory.build({ task, student }));
+			await em.persist([task, otherStudent]).flush();
+			em.clear();
+
+			const result = await repo.findByTaskAndUser(task.id, otherStudent.id);
+
+			expect(result).toBeNull();
+		});
+
+		it('should not return the users submission for a different task', async () => {
+			const student = userFactory.build();
+			const task = taskFactory.build();
+			const otherTask = taskFactory.build();
+			task.submissions.add(submissionFactory.build({ task, student }));
+			await em.persist([task, otherTask]).flush();
+			em.clear();
+
+			const result = await repo.findByTaskAndUser(otherTask.id, student.id);
+
+			expect(result).toBeNull();
+		});
+	});
+
 	describe('deleteUserFromTeam', () => {
 		const setup = async () => {
 			const student1 = userFactory.build();
