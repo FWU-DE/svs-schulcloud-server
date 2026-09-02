@@ -19,7 +19,7 @@ export class SubmissionCreateParams {
 	@IsMongoId()
 	@IsOptional()
 	@ApiPropertyOptional({
-		description: "Collect for this student instead of the caller. Requires write access to the task.",
+		description: 'Collect for this student instead of the caller. Requires write access to the task.',
 		pattern: bsonStringPattern,
 	})
 	studentId?: string;

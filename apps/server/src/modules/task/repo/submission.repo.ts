@@ -41,7 +41,7 @@ export class SubmissionRepo extends BaseRepo<Submission> {
 		const userQuery = await this.byUserIdQuery(userId);
 		const submission = await this._em.findOne(this.entityName, {
 			$and: [{ task: taskId }, userQuery],
-		} as FilterQuery<Submission>);
+		});
 
 		if (submission) {
 			await this.populateReferences([submission]);

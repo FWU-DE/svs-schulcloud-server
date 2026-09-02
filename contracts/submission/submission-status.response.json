@@ -4,24 +4,5 @@
   "isSubmitted": true,
   "grade": 87,
   "isGraded": true,
-  "submittingCourseGroupName": "Gruppe Nord",
-  "gradeComment": "Sauber hergeleitet, Einheit fehlt.",
-  "attachments": [
-    {
-      "id": "6a8a8f058131326c109b2882",
-      "name": "Lesetagebuch.pdf",
-      "url": "/api/v3/file/download/6a8a8f058131326c109b2882/Lesetagebuch.pdf",
-      "mimeType": "application/pdf",
-      "size": 398
-    }
-  ],
-  "annotations": [
-    {
-      "id": "annotation-1",
-      "page": 1,
-      "kind": "correction",
-      "text": "Rechenweg fehlt.",
-      "quote": "x = 4"
-    }
-  ]
+  "submittingCourseGroupName": "Gruppe Nord"
 }

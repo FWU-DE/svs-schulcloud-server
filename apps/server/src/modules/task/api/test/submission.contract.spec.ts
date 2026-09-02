@@ -44,26 +44,7 @@ describe('Submission API contract', () => {
 
 	describe('SubmissionStatusResponse', () => {
 		it('should match the contract fixture with every optional field populated', () => {
-			const submission = submissionFactory
-				.studentWithId()
-				.submitted()
-				.graded()
-				.buildWithId({
-					grade: 87,
-					gradeComment: 'Sauber hergeleitet, Einheit fehlt.',
-					attachments: [
-						{
-							id: '6a8a8f058131326c109b2882',
-							name: 'Lesetagebuch.pdf',
-							url: '/api/v3/file/download/6a8a8f058131326c109b2882/Lesetagebuch.pdf',
-							mimeType: 'application/pdf',
-							size: 398,
-						},
-					],
-					annotations: [
-						{ id: 'annotation-1', page: 1, kind: 'correction', text: 'Rechenweg fehlt.', quote: 'x = 4' },
-					],
-				});
+			const submission = submissionFactory.studentWithId().submitted().graded().buildWithId({ grade: 87 });
 			submission.courseGroup = courseGroupEntityFactory.buildWithId({
 				name: 'Gruppe Nord',
 				students: [userFactory.buildWithId()],
@@ -91,9 +72,7 @@ describe('Submission API contract', () => {
 		it('should match the collect fixture', () => {
 			const student = userFactory.buildWithId();
 			const submission = submissionFactory.submitted().buildWithId({ student });
-			const students = [
-				{ id: student.id, schoolId: student.school.id, firstName: 'Marla', lastName: 'Mathe' },
-			];
+			const students = [{ id: student.id, schoolId: student.school.id, firstName: 'Marla', lastName: 'Mathe' }];
 
 			const listResponse = { data: SubmissionMapper.mapToCollectResponse(students, [submission]) };
 

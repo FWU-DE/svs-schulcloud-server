@@ -119,7 +119,7 @@ export class SubmissionUc {
 		if (!student) {
 			// Not a 404: the caller may read the task, so saying "not a participant" leaks nothing
 			// they could not already see, and it is the only actionable message.
-			throw new ForbiddenException('The given student does not take part in this task\'s course.');
+			throw new ForbiddenException("The given student does not take part in this task's course.");
 		}
 
 		return student;
@@ -138,11 +138,7 @@ export class SubmissionUc {
 		return course;
 	}
 
-	public async update(
-		userId: EntityId,
-		submissionId: EntityId,
-		params: SubmissionUpdateParams
-	): Promise<Submission> {
+	public async update(userId: EntityId, submissionId: EntityId, params: SubmissionUpdateParams): Promise<Submission> {
 		const [user, submission] = await Promise.all([
 			this.authorizationService.getUserWithPermissions(userId),
 			this.submissionService.findById(submissionId),

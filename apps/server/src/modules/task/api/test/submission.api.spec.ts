@@ -551,7 +551,16 @@ describe('Submission Controller (API)', () => {
 			const task = taskFactory.isPublished().buildWithId({ course });
 
 			await em
-				.persist([task, course, teacherUser, teacherAccount, studentUser, studentAccount, other.studentUser, other.studentAccount])
+				.persist([
+					task,
+					course,
+					teacherUser,
+					teacherAccount,
+					studentUser,
+					studentAccount,
+					other.studentUser,
+					other.studentAccount,
+				])
 				.flush();
 			em.clear();
 
@@ -574,7 +583,7 @@ describe('Submission Controller (API)', () => {
 			});
 
 			it('should report the state once a submission exists', async () => {
-                const { teacherAccount, studentUser, task } = await setupClass();
+				const { teacherAccount, studentUser, task } = await setupClass();
 				const submission = submissionFactory.submitted().buildWithId({ task, student: studentUser });
 				await em.persist(submission).flush();
 				em.clear();

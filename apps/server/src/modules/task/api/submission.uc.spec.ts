@@ -623,9 +623,7 @@ describe('Submission Uc', () => {
 			taskService.findById.mockResolvedValueOnce(task);
 			authorizationService.checkPermission.mockImplementation();
 
-			await expect(submissionUc.findCollectStatusesByTask(teacher.id, task.id)).rejects.toThrow(
-				BadRequestException
-			);
+			await expect(submissionUc.findCollectStatusesByTask(teacher.id, task.id)).rejects.toThrow(BadRequestException);
 		});
 	});
 });
