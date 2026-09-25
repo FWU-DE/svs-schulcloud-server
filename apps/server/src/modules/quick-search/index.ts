@@ -5,8 +5,6 @@
  * Do not export *.app.module.ts here; import them directly. *
  *********************************************************** */
 
-export { RoomAuthorizable, UserWithRoomRoles } from './do/room-authorizable.do';
-export { RoomRule, type RoomOperation } from './authorization/room.rule';
-export { RoomMembershipEntity } from './repo/entity';
-export { RoomMembershipModule } from './room-membership.module';
-export { RoomMembershipService } from './service/room-membership.service';
+export { QuickSearchApiModule } from './quick-search-api.module';
+export { QuickSearchModule } from './quick-search.module';
+export { type QuickSearchResult, QuickSearchResultType, QuickSearchService } from './quick-search.service';
