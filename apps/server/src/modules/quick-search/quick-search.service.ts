@@ -1,6 +1,8 @@
+import { AuthorizationService } from '@modules/authorization';
 import { CourseService } from '@modules/course';
+import { RoleName } from '@modules/role';
 import { RoomService } from '@modules/room';
-import { RoomMembershipService } from '@modules/room-membership';
+import { RoomAuthorizable, RoomMembershipService, RoomRule, UserWithRoomRoles } from '@modules/room-membership';
 import { UserDo, UserService } from '@modules/user';
 import { Injectable } from '@nestjs/common';
 import { EntityId } from '@shared/domain/types';
@@ -59,19 +61,31 @@ const score = (title: string, query: string): number => {
 	return 1;
 };
 
+/**
+ * Someone who has asked to join a room is a member of its group, but is deliberately kept out of
+ * the member list (see RoomUc.getRoomMembersResponse). The search has to keep them out as well, in
+ * both directions: an applicant is not shown to the room, and the room is not shown to them.
+ */
+const isApplicant = (member: UserWithRoomRoles): boolean =>
+	member.roles.some((role) => role.name === RoleName.ROOMAPPLICANT);
+
 @Injectable()
 export class QuickSearchService {
 	constructor(
 		private readonly roomMembershipService: RoomMembershipService,
 		private readonly roomService: RoomService,
 		private readonly courseService: CourseService,
-		private readonly userService: UserService
+		private readonly userService: UserService,
+		private readonly authorizationService: AuthorizationService,
+		private readonly roomRule: RoomRule
 	) {}
 
 	/**
-	 * Searches the rooms, courses and people the user already has access to. It deliberately does
-	 * not reach beyond that: people are only found when they share a room with the searcher, so the
-	 * palette never turns into a school-wide directory.
+	 * Searches the rooms, courses and people the user already has access to. Membership alone is not
+	 * enough: every room is put through the same RoomRule the room endpoints use, so a room the user
+	 * may not open stays invisible, and names are only returned for rooms whose member list the user
+	 * is allowed to read. People are therefore never found beyond the rooms they share with the
+	 * searcher, and the palette cannot become a school-wide directory.
 	 */
 	public async search(
 		userId: EntityId,
@@ -79,15 +93,25 @@ export class QuickSearchService {
 		query: string,
 		limit: number
 	): Promise<QuickSearchResult[]> {
-		const roomAuthorizables = await this.roomMembershipService.getRoomAuthorizablesByUserId(userId);
+		const [user, roomAuthorizables] = await Promise.all([
+			this.authorizationService.getUserWithPermissions(userId),
+			this.roomMembershipService.getRoomAuthorizablesByUserId(userId),
+		]);
+
+		const openableRooms = roomAuthorizables.filter((authorizable) =>
+			this.roomRule.can('accessRoom', user, authorizable)
+		);
+		const roomsWithReadableMembers = openableRooms.filter((authorizable) =>
+			this.roomRule.can('getRoomMembers', user, authorizable)
+		);
 
 		const [rooms, courses, people] = await Promise.all([
 			this.searchRooms(
-				roomAuthorizables.map((authorizable) => authorizable.roomId),
+				openableRooms.map((authorizable) => authorizable.roomId),
 				query
 			),
 			this.searchCourses(userId, schoolId, query),
-			this.searchPeople(roomAuthorizables, userId, query),
+			this.searchPeople(roomsWithReadableMembers, userId, query),
 		]);
 
 		return this.merge([rooms, courses, people], limit);
@@ -127,14 +151,14 @@ export class QuickSearchService {
 					type: QuickSearchResultType.COURSE,
 					title: course.name,
 					subtitle: '',
-					url: `/rooms/${course.id}`,
+					url: `/courses/${course.id}`,
 				},
 			])
 			.filter(([hit]) => hit > 0);
 	}
 
 	private async searchPeople(
-		roomAuthorizables: { roomId: EntityId; members: { userId: EntityId }[] }[],
+		roomAuthorizables: RoomAuthorizable[],
 		userId: EntityId,
 		query: string
 	): Promise<[number, QuickSearchResult][]> {
@@ -142,9 +166,10 @@ export class QuickSearchService {
 		const roomOfUser = new Map<EntityId, EntityId>();
 		for (const authorizable of roomAuthorizables) {
 			for (const member of authorizable.members) {
-				if (member.userId !== userId && !roomOfUser.has(member.userId)) {
-					roomOfUser.set(member.userId, authorizable.roomId);
+				if (member.userId === userId || roomOfUser.has(member.userId) || isApplicant(member)) {
+					continue;
 				}
+				roomOfUser.set(member.userId, authorizable.roomId);
 			}
 		}
 
@@ -156,6 +181,7 @@ export class QuickSearchService {
 		const users = await this.userService.findByIds(memberIds, false);
 
 		return users
+			.filter((user) => !user.deletedAt)
 			.map((user): [number, QuickSearchResult] => {
 				const name = this.nameOf(user);
 				const roomId = roomOfUser.get(user.id as EntityId) ?? '';
