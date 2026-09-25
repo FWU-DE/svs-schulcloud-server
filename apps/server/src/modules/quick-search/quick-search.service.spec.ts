@@ -116,7 +116,7 @@ describe('QuickSearchService', () => {
 	});
 
 	describe('when a course matches', () => {
-		it('links to the course route', async () => {
+		it('links to the room route, which resolves to the course room view', async () => {
 			courseService.findAllByUserId.mockResolvedValue([[course('course-1', 'Bio Kurs')], 1]);
 
 			const results = await service.search('user-1', 'school-1', 'Bio', 10);
@@ -127,7 +127,7 @@ describe('QuickSearchService', () => {
 					type: QuickSearchResultType.COURSE,
 					title: 'Bio Kurs',
 					subtitle: '',
-					url: '/courses/course-1',
+					url: '/rooms/course-1',
 				},
 			]);
 		});

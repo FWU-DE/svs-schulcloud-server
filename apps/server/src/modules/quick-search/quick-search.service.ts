@@ -151,7 +151,9 @@ export class QuickSearchService {
 					type: QuickSearchResultType.COURSE,
 					title: course.name,
 					subtitle: '',
-					url: `/courses/${course.id}`,
+					// Courses live under the room route too: /rooms/:id resolves to the client's
+					// RoomDetailsSwitch page, which dispatches to the course room view.
+					url: `/rooms/${course.id}`,
 				},
 			])
 			.filter(([hit]) => hit > 0);
